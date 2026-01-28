@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ============================================
+   THE LIBRARY - Light Mode (LP Portal)
+   Psychology: Trust, clarity, traditional finance
+   ============================================ */
+:root {
+  --background: #F9FAFB;
+  --foreground: #11141D;
+  --card: #FFFFFF;
+  --card-foreground: #11141D;
+  --primary: #11141D;
+  --primary-foreground: #F9FAFB;
+  --secondary: #475569;
+  --secondary-foreground: #F9FAFB;
+  --muted: #F1F5F9;
+  --muted-foreground: #475569;
+  --accent: #3E5CFF;
+  --accent-foreground: #F9FAFB;
+  --destructive: #DC2626;
+  --destructive-foreground: #FFFFFF;
+  --border: #E2E8F0;
+  --input: #E2E8F0;
+  --ring: #11141D;
+  --radius: 8px;
+}
+
+/* ============================================
+   THE COCKPIT - Dark Mode (Manager Dashboard)
+   Psychology: Control, efficiency, technical mastery
+   ============================================ */
+.dark {
+  color-scheme: dark;
+  --background: #11141D;
+  --foreground: #F8FAFC;
+  --card: #1E293B;
+  --card-foreground: #F8FAFC;
+  --primary: #F8FAFC;
+  --primary-foreground: #11141D;
+  --secondary: #334155;
+  --secondary-foreground: #F8FAFC;
+  --muted: #1E293B;
+  --muted-foreground: #94A3B8;
+  --accent: #3E5CFF;
+  --accent-foreground: #F8FAFC;
+  --destructive: #DC2626;
+  --destructive-foreground: #FFFFFF;
+  --border: #334155;
+  --input: #334155;
+  --ring: #F8FAFC;
+}
+
+* {
+  border-color: var(--border);
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+}
