@@ -2,6 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
+import { useActionState } from 'react';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,6 +18,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { DealStageSelect } from './deal-stage-select';
 import { DealStage } from './deal-stage-badge';
+import { createDeal } from '@/lib/actions/deals';
+import Link from 'next/link';
 
 // Form Schema
 const formSchema = z.object({
@@ -55,15 +58,17 @@ export function DealForm() {
         defaultValues,
     });
 
-    function onSubmit(data: DealFormValues) {
-        console.log('Form Submitted:', data);
-        // Here you would typically send data to your API
-        alert(JSON.stringify(data, null, 2));
-    }
+    const [state, formAction, isPending] = useActionState(
+        async (_prevState: { error?: string } | undefined, formData: FormData) => {
+            const result = await createDeal(formData);
+            return result;
+        },
+        undefined
+    );
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form action={formAction} className="space-y-6">
                 <FormField
                     control={form.control}
                     name="name"
@@ -146,9 +151,19 @@ export function DealForm() {
                     )}
                 />
 
+                {state?.error && (
+                    <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
+                        {state.error}
+                    </div>
+                )}
+
                 <div className="flex justify-end gap-4">
-                    <Button type="button" variant="outline">Cancel</Button>
-                    <Button type="submit">Create Deal</Button>
+                    <Button type="button" variant="outline" asChild>
+                        <Link href="/deals">Cancel</Link>
+                    </Button>
+                    <Button type="submit" disabled={isPending}>
+                        {isPending ? 'Creating...' : 'Create Deal'}
+                    </Button>
                 </div>
             </form>
         </Form>
