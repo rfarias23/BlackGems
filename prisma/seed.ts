@@ -1,4 +1,4 @@
-import { PrismaClient, UserRole, FundType, FundStatus, DealStage, DealStatus, InvestorType, InvestorStatus, AccreditedStatus, KYCStatus, AMLStatus, CommitmentStatus } from '@prisma/client'
+import { PrismaClient, UserRole, FundType, FundStatus, DealStage, DealStatus, InvestorType, InvestorStatus, AccreditedStatus, KYCStatus, AMLStatus, CommitmentStatus, CapitalCallStatus, CallItemStatus, DistributionType, DistributionStatus, DistItemStatus } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
@@ -274,6 +274,172 @@ async function main() {
         } else {
             console.log('Investor already exists:', investorData.name)
         }
+    }
+
+    // Create sample capital calls
+    const existingCall = await prisma.capitalCall.findFirst({
+        where: { fundId: fund.id, callNumber: 1 },
+    })
+
+    if (!existingCall) {
+        // Get all active commitments
+        const commitments = await prisma.commitment.findMany({
+            where: {
+                fundId: fund.id,
+                status: { in: ['ACTIVE', 'FUNDED', 'SIGNED'] },
+            },
+        })
+
+        const totalCommitted = commitments.reduce(
+            (sum, c) => sum + Number(c.committedAmount),
+            0
+        )
+
+        // Create Capital Call #1 - Fully Funded
+        const call1Amount = 4650000 // 30% of committed capital
+        const call1 = await prisma.capitalCall.create({
+            data: {
+                fundId: fund.id,
+                callNumber: 1,
+                callDate: new Date('2026-01-20'),
+                dueDate: new Date('2026-02-20'),
+                totalAmount: call1Amount,
+                forInvestment: 4000000,
+                forFees: 500000,
+                forExpenses: 150000,
+                purpose: 'Initial capital call for fund operations and management fee reserve. Includes capital for potential acquisition of ABC Manufacturing.',
+                dealReference: 'ABC Manufacturing',
+                status: CapitalCallStatus.FULLY_FUNDED,
+                noticeDate: new Date('2026-01-20'),
+                completedDate: new Date('2026-02-15'),
+            },
+        })
+
+        // Create call items for each investor
+        for (const commitment of commitments) {
+            const proRata = Number(commitment.committedAmount) / totalCommitted
+            const callAmount = call1Amount * proRata
+
+            await prisma.capitalCallItem.create({
+                data: {
+                    capitalCallId: call1.id,
+                    investorId: commitment.investorId,
+                    callAmount,
+                    paidAmount: callAmount,
+                    status: CallItemStatus.PAID,
+                    paidDate: new Date('2026-02-15'),
+                },
+            })
+        }
+
+        console.log('Capital Call #1 created')
+
+        // Create Capital Call #2 - Partially Funded
+        const call2Amount = 3100000 // Another 20%
+        const call2 = await prisma.capitalCall.create({
+            data: {
+                fundId: fund.id,
+                callNumber: 2,
+                callDate: new Date('2026-01-25'),
+                dueDate: new Date('2026-02-25'),
+                totalAmount: call2Amount,
+                forInvestment: 3000000,
+                forExpenses: 100000,
+                purpose: 'Second capital call for TechFlow Solutions acquisition closing costs and working capital.',
+                dealReference: 'TechFlow Solutions',
+                status: CapitalCallStatus.SENT,
+                noticeDate: new Date('2026-01-25'),
+            },
+        })
+
+        // Create call items - some paid, some pending
+        let itemIndex = 0
+        for (const commitment of commitments) {
+            const proRata = Number(commitment.committedAmount) / totalCommitted
+            const callAmount = call2Amount * proRata
+            const isPaid = itemIndex < 2 // First 2 investors paid
+
+            await prisma.capitalCallItem.create({
+                data: {
+                    capitalCallId: call2.id,
+                    investorId: commitment.investorId,
+                    callAmount,
+                    paidAmount: isPaid ? callAmount : 0,
+                    status: isPaid ? CallItemStatus.PAID : CallItemStatus.NOTIFIED,
+                    paidDate: isPaid ? new Date('2026-02-20') : null,
+                },
+            })
+            itemIndex++
+        }
+
+        console.log('Capital Call #2 created')
+    } else {
+        console.log('Capital calls already exist')
+    }
+
+    // Create sample distribution
+    const existingDist = await prisma.distribution.findFirst({
+        where: { fundId: fund.id, distributionNumber: 1 },
+    })
+
+    if (!existingDist) {
+        // Get all active commitments
+        const commitments = await prisma.commitment.findMany({
+            where: {
+                fundId: fund.id,
+                status: { in: ['ACTIVE', 'FUNDED'] },
+            },
+        })
+
+        const totalCommitted = commitments.reduce(
+            (sum, c) => sum + Number(c.committedAmount),
+            0
+        )
+
+        // Create Distribution #1 - Completed
+        const dist1Amount = 775000 // Return from successful partial exit
+        const dist1 = await prisma.distribution.create({
+            data: {
+                fundId: fund.id,
+                distributionNumber: 1,
+                distributionDate: new Date('2026-01-28'),
+                totalAmount: dist1Amount,
+                returnOfCapital: 500000,
+                realizedGains: 250000,
+                dividends: 25000,
+                type: DistributionType.PROFIT_DISTRIBUTION,
+                source: 'Partial exit - ABC Manufacturing real estate sale',
+                status: DistributionStatus.COMPLETED,
+                approvedDate: new Date('2026-01-26'),
+                paidDate: new Date('2026-01-28'),
+                notes: 'Distribution from the sale of excess real estate assets from ABC Manufacturing acquisition.',
+            },
+        })
+
+        // Create distribution items for each investor
+        for (const commitment of commitments) {
+            const proRata = Number(commitment.committedAmount) / totalCommitted
+            const grossAmount = dist1Amount * proRata
+            const withholdingTax = 0 // No withholding for this distribution
+            const netAmount = grossAmount - withholdingTax
+
+            await prisma.distributionItem.create({
+                data: {
+                    distributionId: dist1.id,
+                    investorId: commitment.investorId,
+                    grossAmount,
+                    withholdingTax,
+                    netAmount,
+                    status: DistItemStatus.PAID,
+                    paidDate: new Date('2026-01-28'),
+                    paymentMethod: 'Wire Transfer',
+                },
+            })
+        }
+
+        console.log('Distribution #1 created')
+    } else {
+        console.log('Distributions already exist')
     }
 
     console.log('Seed completed successfully!')
