@@ -1,4 +1,4 @@
-import { PrismaClient, UserRole, FundType, FundStatus, DealStage, DealStatus } from '@prisma/client'
+import { PrismaClient, UserRole, FundType, FundStatus, DealStage, DealStatus, InvestorType, InvestorStatus, AccreditedStatus, KYCStatus, AMLStatus, CommitmentStatus } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
@@ -141,6 +141,138 @@ async function main() {
             console.log('Deal created:', deal.name)
         } else {
             console.log('Deal already exists:', dealData.name)
+        }
+    }
+
+    // Create sample investors
+    const investors = [
+        {
+            name: 'Smith Family Office',
+            type: InvestorType.FAMILY_OFFICE,
+            status: InvestorStatus.ACTIVE,
+            email: 'investments@smithfo.com',
+            contactName: 'Robert Smith',
+            contactEmail: 'robert@smithfo.com',
+            contactPhone: '+1 (212) 555-0101',
+            contactTitle: 'Chief Investment Officer',
+            city: 'New York',
+            state: 'NY',
+            country: 'USA',
+            accreditedStatus: AccreditedStatus.QUALIFIED_PURCHASER,
+            kycStatus: KYCStatus.APPROVED,
+            amlStatus: AMLStatus.CLEARED,
+            investmentCapacity: 25000000,
+            notes: 'Long-term relationship, interested in manufacturing deals.',
+        },
+        {
+            name: 'Midwest Pension Trust',
+            type: InvestorType.PENSION,
+            status: InvestorStatus.ACTIVE,
+            email: 'alternatives@midwestpension.org',
+            contactName: 'Sarah Johnson',
+            contactEmail: 'sjohnson@midwestpension.org',
+            contactPhone: '+1 (312) 555-0202',
+            contactTitle: 'Director of Alternative Investments',
+            city: 'Chicago',
+            state: 'IL',
+            country: 'USA',
+            accreditedStatus: AccreditedStatus.INSTITUTIONAL,
+            kycStatus: KYCStatus.APPROVED,
+            amlStatus: AMLStatus.CLEARED,
+            investmentCapacity: 100000000,
+            notes: 'Institutional investor with strict ESG requirements.',
+        },
+        {
+            name: 'John Anderson',
+            type: InvestorType.INDIVIDUAL,
+            status: InvestorStatus.COMMITTED,
+            email: 'john.anderson@email.com',
+            contactName: 'John Anderson',
+            contactEmail: 'john.anderson@email.com',
+            contactPhone: '+1 (415) 555-0303',
+            city: 'San Francisco',
+            state: 'CA',
+            country: 'USA',
+            accreditedStatus: AccreditedStatus.ACCREDITED_INDIVIDUAL,
+            kycStatus: KYCStatus.APPROVED,
+            amlStatus: AMLStatus.CLEARED,
+            investmentCapacity: 2000000,
+            notes: 'Former tech executive, interested in software deals.',
+        },
+        {
+            name: 'Harbor Foundation',
+            type: InvestorType.FOUNDATION,
+            status: InvestorStatus.INTERESTED,
+            email: 'investments@harborfdn.org',
+            contactName: 'Michael Chen',
+            contactEmail: 'mchen@harborfdn.org',
+            contactPhone: '+1 (617) 555-0404',
+            contactTitle: 'Investment Committee Chair',
+            city: 'Boston',
+            state: 'MA',
+            country: 'USA',
+            accreditedStatus: AccreditedStatus.INSTITUTIONAL,
+            kycStatus: KYCStatus.IN_PROGRESS,
+            amlStatus: AMLStatus.PENDING,
+            investmentCapacity: 15000000,
+            notes: 'Mission-driven, looking for impact investments.',
+        },
+        {
+            name: 'Williams Trust',
+            type: InvestorType.TRUST,
+            status: InvestorStatus.PROSPECT,
+            email: 'trustee@williamstrust.com',
+            contactName: 'Elizabeth Williams',
+            contactEmail: 'elizabeth@williamstrust.com',
+            contactPhone: '+1 (305) 555-0505',
+            city: 'Miami',
+            state: 'FL',
+            country: 'USA',
+            accreditedStatus: AccreditedStatus.QUALIFIED_PURCHASER,
+            kycStatus: KYCStatus.PENDING,
+            amlStatus: AMLStatus.PENDING,
+            investmentCapacity: 5000000,
+            notes: 'Referred by Smith Family Office.',
+        },
+    ]
+
+    for (const investorData of investors) {
+        const existingInvestor = await prisma.investor.findFirst({
+            where: { name: investorData.name },
+        })
+
+        if (!existingInvestor) {
+            const investor = await prisma.investor.create({
+                data: investorData,
+            })
+            console.log('Investor created:', investor.name)
+
+            // Create commitment for active investors
+            if (investorData.status === InvestorStatus.ACTIVE || investorData.status === InvestorStatus.COMMITTED) {
+                const commitmentAmount = investorData.name === 'Smith Family Office' ? 5000000 :
+                                        investorData.name === 'Midwest Pension Trust' ? 10000000 :
+                                        investorData.name === 'John Anderson' ? 500000 : 0
+
+                if (commitmentAmount > 0) {
+                    await prisma.commitment.create({
+                        data: {
+                            investorId: investor.id,
+                            fundId: fund.id,
+                            committedAmount: commitmentAmount,
+                            calledAmount: commitmentAmount * 0.3, // 30% called
+                            paidAmount: commitmentAmount * 0.3,
+                            status: CommitmentStatus.ACTIVE,
+                            commitmentDate: new Date('2026-01-15'),
+                            effectiveDate: new Date('2026-01-20'),
+                            subscriptionDocsSigned: true,
+                            subscriptionDocsDate: new Date('2026-01-18'),
+                        },
+                    })
+                    console.log('Commitment created for:', investor.name)
+                }
+            }
+        } else {
+            console.log('Investor already exists:', investorData.name)
         }
     }
 
