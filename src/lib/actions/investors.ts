@@ -350,18 +350,3 @@ export async function deleteInvestor(id: string) {
     }
 }
 
-// Get investor type options
-export function getInvestorTypeOptions() {
-    return Object.entries(INVESTOR_TYPE_DISPLAY).map(([value, label]) => ({
-        value: label,
-        label,
-    }))
-}
-
-// Get investor status options
-export function getInvestorStatusOptions() {
-    return Object.entries(INVESTOR_STATUS_DISPLAY).map(([value, label]) => ({
-        value: label,
-        label,
-    }))
-}
