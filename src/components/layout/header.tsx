@@ -54,32 +54,36 @@ export function Header({ user }: HeaderProps) {
                             </Avatar>
                         </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-56 bg-popover text-popover-foreground" align="end" forceMount>
+                    <DropdownMenuContent
+                        className="w-56 bg-[#1E293B] text-[#F8FAFC] border-[#334155]"
+                        align="end"
+                        forceMount
+                    >
                         <DropdownMenuLabel className="font-normal">
                             <div className="flex flex-col space-y-1">
-                                <p className="text-sm font-medium leading-none">{user?.name || 'User'}</p>
-                                <p className="text-xs leading-none text-muted-foreground">
+                                <p className="text-sm font-medium leading-none text-[#F8FAFC]">{user?.name || 'User'}</p>
+                                <p className="text-xs leading-none text-[#94A3B8]">
                                     {user?.email || ''}
                                 </p>
                             </div>
                         </DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem asChild>
-                            <Link href="/settings" className="flex items-center cursor-pointer">
+                        <DropdownMenuSeparator className="bg-[#334155]" />
+                        <DropdownMenuItem asChild className="focus:bg-[#334155] focus:text-[#F8FAFC]">
+                            <Link href="/settings" className="flex items-center cursor-pointer text-[#F8FAFC]">
                                 <User className="mr-2 h-4 w-4" />
                                 Profile
                             </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                            <Link href="/settings" className="flex items-center cursor-pointer">
+                        <DropdownMenuItem asChild className="focus:bg-[#334155] focus:text-[#F8FAFC]">
+                            <Link href="/settings" className="flex items-center cursor-pointer text-[#F8FAFC]">
                                 <Settings className="mr-2 h-4 w-4" />
                                 Settings
                             </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuSeparator />
+                        <DropdownMenuSeparator className="bg-[#334155]" />
                         <DropdownMenuItem
                             onClick={() => signOut({ callbackUrl: '/login' })}
-                            className="text-destructive focus:text-destructive cursor-pointer"
+                            className="text-[#DC2626] focus:bg-[#334155] focus:text-[#DC2626] cursor-pointer"
                         >
                             <LogOut className="mr-2 h-4 w-4" />
                             Log out
