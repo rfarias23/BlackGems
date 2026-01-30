@@ -15,6 +15,8 @@ export default function DashboardLayout({
                     '--foreground': '#F8FAFC',
                     '--card': '#1E293B',
                     '--card-foreground': '#F8FAFC',
+                    '--popover': '#1E293B',
+                    '--popover-foreground': '#F8FAFC',
                     '--primary': '#F8FAFC',
                     '--primary-foreground': '#11141D',
                     '--secondary': '#334155',

@@ -33,7 +33,7 @@ export default function RootLayout({
     return (
         <html
             lang="en"
-            className={`${inter.variable} ${sourceSerif.variable} ${jetbrainsMono.variable}`}
+            className={`${inter.variable} ${sourceSerif.variable} ${jetbrainsMono.variable} dark`}
         >
             <body className="font-sans antialiased">{children}</body>
         </html>
