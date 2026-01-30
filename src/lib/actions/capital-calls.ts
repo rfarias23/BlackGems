@@ -469,9 +469,14 @@ export async function getFundsForCapitalCall(): Promise<{ id: string; name: stri
         return []
     }
 
+    // Get funds that have active commitments (what matters for capital calls)
     const funds = await prisma.fund.findMany({
         where: {
-            status: { in: ['SEARCHING', 'UNDER_LOI', 'ACQUIRED', 'OPERATING'] },
+            commitments: {
+                some: {
+                    status: { in: ['SIGNED', 'ACTIVE', 'FUNDED'] },
+                },
+            },
         },
         select: {
             id: true,

@@ -470,23 +470,12 @@ export async function getFundsForDistribution(): Promise<{ id: string; name: str
         return []
     }
 
+    // Get funds that have active commitments (what matters for distributions)
     const funds = await prisma.fund.findMany({
-        where: {
-            status: { in: ['OPERATING', 'PREPARING_EXIT', 'EXITED'] },
-        },
-        select: {
-            id: true,
-            name: true,
-        },
-        orderBy: { name: 'asc' },
-    })
-
-    // Also include funds with active investments
-    const fundsWithCommitments = await prisma.fund.findMany({
         where: {
             commitments: {
                 some: {
-                    status: { in: ['ACTIVE', 'FUNDED'] },
+                    status: { in: ['SIGNED', 'ACTIVE', 'FUNDED'] },
                 },
             },
         },
@@ -497,11 +486,7 @@ export async function getFundsForDistribution(): Promise<{ id: string; name: str
         orderBy: { name: 'asc' },
     })
 
-    // Merge and deduplicate
-    const allFunds = [...funds, ...fundsWithCommitments]
-    const uniqueFunds = allFunds.filter(
-        (fund, index, self) => self.findIndex((f) => f.id === fund.id) === index
-    )
+    const uniqueFunds = funds
 
     return uniqueFunds
 }
