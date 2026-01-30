@@ -494,8 +494,24 @@ export async function recordPortfolioMetrics(formData: FormData) {
     }
 }
 
+// Metrics item type
+export interface PortfolioMetricItem {
+    id: string
+    periodDate: Date
+    periodType: string
+    revenue: string | null
+    revenueGrowth: string | null
+    ebitda: string | null
+    ebitdaMargin: string | null
+    employeeCount: number | null
+    currentValuation: string | null
+    highlights: string | null
+    concerns: string | null
+    notes: string | null
+}
+
 // Get metrics history for a company
-export async function getPortfolioMetrics(companyId: string) {
+export async function getPortfolioMetrics(companyId: string): Promise<PortfolioMetricItem[]> {
     const session = await auth()
     if (!session?.user) {
         return []

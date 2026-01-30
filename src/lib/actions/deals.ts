@@ -5,10 +5,9 @@ import { auth } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
-import { DealStage, DealStatus, Prisma } from '@prisma/client'
 
 // Stage mapping between DB enum and UI display values
-const STAGE_TO_DISPLAY: Record<DealStage, string> = {
+const STAGE_TO_DISPLAY: Record<string, string> = {
     IDENTIFIED: 'Identified',
     INITIAL_REVIEW: 'Initial Review',
     PRELIMINARY_ANALYSIS: 'Initial Review',
@@ -29,17 +28,17 @@ const STAGE_TO_DISPLAY: Record<DealStage, string> = {
     ON_HOLD: 'On Hold',
 }
 
-const DISPLAY_TO_STAGE: Record<string, DealStage> = {
-    'Identified': DealStage.IDENTIFIED,
-    'Initial Review': DealStage.INITIAL_REVIEW,
-    'NDA Signed': DealStage.NDA_SIGNED,
-    'IOI Submitted': DealStage.IOI_SUBMITTED,
-    'LOI Negotiation': DealStage.LOI_NEGOTIATION,
-    'Due Diligence': DealStage.DUE_DILIGENCE,
-    'Closing': DealStage.CLOSING,
-    'Closed Won': DealStage.CLOSED_WON,
-    'Closed Lost': DealStage.CLOSED_LOST,
-    'On Hold': DealStage.ON_HOLD,
+const DISPLAY_TO_STAGE: Record<string, string> = {
+    'Identified': 'IDENTIFIED',
+    'Initial Review': 'INITIAL_REVIEW',
+    'NDA Signed': 'NDA_SIGNED',
+    'IOI Submitted': 'IOI_SUBMITTED',
+    'LOI Negotiation': 'LOI_NEGOTIATION',
+    'Due Diligence': 'DUE_DILIGENCE',
+    'Closing': 'CLOSING',
+    'Closed Won': 'CLOSED_WON',
+    'Closed Lost': 'CLOSED_LOST',
+    'On Hold': 'ON_HOLD',
 }
 
 // Validation schemas
@@ -73,7 +72,7 @@ export interface DealDetail {
     name: string
     companyName: string
     stage: string
-    status: DealStatus
+    status: string
     industry: string | null
     subIndustry: string | null
     description: string | null
@@ -305,7 +304,7 @@ export async function createDeal(formData: FormData) {
     const { name, companyName, stage, industry, askingPrice, description, fundId } = validatedData.data
 
     // Convert display stage to DB enum
-    const dbStage = DISPLAY_TO_STAGE[stage] || DealStage.IDENTIFIED
+    const dbStage = DISPLAY_TO_STAGE[stage] || 'IDENTIFIED'
 
     // Parse asking price (remove $ and commas)
     let parsedPrice: number | null = null

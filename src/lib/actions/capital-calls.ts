@@ -123,9 +123,11 @@ export async function getCapitalCalls(): Promise<CapitalCallListItem[]> {
         },
     })
 
-    return calls.map((call) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return calls.map((call: any) => {
         const totalPaid = call.items.reduce(
-            (sum, item) => sum + Number(item.paidAmount),
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (sum: number, item: any) => sum + Number(item.paidAmount),
             0
         )
         return {
