@@ -83,7 +83,7 @@ export function Header({ user }: HeaderProps) {
                         <DropdownMenuSeparator className="bg-[#334155]" />
                         <DropdownMenuItem
                             onClick={() => signOut({ callbackUrl: '/login' })}
-                            className="text-[#DC2626] focus:bg-[#334155] focus:text-[#DC2626] cursor-pointer"
+                            className="text-[#F8FAFC] focus:bg-[#334155] focus:text-[#F8FAFC] cursor-pointer"
                         >
                             <LogOut className="mr-2 h-4 w-4" />
                             Log out
