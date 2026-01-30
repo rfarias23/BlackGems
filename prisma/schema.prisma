@@ -113,11 +113,13 @@ model Fund {
   updatedAt         DateTime   @updatedAt
 
   // Relations
-  members              FundMember[]
-  deals                Deal[]
-  documents            Document[]
-  // investors            Investor[] // Commented out for MVP
-  // portfolioCompanies   PortfolioCompany[] // Commented out for MVP
+  members           FundMember[]
+  deals             Deal[]
+  documents         Document[]
+  commitments       Commitment[]
+  capitalCalls      CapitalCall[]
+  distributions     Distribution[]
+  portfolioCompanies PortfolioCompany[]
 }
 
 enum FundType {
@@ -252,6 +254,7 @@ model Deal {
   tasks               Task[]
   dueDiligenceItems   DueDiligenceItem[]
   comments            Comment[]
+  portfolioCompany    PortfolioCompany?
 
   @@index([fundId])
   @@index([stage])
@@ -581,4 +584,502 @@ enum AuditAction {
   LOGIN
   LOGOUT
   FAILED_LOGIN
+}
+
+// ============================================================================
+// INVESTOR & CAPITAL MANAGEMENT
+// ============================================================================
+
+model Investor {
+  id              String         @id @default(cuid())
+
+  // Basic Info
+  name            String
+  type            InvestorType
+  status          InvestorStatus @default(PROSPECT)
+
+  // Entity Details
+  legalName       String?
+  taxId           String?        // EIN or SSN (encrypted in production)
+  jurisdiction    String?        // State/Country of formation
+
+  // Contact Info
+  email           String?
+  phone           String?
+  address         String?
+  city            String?
+  state           String?
+  country         String         @default("USA")
+  postalCode      String?
+
+  // Primary Contact Person
+  contactName     String?
+  contactEmail    String?
+  contactPhone    String?
+  contactTitle    String?
+
+  // Compliance
+  accreditedStatus AccreditedStatus?
+  kycStatus       KYCStatus      @default(PENDING)
+  kycCompletedAt  DateTime?
+  amlStatus       AMLStatus      @default(PENDING)
+  amlCompletedAt  DateTime?
+
+  // Capacity
+  investmentCapacity Decimal?    @db.Decimal(15, 2) // Total they can invest
+
+  // Notes
+  notes           String?        @db.Text
+  source          String?        // How they heard about the fund
+
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  // Relations
+  commitments     Commitment[]
+  capitalCalls    CapitalCallItem[]
+  distributions   DistributionItem[]
+
+  @@index([type])
+  @@index([status])
+}
+
+enum InvestorType {
+  INDIVIDUAL
+  JOINT
+  TRUST
+  IRA
+  FAMILY_OFFICE
+  FOUNDATION
+  ENDOWMENT
+  PENSION
+  FUND_OF_FUNDS
+  CORPORATE
+  SOVEREIGN_WEALTH
+  INSURANCE
+  BANK
+  OTHER
+}
+
+enum InvestorStatus {
+  PROSPECT
+  CONTACTED
+  INTERESTED
+  DUE_DILIGENCE
+  COMMITTED
+  ACTIVE
+  INACTIVE
+  DECLINED
+}
+
+enum AccreditedStatus {
+  ACCREDITED_INDIVIDUAL    // $200k income or $1M net worth
+  QUALIFIED_PURCHASER      // $5M+ investments
+  QUALIFIED_CLIENT         // $1.1M+ with adviser
+  INSTITUTIONAL            // Banks, insurance, registered investment companies
+  NOT_ACCREDITED
+  PENDING_VERIFICATION
+}
+
+enum KYCStatus {
+  PENDING
+  IN_PROGRESS
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+enum AMLStatus {
+  PENDING
+  CLEARED
+  FLAGGED
+  REJECTED
+}
+
+model Commitment {
+  id              String           @id @default(cuid())
+
+  investor        Investor         @relation(fields: [investorId], references: [id], onDelete: Cascade)
+  investorId      String
+  fund            Fund             @relation(fields: [fundId], references: [id], onDelete: Cascade)
+  fundId          String
+
+  // Amounts
+  committedAmount Decimal          @db.Decimal(15, 2)
+  calledAmount    Decimal          @default(0) @db.Decimal(15, 2)
+  paidAmount      Decimal          @default(0) @db.Decimal(15, 2)
+  distributedAmount Decimal        @default(0) @db.Decimal(15, 2)
+
+  // Calculated (unfunded = committed - called)
+  // Calculated (ownership % = committed / total fund committed)
+
+  // Status
+  status          CommitmentStatus @default(PENDING)
+
+  // Dates
+  commitmentDate  DateTime?
+  effectiveDate   DateTime?        // When they officially became an LP
+
+  // Documentation
+  subscriptionDocsSigned Boolean   @default(false)
+  subscriptionDocsDate   DateTime?
+  sideLetterExists       Boolean   @default(false)
+
+  // Notes
+  notes           String?          @db.Text
+
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@unique([investorId, fundId])
+  @@index([fundId])
+  @@index([investorId])
+}
+
+enum CommitmentStatus {
+  PENDING          // Verbal commitment, docs not signed
+  SIGNED           // Subscription docs signed
+  FUNDED           // First capital call paid
+  ACTIVE           // Full LP in good standing
+  DEFAULTED        // Missed capital calls
+  TRANSFERRED      // Interest transferred to another LP
+  REDEEMED         // Early redemption (if allowed)
+}
+
+model CapitalCall {
+  id              String           @id @default(cuid())
+
+  fund            Fund             @relation(fields: [fundId], references: [id], onDelete: Cascade)
+  fundId          String
+
+  // Call Details
+  callNumber      Int              // Sequential: Call #1, #2, etc.
+  callDate        DateTime
+  dueDate         DateTime
+
+  // Amounts
+  totalAmount     Decimal          @db.Decimal(15, 2)
+  forInvestment   Decimal?         @db.Decimal(15, 2) // For deals
+  forFees         Decimal?         @db.Decimal(15, 2) // Management fees
+  forExpenses     Decimal?         @db.Decimal(15, 2) // Fund expenses
+
+  // Purpose
+  purpose         String?          @db.Text
+  dealReference   String?          // Which deal this is funding
+
+  // Status
+  status          CapitalCallStatus @default(DRAFT)
+
+  // Dates
+  noticeDate      DateTime?        // When notice was sent
+  completedDate   DateTime?        // When fully funded
+
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  // Relations
+  items           CapitalCallItem[]
+
+  @@index([fundId])
+  @@index([status])
+}
+
+enum CapitalCallStatus {
+  DRAFT
+  APPROVED
+  SENT
+  PARTIALLY_FUNDED
+  FULLY_FUNDED
+  CANCELLED
+}
+
+model CapitalCallItem {
+  id              String       @id @default(cuid())
+
+  capitalCall     CapitalCall  @relation(fields: [capitalCallId], references: [id], onDelete: Cascade)
+  capitalCallId   String
+  investor        Investor     @relation(fields: [investorId], references: [id], onDelete: Cascade)
+  investorId      String
+
+  // Amounts
+  callAmount      Decimal      @db.Decimal(15, 2) // Pro-rata share
+  paidAmount      Decimal      @default(0) @db.Decimal(15, 2)
+
+  // Status
+  status          CallItemStatus @default(PENDING)
+  paidDate        DateTime?
+
+  // Notes
+  notes           String?
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@unique([capitalCallId, investorId])
+  @@index([capitalCallId])
+  @@index([investorId])
+}
+
+enum CallItemStatus {
+  PENDING
+  NOTIFIED
+  PARTIAL
+  PAID
+  OVERDUE
+  DEFAULTED
+}
+
+model Distribution {
+  id              String             @id @default(cuid())
+
+  fund            Fund               @relation(fields: [fundId], references: [id], onDelete: Cascade)
+  fundId          String
+
+  // Distribution Details
+  distributionNumber Int             // Sequential
+  distributionDate   DateTime
+
+  // Amounts
+  totalAmount     Decimal            @db.Decimal(15, 2)
+  returnOfCapital Decimal?           @db.Decimal(15, 2)
+  realizedGains   Decimal?           @db.Decimal(15, 2)
+  dividends       Decimal?           @db.Decimal(15, 2)
+  interest        Decimal?           @db.Decimal(15, 2)
+
+  // Type
+  type            DistributionType
+
+  // Source
+  source          String?            // Which investment/exit generated this
+
+  // Status
+  status          DistributionStatus @default(DRAFT)
+
+  // Dates
+  approvedDate    DateTime?
+  paidDate        DateTime?
+
+  notes           String?            @db.Text
+
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  // Relations
+  items           DistributionItem[]
+
+  @@index([fundId])
+  @@index([status])
+}
+
+enum DistributionType {
+  RETURN_OF_CAPITAL
+  PROFIT_DISTRIBUTION
+  RECALLABLE
+  FINAL
+  SPECIAL
+}
+
+enum DistributionStatus {
+  DRAFT
+  APPROVED
+  PROCESSING
+  COMPLETED
+  CANCELLED
+}
+
+model DistributionItem {
+  id              String       @id @default(cuid())
+
+  distribution    Distribution @relation(fields: [distributionId], references: [id], onDelete: Cascade)
+  distributionId  String
+  investor        Investor     @relation(fields: [investorId], references: [id], onDelete: Cascade)
+  investorId      String
+
+  // Amounts
+  grossAmount     Decimal      @db.Decimal(15, 2) // Before withholding
+  withholdingTax  Decimal      @default(0) @db.Decimal(15, 2)
+  netAmount       Decimal      @db.Decimal(15, 2) // After withholding
+
+  // Status
+  status          DistItemStatus @default(PENDING)
+  paidDate        DateTime?
+
+  // Payment Details
+  paymentMethod   String?
+  paymentReference String?
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@unique([distributionId, investorId])
+  @@index([distributionId])
+  @@index([investorId])
+}
+
+enum DistItemStatus {
+  PENDING
+  PROCESSING
+  PAID
+  FAILED
+}
+
+// ============================================================================
+// PORTFOLIO MANAGEMENT
+// ============================================================================
+
+model PortfolioCompany {
+  id              String              @id @default(cuid())
+
+  fund            Fund                @relation(fields: [fundId], references: [id], onDelete: Cascade)
+  fundId          String
+
+  deal            Deal?               @relation(fields: [dealId], references: [id])
+  dealId          String?             @unique // Link to original deal
+
+  // Basic Info
+  name            String
+  legalName       String?
+  description     String?             @db.Text
+  website         String?
+  logo            String?
+
+  // Classification
+  industry        String?
+  subIndustry     String?
+  businessModel   String?
+
+  // Location
+  headquarters    String?
+  city            String?
+  state           String?
+  country         String              @default("USA")
+
+  // Investment Details
+  acquisitionDate DateTime
+  exitDate        DateTime?
+  holdingPeriod   Int?                // Months (calculated)
+
+  // Entry Metrics
+  entryValuation  Decimal             @db.Decimal(15, 2)
+  entryRevenue    Decimal?            @db.Decimal(15, 2)
+  entryEbitda     Decimal?            @db.Decimal(15, 2)
+  entryMultiple   Decimal?            @db.Decimal(5, 2) // Entry EV/EBITDA
+
+  // Investment Structure
+  equityInvested  Decimal             @db.Decimal(15, 2)
+  debtFinancing   Decimal?            @db.Decimal(15, 2)
+  totalInvestment Decimal             @db.Decimal(15, 2) // Equity + Debt
+  ownershipPct    Decimal             @db.Decimal(5, 4)  // e.g., 0.85 = 85%
+
+  // Current Status
+  status          PortfolioStatus     @default(HOLDING)
+
+  // Exit Details (if exited)
+  exitValuation   Decimal?            @db.Decimal(15, 2)
+  exitRevenue     Decimal?            @db.Decimal(15, 2)
+  exitEbitda      Decimal?            @db.Decimal(15, 2)
+  exitMultiple    Decimal?            @db.Decimal(5, 2)
+  exitType        ExitType?
+  exitBuyer       String?
+
+  // Returns (calculated or entered)
+  realizedValue   Decimal?            @db.Decimal(15, 2)
+  unrealizedValue Decimal?            @db.Decimal(15, 2)
+  totalValue      Decimal?            @db.Decimal(15, 2)
+  moic            Decimal?            @db.Decimal(5, 2)  // Multiple on Invested Capital
+  irr             Decimal?            @db.Decimal(5, 4)  // Internal Rate of Return
+
+  // Management
+  ceoName         String?
+  ceoEmail        String?
+  ceoPhone        String?
+  boardSeats      Int?
+
+  // Notes
+  investmentThesis String?            @db.Text
+  notes           String?             @db.Text
+
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  // Relations
+  metrics         PortfolioMetric[]
+
+  @@index([fundId])
+  @@index([status])
+}
+
+enum PortfolioStatus {
+  HOLDING           // Active investment
+  PREPARING_EXIT    // Actively seeking exit
+  UNDER_LOI         // Exit LOI signed
+  PARTIAL_EXIT      // Partial stake sold
+  EXITED            // Fully exited
+  WRITTEN_OFF       // Investment written off
+}
+
+enum ExitType {
+  STRATEGIC_SALE    // Sold to strategic buyer
+  FINANCIAL_SALE    // Sold to financial buyer/PE
+  IPO               // Public offering
+  RECAPITALIZATION  // Recap/dividend recap
+  MANAGEMENT_BUYOUT // MBO
+  MERGER            // Merged with another company
+  LIQUIDATION       // Business liquidated
+  WRITE_OFF         // Total loss
+}
+
+model PortfolioMetric {
+  id              String            @id @default(cuid())
+
+  company         PortfolioCompany  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId       String
+
+  // Period
+  periodDate      DateTime          // End of period (e.g., Q4 2025)
+  periodType      MetricPeriodType  @default(QUARTERLY)
+
+  // Financial Metrics
+  revenue         Decimal?          @db.Decimal(15, 2)
+  revenueGrowth   Decimal?          @db.Decimal(5, 4)   // YoY growth %
+  grossProfit     Decimal?          @db.Decimal(15, 2)
+  grossMargin     Decimal?          @db.Decimal(5, 4)
+  ebitda          Decimal?          @db.Decimal(15, 2)
+  ebitdaMargin    Decimal?          @db.Decimal(5, 4)
+  netIncome       Decimal?          @db.Decimal(15, 2)
+
+  // Cash Flow
+  operatingCashFlow Decimal?        @db.Decimal(15, 2)
+  freeCashFlow    Decimal?          @db.Decimal(15, 2)
+  cashBalance     Decimal?          @db.Decimal(15, 2)
+
+  // Debt
+  totalDebt       Decimal?          @db.Decimal(15, 2)
+  netDebt         Decimal?          @db.Decimal(15, 2)
+
+  // Operational
+  employeeCount   Int?
+  customerCount   Int?
+
+  // Valuation
+  currentValuation Decimal?         @db.Decimal(15, 2)
+  evEbitda        Decimal?          @db.Decimal(5, 2)   // EV/EBITDA multiple
+
+  // Notes
+  highlights      String?           @db.Text
+  concerns        String?           @db.Text
+  notes           String?           @db.Text
+
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@unique([companyId, periodDate, periodType])
+  @@index([companyId])
+  @@index([periodDate])
+}
+
+enum MetricPeriodType {
+  MONTHLY
+  QUARTERLY
+  ANNUAL
 }

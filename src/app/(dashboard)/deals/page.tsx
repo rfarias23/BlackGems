@@ -1,9 +1,23 @@
 import { Button } from '@/components/ui/button';
-import { DealTable } from '@/components/deals/deal-table';
+import { DealTable, DealTableItem } from '@/components/deals/deal-table';
+import { DealStage } from '@/components/deals/deal-stage-badge';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
+import { getDeals } from '@/lib/actions/deals';
 
-export default function DealsPage() {
+export default async function DealsPage() {
+    const deals = await getDeals();
+
+    // Transform server data to table format
+    const tableDeals: DealTableItem[] = deals.map((deal) => ({
+        id: deal.id,
+        name: deal.name,
+        stage: deal.stage as DealStage,
+        sector: deal.industry,
+        askPrice: deal.askingPrice || 'TBD',
+        date: deal.createdAt.toISOString().split('T')[0],
+    }));
+
     return (
         <div className="space-y-8">
             <div className="flex items-center justify-between">
@@ -21,7 +35,7 @@ export default function DealsPage() {
                 </Button>
             </div>
 
-            <DealTable />
+            <DealTable deals={tableDeals} />
         </div>
     );
 }

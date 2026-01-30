@@ -1,6 +1,23 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { ArrowUpRight, DollarSign, Activity, Users } from 'lucide-react';
+import { DownloadReportButton } from '@/components/dashboard/download-report-button';
+
+// Dashboard metrics (in production, these would come from the database)
+const dashboardMetrics = {
+    fundName: 'BlackGem Fund I',
+    totalAUM: '$45,231,890',
+    aumChange: '+20.1% from last month',
+    activeDeals: 12,
+    dealsChange: '+2 new this week',
+    investors: 24,
+    investorsStatus: 'All active',
+    irrNet: '24.5%',
+    irrChange: '+1.2% this quarter',
+    deals: [
+        { name: 'Project Alpha', stage: 'LOI Negotiation', status: 'Active' },
+        { name: 'Project Beta', stage: 'Initial Review', status: 'New' },
+    ],
+};
 
 export default function DashboardPage() {
     return (
@@ -8,7 +25,7 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between space-y-2">
                 <h2 className="text-3xl font-bold tracking-tight text-primary">Dashboard</h2>
                 <div className="flex items-center space-x-2">
-                    <Button>Download Report</Button>
+                    <DownloadReportButton metrics={dashboardMetrics} />
                 </div>
             </div>
 

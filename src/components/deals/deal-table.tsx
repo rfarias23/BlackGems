@@ -22,55 +22,24 @@ import { DealStageBadge, DealStage } from './deal-stage-badge';
 import Link from 'next/link';
 import { Search, Filter } from 'lucide-react';
 
-// Mock Data
-const MOCK_DEALS = [
-    {
-        id: '1',
-        name: 'ABC Manufacturing',
-        stage: 'Due Diligence' as DealStage,
-        sector: 'Manufacturing',
-        askPrice: '$8,500,000',
-        date: '2026-01-15',
-    },
-    {
-        id: '2',
-        name: 'TechFlow Solutions',
-        stage: 'LOI Negotiation' as DealStage,
-        sector: 'Software',
-        askPrice: '$4,200,000',
-        date: '2026-01-20',
-    },
-    {
-        id: '3',
-        name: 'GreenLeaf Logistics',
-        stage: 'Initial Review' as DealStage,
-        sector: 'Logistics',
-        askPrice: '$12,000,000',
-        date: '2026-01-22',
-    },
-    {
-        id: '4',
-        name: 'Summit Healthcare',
-        stage: 'Identified' as DealStage,
-        sector: 'Healthcare',
-        askPrice: 'TBD',
-        date: '2026-01-25',
-    },
-    {
-        id: '5',
-        name: 'Apex Construction',
-        stage: 'Closed Lost' as DealStage,
-        sector: 'Construction',
-        askPrice: '$6,000,000',
-        date: '2025-12-10',
-    },
-];
+export interface DealTableItem {
+    id: string;
+    name: string;
+    stage: DealStage;
+    sector: string | null;
+    askPrice: string | null;
+    date: string;
+}
 
-export function DealTable() {
+interface DealTableProps {
+    deals: DealTableItem[];
+}
+
+export function DealTable({ deals }: DealTableProps) {
     const [searchTerm, setSearchTerm] = useState('');
     const [stageFilter, setStageFilter] = useState<string>('all');
 
-    const filteredDeals = MOCK_DEALS.filter((deal) => {
+    const filteredDeals = deals.filter((deal) => {
         const matchesSearch = deal.name.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesStage = stageFilter === 'all' || deal.stage === stageFilter;
         return matchesSearch && matchesStage;
@@ -158,7 +127,7 @@ export function DealTable() {
                 </Table>
             </div>
             <div className="text-xs text-muted-foreground">
-                Showing {filteredDeals.length} of {MOCK_DEALS.length} deals
+                Showing {filteredDeals.length} of {deals.length} deals
             </div>
         </div>
     );
