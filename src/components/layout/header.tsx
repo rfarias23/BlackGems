@@ -11,8 +11,16 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Bell, Settings, LogOut, User } from 'lucide-react';
-import { useSession, signOut } from 'next-auth/react';
+import { signOut } from 'next-auth/react';
 import Link from 'next/link';
+
+interface HeaderProps {
+    user?: {
+        name?: string | null;
+        email?: string | null;
+        image?: string | null;
+    };
+}
 
 function getInitials(name: string | null | undefined): string {
     if (!name) return 'U';
@@ -23,9 +31,7 @@ function getInitials(name: string | null | undefined): string {
     return name.substring(0, 2).toUpperCase();
 }
 
-export function Header() {
-    const { data: session } = useSession();
-    const user = session?.user;
+export function Header({ user }: HeaderProps) {
 
     return (
         <header className="flex h-16 items-center justify-between border-b border-border bg-card px-6 text-card-foreground">

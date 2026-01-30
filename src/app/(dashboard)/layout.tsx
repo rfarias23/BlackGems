@@ -1,11 +1,14 @@
 import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
+import { auth } from '@/lib/auth';
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
+    const session = await auth();
+
     return (
         <div
             className="min-h-screen bg-[#11141D] text-[#F9FAFB] font-sans antialiased"
@@ -39,7 +42,7 @@ export default function DashboardLayout({
 
             {/* Main content area */}
             <div className="md:pl-64 flex flex-col min-h-screen">
-                <Header />
+                <Header user={session?.user} />
                 <main className="flex-1 p-8">
                     {children}
                 </main>
