@@ -119,6 +119,7 @@ model Fund {
   commitments       Commitment[]
   capitalCalls      CapitalCall[]
   distributions     Distribution[]
+  portfolioCompanies PortfolioCompany[]
 }
 
 enum FundType {
@@ -253,6 +254,7 @@ model Deal {
   tasks               Task[]
   dueDiligenceItems   DueDiligenceItem[]
   comments            Comment[]
+  portfolioCompany    PortfolioCompany?
 
   @@index([fundId])
   @@index([stage])
@@ -919,4 +921,165 @@ enum DistItemStatus {
   PROCESSING
   PAID
   FAILED
+}
+
+// ============================================================================
+// PORTFOLIO MANAGEMENT
+// ============================================================================
+
+model PortfolioCompany {
+  id              String              @id @default(cuid())
+
+  fund            Fund                @relation(fields: [fundId], references: [id], onDelete: Cascade)
+  fundId          String
+
+  deal            Deal?               @relation(fields: [dealId], references: [id])
+  dealId          String?             @unique // Link to original deal
+
+  // Basic Info
+  name            String
+  legalName       String?
+  description     String?             @db.Text
+  website         String?
+  logo            String?
+
+  // Classification
+  industry        String?
+  subIndustry     String?
+  businessModel   String?
+
+  // Location
+  headquarters    String?
+  city            String?
+  state           String?
+  country         String              @default("USA")
+
+  // Investment Details
+  acquisitionDate DateTime
+  exitDate        DateTime?
+  holdingPeriod   Int?                // Months (calculated)
+
+  // Entry Metrics
+  entryValuation  Decimal             @db.Decimal(15, 2)
+  entryRevenue    Decimal?            @db.Decimal(15, 2)
+  entryEbitda     Decimal?            @db.Decimal(15, 2)
+  entryMultiple   Decimal?            @db.Decimal(5, 2) // Entry EV/EBITDA
+
+  // Investment Structure
+  equityInvested  Decimal             @db.Decimal(15, 2)
+  debtFinancing   Decimal?            @db.Decimal(15, 2)
+  totalInvestment Decimal             @db.Decimal(15, 2) // Equity + Debt
+  ownershipPct    Decimal             @db.Decimal(5, 4)  // e.g., 0.85 = 85%
+
+  // Current Status
+  status          PortfolioStatus     @default(HOLDING)
+
+  // Exit Details (if exited)
+  exitValuation   Decimal?            @db.Decimal(15, 2)
+  exitRevenue     Decimal?            @db.Decimal(15, 2)
+  exitEbitda      Decimal?            @db.Decimal(15, 2)
+  exitMultiple    Decimal?            @db.Decimal(5, 2)
+  exitType        ExitType?
+  exitBuyer       String?
+
+  // Returns (calculated or entered)
+  realizedValue   Decimal?            @db.Decimal(15, 2)
+  unrealizedValue Decimal?            @db.Decimal(15, 2)
+  totalValue      Decimal?            @db.Decimal(15, 2)
+  moic            Decimal?            @db.Decimal(5, 2)  // Multiple on Invested Capital
+  irr             Decimal?            @db.Decimal(5, 4)  // Internal Rate of Return
+
+  // Management
+  ceoName         String?
+  ceoEmail        String?
+  ceoPhone        String?
+  boardSeats      Int?
+
+  // Notes
+  investmentThesis String?            @db.Text
+  notes           String?             @db.Text
+
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  // Relations
+  metrics         PortfolioMetric[]
+
+  @@index([fundId])
+  @@index([status])
+}
+
+enum PortfolioStatus {
+  HOLDING           // Active investment
+  PREPARING_EXIT    // Actively seeking exit
+  UNDER_LOI         // Exit LOI signed
+  PARTIAL_EXIT      // Partial stake sold
+  EXITED            // Fully exited
+  WRITTEN_OFF       // Investment written off
+}
+
+enum ExitType {
+  STRATEGIC_SALE    // Sold to strategic buyer
+  FINANCIAL_SALE    // Sold to financial buyer/PE
+  IPO               // Public offering
+  RECAPITALIZATION  // Recap/dividend recap
+  MANAGEMENT_BUYOUT // MBO
+  MERGER            // Merged with another company
+  LIQUIDATION       // Business liquidated
+  WRITE_OFF         // Total loss
+}
+
+model PortfolioMetric {
+  id              String            @id @default(cuid())
+
+  company         PortfolioCompany  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId       String
+
+  // Period
+  periodDate      DateTime          // End of period (e.g., Q4 2025)
+  periodType      MetricPeriodType  @default(QUARTERLY)
+
+  // Financial Metrics
+  revenue         Decimal?          @db.Decimal(15, 2)
+  revenueGrowth   Decimal?          @db.Decimal(5, 4)   // YoY growth %
+  grossProfit     Decimal?          @db.Decimal(15, 2)
+  grossMargin     Decimal?          @db.Decimal(5, 4)
+  ebitda          Decimal?          @db.Decimal(15, 2)
+  ebitdaMargin    Decimal?          @db.Decimal(5, 4)
+  netIncome       Decimal?          @db.Decimal(15, 2)
+
+  // Cash Flow
+  operatingCashFlow Decimal?        @db.Decimal(15, 2)
+  freeCashFlow    Decimal?          @db.Decimal(15, 2)
+  cashBalance     Decimal?          @db.Decimal(15, 2)
+
+  // Debt
+  totalDebt       Decimal?          @db.Decimal(15, 2)
+  netDebt         Decimal?          @db.Decimal(15, 2)
+
+  // Operational
+  employeeCount   Int?
+  customerCount   Int?
+
+  // Valuation
+  currentValuation Decimal?         @db.Decimal(15, 2)
+  evEbitda        Decimal?          @db.Decimal(5, 2)   // EV/EBITDA multiple
+
+  // Notes
+  highlights      String?           @db.Text
+  concerns        String?           @db.Text
+  notes           String?           @db.Text
+
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@unique([companyId, periodDate, periodType])
+  @@index([companyId])
+  @@index([periodDate])
+}
+
+enum MetricPeriodType {
+  MONTHLY
+  QUARTERLY
+  ANNUAL
 }

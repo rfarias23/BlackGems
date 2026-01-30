@@ -1,4 +1,4 @@
-import { PrismaClient, UserRole, FundType, FundStatus, DealStage, DealStatus, InvestorType, InvestorStatus, AccreditedStatus, KYCStatus, AMLStatus, CommitmentStatus, CapitalCallStatus, CallItemStatus, DistributionType, DistributionStatus, DistItemStatus } from '@prisma/client'
+import { PrismaClient, UserRole, FundType, FundStatus, DealStage, DealStatus, InvestorType, InvestorStatus, AccreditedStatus, KYCStatus, AMLStatus, CommitmentStatus, CapitalCallStatus, CallItemStatus, DistributionType, DistributionStatus, DistItemStatus, PortfolioStatus, MetricPeriodType } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
@@ -440,6 +440,138 @@ async function main() {
         console.log('Distribution #1 created')
     } else {
         console.log('Distributions already exist')
+    }
+
+    // Create sample portfolio companies
+    const existingPortfolio = await prisma.portfolioCompany.findFirst({
+        where: { fundId: fund.id },
+    })
+
+    if (!existingPortfolio) {
+        // Portfolio Company 1: ABC Manufacturing (from closed deal)
+        const abcManufacturing = await prisma.portfolioCompany.create({
+            data: {
+                fundId: fund.id,
+                name: 'ABC Manufacturing',
+                legalName: 'ABC Manufacturing Co.',
+                description: 'Precision metal fabrication company serving aerospace and defense industries with 40+ years of operational history.',
+                website: 'https://abcmanufacturing.com',
+                industry: 'Manufacturing',
+                subIndustry: 'Metal Fabrication',
+                businessModel: 'B2B',
+                headquarters: 'Austin, TX',
+                city: 'Austin',
+                state: 'TX',
+                country: 'USA',
+                acquisitionDate: new Date('2025-06-15'),
+                entryValuation: 12000000,
+                entryRevenue: 18000000,
+                entryEbitda: 2400000,
+                entryMultiple: 5.0,
+                equityInvested: 4800000,
+                debtFinancing: 7200000,
+                totalInvestment: 4800000,
+                ownershipPct: 0.85,
+                status: PortfolioStatus.HOLDING,
+                unrealizedValue: 5520000, // 15% value increase
+                totalValue: 5520000,
+                moic: 1.15,
+                ceoName: 'Robert Miller',
+                ceoEmail: 'rmiller@abcmanufacturing.com',
+                boardSeats: 2,
+                investmentThesis: 'ABC Manufacturing has a strong market position in aerospace components with long-term customer contracts. Value creation through operational improvements, pricing optimization, and strategic add-on acquisitions.',
+            },
+        })
+
+        // Add metrics for ABC Manufacturing
+        await prisma.portfolioMetric.createMany({
+            data: [
+                {
+                    companyId: abcManufacturing.id,
+                    periodDate: new Date('2025-09-30'),
+                    periodType: MetricPeriodType.QUARTERLY,
+                    revenue: 4800000,
+                    revenueGrowth: 0.08,
+                    ebitda: 720000,
+                    ebitdaMargin: 0.15,
+                    employeeCount: 85,
+                    currentValuation: 13200000,
+                    highlights: 'Won new aerospace contract worth $2M annually. Successfully implemented ERP system.',
+                },
+                {
+                    companyId: abcManufacturing.id,
+                    periodDate: new Date('2025-12-31'),
+                    periodType: MetricPeriodType.QUARTERLY,
+                    revenue: 5100000,
+                    revenueGrowth: 0.12,
+                    ebitda: 816000,
+                    ebitdaMargin: 0.16,
+                    employeeCount: 92,
+                    currentValuation: 13800000,
+                    highlights: 'Record Q4 revenue. Added 3 new customers. Margin expansion from operational improvements.',
+                },
+            ],
+        })
+
+        console.log('Portfolio company ABC Manufacturing created with metrics')
+
+        // Portfolio Company 2: TechFlow Solutions
+        const techFlow = await prisma.portfolioCompany.create({
+            data: {
+                fundId: fund.id,
+                name: 'TechFlow Solutions',
+                legalName: 'TechFlow Solutions Inc.',
+                description: 'IT managed services provider specializing in mid-market companies with recurring revenue model.',
+                website: 'https://techflowsolutions.com',
+                industry: 'Technology',
+                subIndustry: 'IT Services',
+                businessModel: 'Recurring Revenue / SaaS',
+                headquarters: 'Dallas, TX',
+                city: 'Dallas',
+                state: 'TX',
+                country: 'USA',
+                acquisitionDate: new Date('2025-09-01'),
+                entryValuation: 8500000,
+                entryRevenue: 6200000,
+                entryEbitda: 1200000,
+                entryMultiple: 7.1,
+                equityInvested: 3400000,
+                debtFinancing: 5100000,
+                totalInvestment: 3400000,
+                ownershipPct: 0.90,
+                status: PortfolioStatus.HOLDING,
+                unrealizedValue: 3740000, // 10% increase
+                totalValue: 3740000,
+                moic: 1.10,
+                ceoName: 'Sarah Chen',
+                ceoEmail: 'schen@techflowsolutions.com',
+                boardSeats: 2,
+                investmentThesis: 'TechFlow has 95% recurring revenue with strong customer retention. Growth opportunities through geographic expansion and adding complementary services.',
+            },
+        })
+
+        // Add metrics for TechFlow Solutions
+        await prisma.portfolioMetric.createMany({
+            data: [
+                {
+                    companyId: techFlow.id,
+                    periodDate: new Date('2025-12-31'),
+                    periodType: MetricPeriodType.QUARTERLY,
+                    revenue: 1700000,
+                    revenueGrowth: 0.15,
+                    ebitda: 340000,
+                    ebitdaMargin: 0.20,
+                    employeeCount: 45,
+                    customerCount: 120,
+                    currentValuation: 9350000,
+                    highlights: 'Added 15 new MSP contracts. Customer churn below 3%. Launched new cybersecurity offering.',
+                },
+            ],
+        })
+
+        console.log('Portfolio company TechFlow Solutions created with metrics')
+    } else {
+        console.log('Portfolio companies already exist')
     }
 
     console.log('Seed completed successfully!')
