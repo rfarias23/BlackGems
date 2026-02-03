@@ -255,24 +255,30 @@ export async function getLPCapitalStatement(investorId: string, fundId?: string)
 
     // Get capital call items
     const capitalCallItems = await prisma.capitalCallItem.findMany({
-        where: { investorId: investorId },
-        include: {
-            capitalCall: {
-                where: { fundId: fund.id },
-            },
-        },
-        orderBy: { capitalCall: { callDate: 'desc' } },
+    where: { 
+        investorId: investorId,
+        capitalCall: {
+            fundId: fund.id
+        }
+    },
+    include: {
+        capitalCall: true,
+    },
+    orderBy: { capitalCall: { callDate: 'desc' } },
     })
 
     // Get distribution items
     const distributionItems = await prisma.distributionItem.findMany({
-        where: { investorId: investorId },
-        include: {
-            distribution: {
-                where: { fundId: fund.id },
-            },
-        },
-        orderBy: { distribution: { distributionDate: 'desc' } },
+    where: { 
+        investorId: investorId,
+        distribution: {
+            fundId: fund.id
+        }
+    },
+    include: {
+        distribution: true,
+    },
+    orderBy: { distribution: { distributionDate: 'desc' } },
     })
 
     const netContributions = Number(commitment.paidAmount) - Number(commitment.distributedAmount)
