@@ -25,7 +25,7 @@ export async function requireFundAccess(userId: string, fundId: string) {
     select: { role: true },
   })
 
-  if (user?.role === 'SUPER_ADMIN') {
+  if (user?.role === 'SUPER_ADMIN' || user?.role === 'FUND_ADMIN') {
     return true
   }
 

@@ -32,6 +32,7 @@ export const authConfig = {
         async jwt({ token, user }) {
             if (user) {
                 token.role = user.role
+                token.sub = user.id
             }
             return token
         },
@@ -44,6 +45,7 @@ export const authConfig = {
         },
         async session({ session, token }) {
             if (token && session.user) {
+                session.user.id = token.sub as string
                 session.user.role = token.role as any
             }
             return session

@@ -42,6 +42,24 @@ async function main() {
     })
     console.log('Fund created:', fund.name)
 
+    // Create FundMember linking admin user to the fund
+    const existingMember = await prisma.fundMember.findUnique({
+        where: { fundId_userId: { fundId: fund.id, userId: user.id } },
+    })
+    if (!existingMember) {
+        await prisma.fundMember.create({
+            data: {
+                fundId: fund.id,
+                userId: user.id,
+                role: 'PRINCIPAL',
+                isActive: true,
+            },
+        })
+        console.log('FundMember created for:', user.email)
+    } else {
+        console.log('FundMember already exists for:', user.email)
+    }
+
     // Create sample deals
     const deals = [
         {
