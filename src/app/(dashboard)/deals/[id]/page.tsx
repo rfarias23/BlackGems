@@ -3,28 +3,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { DealStageBadge, DealStage } from '@/components/deals/deal-stage-badge';
-import { ArrowLeft, Calendar } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getDeal } from '@/lib/actions/deals';
 import { getDealDocuments } from '@/lib/actions/documents';
+import { getDealTimeline } from '@/lib/actions/activities';
 import { DeleteDealButton } from '@/components/deals/delete-deal-button';
 import { DealOverview } from '@/components/deals/deal-overview';
 import { DocumentUploadButton } from '@/components/documents/document-upload-button';
 import { DocumentList } from '@/components/documents/document-list';
 import { AddContactButton } from '@/components/deals/add-contact-button';
 import { ContactList } from '@/components/deals/contact-list';
+import { LogActivityButton } from '@/components/deals/log-activity-button';
+import { ActivityTimeline } from '@/components/deals/activity-timeline';
 import { auth } from '@/lib/auth';
-
-// Format date helper
-function formatDate(date: Date | null): string {
-    if (!date) return '-';
-    return new Intl.DateTimeFormat('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-    }).format(new Date(date));
-}
 
 // Roles that can edit deals
 const EDIT_ROLES = ['SUPER_ADMIN', 'FUND_ADMIN', 'INVESTMENT_MANAGER', 'ANALYST'];
@@ -32,7 +25,9 @@ const EDIT_ROLES = ['SUPER_ADMIN', 'FUND_ADMIN', 'INVESTMENT_MANAGER', 'ANALYST'
 export default async function DealDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
     const [deal, session] = await Promise.all([getDeal(id), auth()]);
-    const documents = deal ? await getDealDocuments(id) : [];
+    const [documents, timeline] = deal
+        ? await Promise.all([getDealDocuments(id), getDealTimeline(id)])
+        : [[], []];
 
     if (!deal) {
         notFound();
@@ -127,43 +122,11 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
                 </TabsContent>
 
                 <TabsContent value="activity">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Recent Activity</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            {deal.activities.length > 0 ? (
-                                <div className="space-y-8">
-                                    {deal.activities.map((activity) => (
-                                        <div key={activity.id} className="flex gap-4">
-                                            <div className="mt-1 h-2 w-2 rounded-full bg-primary" />
-                                            <div className="space-y-1">
-                                                <p className="text-sm font-medium leading-none">{activity.title}</p>
-                                                {activity.description && (
-                                                    <p className="text-sm text-muted-foreground">{activity.description}</p>
-                                                )}
-                                                <div className="flex items-center pt-2 text-xs text-muted-foreground">
-                                                    <Calendar className="mr-1 h-3 w-3" />
-                                                    {formatDate(activity.createdAt)}
-                                                    {activity.user.name && (
-                                                        <span className="ml-2">by {activity.user.name}</span>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="flex flex-col items-center justify-center py-8 text-center">
-                                    <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
-                                    <p className="text-muted-foreground">No activity recorded yet.</p>
-                                    <p className="text-sm text-muted-foreground mt-1">
-                                        Activities will be logged as you interact with this deal.
-                                    </p>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-medium">Activity</h3>
+                        {canEdit && <LogActivityButton dealId={deal.id} />}
+                    </div>
+                    <ActivityTimeline events={timeline} />
                 </TabsContent>
 
                 <TabsContent value="notes">
