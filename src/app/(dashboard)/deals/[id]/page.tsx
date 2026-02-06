@@ -3,12 +3,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { DealStageBadge, DealStage } from '@/components/deals/deal-stage-badge';
-import { ArrowLeft, Upload, Plus, FileText, Phone, Mail, Calendar, Users } from 'lucide-react';
+import { ArrowLeft, Plus, Phone, Mail, Calendar, Users } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getDeal } from '@/lib/actions/deals';
+import { getDealDocuments } from '@/lib/actions/documents';
 import { DeleteDealButton } from '@/components/deals/delete-deal-button';
 import { DealOverview } from '@/components/deals/deal-overview';
+import { DocumentUploadButton } from '@/components/documents/document-upload-button';
+import { DocumentList } from '@/components/documents/document-list';
 import { auth } from '@/lib/auth';
 
 // Format date helper
@@ -37,6 +40,7 @@ const EDIT_ROLES = ['SUPER_ADMIN', 'FUND_ADMIN', 'INVESTMENT_MANAGER', 'ANALYST'
 export default async function DealDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
     const [deal, session] = await Promise.all([getDeal(id), auth()]);
+    const documents = deal ? await getDealDocuments(id) : [];
 
     if (!deal) {
         notFound();
@@ -117,22 +121,9 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
                 <TabsContent value="documents" className="space-y-4">
                     <div className="flex justify-between items-center">
                         <h3 className="text-lg font-medium">Data Room</h3>
-                        <Button size="sm">
-                            <Upload className="mr-2 h-4 w-4" />
-                            Upload File
-                        </Button>
+                        {canEdit && <DocumentUploadButton dealId={deal.id} />}
                     </div>
-                    <Card>
-                        <CardContent className="p-6">
-                            <div className="flex flex-col items-center justify-center py-8 text-center">
-                                <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-                                <p className="text-muted-foreground">No documents uploaded yet.</p>
-                                <p className="text-sm text-muted-foreground mt-1">
-                                    Upload CIMs, financial statements, and other deal materials.
-                                </p>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <DocumentList documents={documents} canManage={canEdit} />
                 </TabsContent>
 
                 <TabsContent value="contacts">
