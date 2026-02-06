@@ -4,6 +4,7 @@ export interface TimelineEvent {
   type: string
   title: string
   description: string | null
+  userId: string | null
   userName: string | null
   createdAt: Date
 }

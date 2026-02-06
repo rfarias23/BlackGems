@@ -97,7 +97,7 @@ export async function getDealTimeline(dealId: string): Promise<TimelineEvent[]> 
     where: { dealId },
     orderBy: { createdAt: 'desc' },
     take: 50,
-    include: { user: { select: { name: true } } },
+    include: { user: { select: { id: true, name: true } } },
   })
 
   // Fetch system audit logs for this deal
@@ -105,7 +105,7 @@ export async function getDealTimeline(dealId: string): Promise<TimelineEvent[]> 
     where: { entityType: { in: ['Deal', 'Document', 'DealContact', 'Activity'] }, entityId: dealId },
     orderBy: { createdAt: 'desc' },
     take: 50,
-    include: { user: { select: { name: true } } },
+    include: { user: { select: { id: true, name: true } } },
   })
 
   // Also fetch audit logs for documents/contacts that belong to this deal
@@ -128,7 +128,7 @@ export async function getDealTimeline(dealId: string): Promise<TimelineEvent[]> 
       where: { entityId: { in: relatedIds } },
       orderBy: { createdAt: 'desc' },
       take: 50,
-      include: { user: { select: { name: true } } },
+      include: { user: { select: { id: true, name: true } } },
     })
   }
 
@@ -143,6 +143,7 @@ export async function getDealTimeline(dealId: string): Promise<TimelineEvent[]> 
       type: a.type,
       title: a.title,
       description: a.description,
+      userId: a.user.id,
       userName: a.user.name,
       createdAt: a.createdAt,
     })
@@ -165,6 +166,7 @@ export async function getDealTimeline(dealId: string): Promise<TimelineEvent[]> 
       type: `${log.action}_${log.entityType}`,
       title,
       description: null,
+      userId: log.user?.id || null,
       userName: log.user?.name || null,
       createdAt: log.createdAt,
     })
