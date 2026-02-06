@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { FileText, Download, Trash2, AlertTriangle } from 'lucide-react';
 import { deleteDocument } from '@/lib/actions/documents';
-import type { DocumentItem } from '@/lib/actions/documents';
+import type { DocumentItem } from '@/lib/shared/document-types';
 
 const dark = {
     dialog: 'bg-[#1E293B] text-[#F8FAFC] border-[#334155]',
