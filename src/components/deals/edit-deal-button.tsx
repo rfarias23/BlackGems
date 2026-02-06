@@ -81,11 +81,12 @@ export function EditDealButton({ deal }: EditDealButtonProps) {
                     Edit Deal
                 </Button>
             </DialogTrigger>
-            <DialogContent className={`sm:max-w-[525px] max-h-[85vh] overflow-y-auto ${dark.dialog}`}>
+            <DialogContent className={`sm:max-w-[525px] ${dark.dialog}`}>
                 <DialogHeader>
                     <DialogTitle className="text-[#F8FAFC]">Edit Deal</DialogTitle>
                 </DialogHeader>
-                <form action={handleSubmit} className="space-y-4">
+                <form action={handleSubmit} className="flex flex-col gap-4">
+                  <div className="max-h-[60vh] overflow-y-auto space-y-4 pr-1">
                     <div className="space-y-2">
                         <Label htmlFor="name" className={dark.label}>Company Name</Label>
                         <Input
@@ -234,13 +235,15 @@ export function EditDealButton({ deal }: EditDealButtonProps) {
                         </div>
                     </div>
 
+                  </div>
+
                     {error && (
                         <div className={`rounded-md p-3 text-sm ${dark.error}`}>
                             {error}
                         </div>
                     )}
 
-                    <div className="flex justify-end gap-2 pt-2">
+                    <div className="flex justify-end gap-2">
                         <Button
                             type="button"
                             variant="outline"
