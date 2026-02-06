@@ -3,11 +3,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { DealStageBadge, DealStage } from '@/components/deals/deal-stage-badge';
-import { ArrowLeft, Edit, Trash2, Upload, Plus, FileText, Phone, Mail, Calendar, Building2, MapPin, Users } from 'lucide-react';
+import { ArrowLeft, Upload, Plus, FileText, Phone, Mail, Calendar, Building2, MapPin, Users } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getDeal } from '@/lib/actions/deals';
 import { DeleteDealButton } from '@/components/deals/delete-deal-button';
+import { EditDealButton } from '@/components/deals/edit-deal-button';
 
 // Format date helper
 function formatDate(date: Date | null): string {
@@ -57,10 +58,14 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button variant="outline">
-                        <Edit className="mr-2 h-4 w-4" />
-                        Edit Deal
-                    </Button>
+                    <EditDealButton deal={{
+                        id: deal.id,
+                        name: deal.name,
+                        stage: deal.stage,
+                        industry: deal.industry,
+                        askingPrice: deal.askingPrice,
+                        description: deal.description,
+                    }} />
                     <DeleteDealButton dealId={deal.id} dealName={deal.name} />
                 </div>
             </div>
