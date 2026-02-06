@@ -382,10 +382,6 @@ export async function updateDeal(id: string, formData: FormData) {
     if (stage) {
         const targetStage = DISPLAY_TO_STAGE[stage]
         if (targetStage && targetStage !== existingDeal.stage) {
-            // Validate stage transition only if stage is actually changing
-            if (!canTransitionDealStage(existingDeal.stage, targetStage)) {
-                return { error: `Cannot transition from ${STAGE_TO_DISPLAY[existingDeal.stage]} to ${stage}` }
-            }
             updateData.stage = targetStage
         }
     }
