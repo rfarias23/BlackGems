@@ -36,15 +36,20 @@ export function DeleteDealButton({ dealId, dealName }: DeleteDealButtonProps) {
                     <Trash2 className="h-4 w-4" />
                 </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="bg-[#1E293B] text-[#F8FAFC] border-[#334155]">
                 <DialogHeader>
-                    <DialogTitle>Delete Deal</DialogTitle>
-                    <DialogDescription>
+                    <DialogTitle className="text-[#F8FAFC]">Delete Deal</DialogTitle>
+                    <DialogDescription className="text-[#94A3B8]">
                         Are you sure you want to delete &quot;{dealName}&quot;? This action cannot be undone.
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
-                    <Button variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
+                    <Button
+                        variant="outline"
+                        onClick={() => setOpen(false)}
+                        disabled={isPending}
+                        className="border-[#334155] bg-transparent text-[#F8FAFC] hover:bg-[#334155] hover:text-[#F8FAFC]"
+                    >
                         Cancel
                     </Button>
                     <Button variant="destructive" onClick={handleDelete} disabled={isPending}>
