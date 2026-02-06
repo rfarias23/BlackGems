@@ -472,6 +472,18 @@ export async function updateDeal(id: string, formData: FormData) {
         updateData.country = country
     }
 
+    // Date fields
+    const dateFields = [
+        'firstContactDate', 'ndaSignedDate', 'cimReceivedDate',
+        'managementMeetingDate', 'loiSubmittedDate', 'expectedCloseDate',
+    ] as const
+    for (const field of dateFields) {
+        const value = formData.get(field) as string | null
+        if (value) {
+            updateData[field] = new Date(value)
+        }
+    }
+
     try {
         await prisma.deal.update({
             where: { id },

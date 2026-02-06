@@ -3,12 +3,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { DealStageBadge, DealStage } from '@/components/deals/deal-stage-badge';
-import { ArrowLeft, Upload, Plus, FileText, Phone, Mail, Calendar, Building2, MapPin, Users } from 'lucide-react';
+import { ArrowLeft, Upload, Plus, FileText, Phone, Mail, Calendar, Users } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getDeal } from '@/lib/actions/deals';
 import { DeleteDealButton } from '@/components/deals/delete-deal-button';
-import { EditDealButton } from '@/components/deals/edit-deal-button';
+import { DealOverview } from '@/components/deals/deal-overview';
+import { auth } from '@/lib/auth';
 
 // Format date helper
 function formatDate(date: Date | null): string {
@@ -30,13 +31,19 @@ function getInitials(name: string): string {
         .slice(0, 2);
 }
 
+// Roles that can edit deals
+const EDIT_ROLES = ['SUPER_ADMIN', 'FUND_ADMIN', 'INVESTMENT_MANAGER', 'ANALYST'];
+
 export default async function DealDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
-    const deal = await getDeal(id);
+    const [deal, session] = await Promise.all([getDeal(id), auth()]);
 
     if (!deal) {
         notFound();
     }
+
+    const userRole = (session?.user as { role?: string })?.role || 'LP_VIEWER';
+    const canEdit = EDIT_ROLES.includes(userRole);
 
     return (
         <div className="space-y-6">
@@ -58,22 +65,9 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <EditDealButton deal={{
-                        id: deal.id,
-                        name: deal.name,
-                        stage: deal.stage,
-                        industry: deal.industry,
-                        askingPrice: deal.askingPrice,
-                        revenue: deal.revenue,
-                        ebitda: deal.ebitda,
-                        description: deal.description,
-                        yearFounded: deal.yearFounded,
-                        employeeCount: deal.employeeCount,
-                        city: deal.city,
-                        state: deal.state,
-                        country: deal.country,
-                    }} />
-                    <DeleteDealButton dealId={deal.id} dealName={deal.name} />
+                    {canEdit && (
+                        <DeleteDealButton dealId={deal.id} dealName={deal.name} />
+                    )}
                 </div>
             </div>
 
@@ -90,132 +84,34 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
                 </TabsList>
 
                 <TabsContent value="overview" className="space-y-4">
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Revenue (LTM)</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">{deal.revenue || 'TBD'}</div>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">EBITDA (LTM)</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">{deal.ebitda || 'TBD'}</div>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">EBITDA Margin</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold text-emerald-500">{deal.ebitdaMargin || '-'}</div>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Asking Price</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold text-muted-foreground">{deal.askingPrice || 'TBD'}</div>
-                            </CardContent>
-                        </Card>
-                    </div>
-
-                    <div className="grid gap-4 md:grid-cols-7">
-                        <Card className="col-span-4">
-                            <CardHeader>
-                                <CardTitle>Investment Thesis</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-sm text-muted-foreground leading-relaxed">
-                                    {deal.description || deal.investmentThesis || 'No description provided yet.'}
-                                </p>
-                                {deal.keyRisks && (
-                                    <div className="mt-4 space-y-2">
-                                        <h4 className="text-sm font-semibold">Key Risks:</h4>
-                                        <p className="text-sm text-muted-foreground">{deal.keyRisks}</p>
-                                    </div>
-                                )}
-                                {deal.valueCreationPlan && (
-                                    <div className="mt-4 space-y-2">
-                                        <h4 className="text-sm font-semibold">Value Creation Plan:</h4>
-                                        <p className="text-sm text-muted-foreground">{deal.valueCreationPlan}</p>
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-                        <Card className="col-span-3">
-                            <CardHeader>
-                                <CardTitle>Key Dates</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-4">
-                                    <div className="flex items-center justify-between text-sm">
-                                        <span className="text-muted-foreground">First Contact</span>
-                                        <span className="font-medium">{formatDate(deal.firstContactDate)}</span>
-                                    </div>
-                                    <div className="flex items-center justify-between text-sm">
-                                        <span className="text-muted-foreground">NDA Signed</span>
-                                        <span className="font-medium">{formatDate(deal.ndaSignedDate)}</span>
-                                    </div>
-                                    <div className="flex items-center justify-between text-sm">
-                                        <span className="text-muted-foreground">CIM Received</span>
-                                        <span className="font-medium">{formatDate(deal.cimReceivedDate)}</span>
-                                    </div>
-                                    <div className="flex items-center justify-between text-sm">
-                                        <span className="text-muted-foreground">Mgmt Meeting</span>
-                                        <span className="font-medium">{formatDate(deal.managementMeetingDate)}</span>
-                                    </div>
-                                    <div className="flex items-center justify-between text-sm">
-                                        <span className="text-muted-foreground">LOI Submitted</span>
-                                        <span className="font-medium">{formatDate(deal.loiSubmittedDate)}</span>
-                                    </div>
-                                    <div className="flex items-center justify-between text-sm">
-                                        <span className="text-muted-foreground">Expected Close</span>
-                                        <span className="font-medium">{formatDate(deal.expectedCloseDate)}</span>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
-
-                    {/* Company Details */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Company Details</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="grid gap-4 md:grid-cols-3">
-                                <div className="flex items-center gap-2">
-                                    <Building2 className="h-4 w-4 text-muted-foreground" />
-                                    <span className="text-sm">
-                                        <span className="text-muted-foreground">Founded:</span>{' '}
-                                        <span className="font-medium">{deal.yearFounded || '-'}</span>
-                                    </span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Users className="h-4 w-4 text-muted-foreground" />
-                                    <span className="text-sm">
-                                        <span className="text-muted-foreground">Employees:</span>{' '}
-                                        <span className="font-medium">{deal.employeeCount || '-'}</span>
-                                    </span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <MapPin className="h-4 w-4 text-muted-foreground" />
-                                    <span className="text-sm">
-                                        <span className="text-muted-foreground">Location:</span>{' '}
-                                        <span className="font-medium">
-                                            {[deal.city, deal.state, deal.country].filter(Boolean).join(', ') || '-'}
-                                        </span>
-                                    </span>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <DealOverview
+                        deal={{
+                            id: deal.id,
+                            name: deal.name,
+                            stage: deal.stage,
+                            industry: deal.industry,
+                            askingPrice: deal.askingPrice,
+                            revenue: deal.revenue,
+                            ebitda: deal.ebitda,
+                            ebitdaMargin: deal.ebitdaMargin,
+                            description: deal.description,
+                            investmentThesis: deal.investmentThesis,
+                            keyRisks: deal.keyRisks,
+                            valueCreationPlan: deal.valueCreationPlan,
+                            yearFounded: deal.yearFounded,
+                            employeeCount: deal.employeeCount,
+                            city: deal.city,
+                            state: deal.state,
+                            country: deal.country,
+                            firstContactDate: deal.firstContactDate,
+                            ndaSignedDate: deal.ndaSignedDate,
+                            cimReceivedDate: deal.cimReceivedDate,
+                            managementMeetingDate: deal.managementMeetingDate,
+                            loiSubmittedDate: deal.loiSubmittedDate,
+                            expectedCloseDate: deal.expectedCloseDate,
+                        }}
+                        userRole={userRole}
+                    />
                 </TabsContent>
 
                 <TabsContent value="documents" className="space-y-4">
