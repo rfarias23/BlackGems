@@ -223,7 +223,7 @@ export function DocumentList({ documents, canManage }: DocumentListProps) {
                     <div className="px-6 pb-6 flex-1 min-h-0">
                         {previewDoc && isPdf(previewDoc.fileType) && (
                             <iframe
-                                src={`/api/documents/${previewDoc.id}`}
+                                src={`/api/documents/${previewDoc.id}?inline=1`}
                                 className="w-full rounded-lg border border-[#334155]"
                                 style={{ height: 'calc(80vh - 100px)' }}
                                 title={previewDoc.name}
@@ -233,7 +233,7 @@ export function DocumentList({ documents, canManage }: DocumentListProps) {
                             <div className="flex items-center justify-center" style={{ maxHeight: 'calc(80vh - 100px)' }}>
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img
-                                    src={`/api/documents/${previewDoc.id}`}
+                                    src={`/api/documents/${previewDoc.id}?inline=1`}
                                     alt={previewDoc.name}
                                     className="max-w-full max-h-full object-contain rounded-lg"
                                 />
