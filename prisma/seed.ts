@@ -42,6 +42,24 @@ async function main() {
     })
     console.log('Fund created:', fund.name)
 
+    // Create FundMember linking admin user to the fund
+    const existingMember = await prisma.fundMember.findUnique({
+        where: { fundId_userId: { fundId: fund.id, userId: user.id } },
+    })
+    if (!existingMember) {
+        await prisma.fundMember.create({
+            data: {
+                fundId: fund.id,
+                userId: user.id,
+                role: 'PRINCIPAL',
+                isActive: true,
+            },
+        })
+        console.log('FundMember created for:', user.email)
+    } else {
+        console.log('FundMember already exists for:', user.email)
+    }
+
     // Create sample deals
     const deals = [
         {
@@ -53,12 +71,20 @@ async function main() {
             askingPrice: 8500000,
             revenue: 8200000,
             ebitda: 1400000,
+            ebitdaMargin: 0.1707, // 1,400,000 / 8,200,000
             description: 'ABC Manufacturing is a 35-year-old manufacturer of industrial equipment with strong customer relationships and consistent margins.',
             city: 'Detroit',
             state: 'MI',
             country: 'USA',
             employeeCount: 45,
             yearFounded: 1991,
+            firstContactDate: new Date('2025-10-15'),
+            ndaSignedDate: new Date('2025-11-01'),
+            cimReceivedDate: new Date('2025-11-08'),
+            managementMeetingDate: new Date('2025-12-03'),
+            loiSubmittedDate: new Date('2025-12-20'),
+            loiAcceptedDate: new Date('2026-01-05'),
+            expectedCloseDate: new Date('2026-03-31'),
         },
         {
             name: 'TechFlow Solutions',
@@ -69,12 +95,18 @@ async function main() {
             askingPrice: 4200000,
             revenue: 3100000,
             ebitda: 850000,
+            ebitdaMargin: 0.2742, // 850,000 / 3,100,000
             description: 'B2B SaaS platform for workflow automation with strong recurring revenue.',
             city: 'Austin',
             state: 'TX',
             country: 'USA',
             employeeCount: 22,
             yearFounded: 2018,
+            firstContactDate: new Date('2025-11-20'),
+            ndaSignedDate: new Date('2025-12-05'),
+            cimReceivedDate: new Date('2025-12-12'),
+            managementMeetingDate: new Date('2026-01-10'),
+            expectedCloseDate: new Date('2026-04-30'),
         },
         {
             name: 'GreenLeaf Logistics',
@@ -85,12 +117,14 @@ async function main() {
             askingPrice: 12000000,
             revenue: 15000000,
             ebitda: 2100000,
+            ebitdaMargin: 0.14, // 2,100,000 / 15,000,000
             description: 'Regional logistics provider with fleet of 50+ trucks serving the Midwest.',
             city: 'Chicago',
             state: 'IL',
             country: 'USA',
             employeeCount: 85,
             yearFounded: 2005,
+            firstContactDate: new Date('2026-01-10'),
         },
         {
             name: 'Summit Healthcare',
@@ -101,6 +135,7 @@ async function main() {
             askingPrice: null,
             revenue: 6500000,
             ebitda: 1100000,
+            ebitdaMargin: 0.1692, // 1,100,000 / 6,500,000
             description: 'Home healthcare services provider with multiple locations.',
             city: 'Denver',
             state: 'CO',
@@ -117,12 +152,17 @@ async function main() {
             askingPrice: 6000000,
             revenue: 9200000,
             ebitda: 920000,
+            ebitdaMargin: 0.10, // 920,000 / 9,200,000
             description: 'Commercial construction company specializing in tenant improvements.',
             city: 'Phoenix',
             state: 'AZ',
             country: 'USA',
             employeeCount: 38,
             yearFounded: 2008,
+            firstContactDate: new Date('2025-08-01'),
+            ndaSignedDate: new Date('2025-08-20'),
+            cimReceivedDate: new Date('2025-09-01'),
+            managementMeetingDate: new Date('2025-09-25'),
         },
     ]
 

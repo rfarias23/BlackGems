@@ -5,7 +5,12 @@ import { auth } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
-import { DealStage, DealStatus, Prisma } from '@prisma/client'
+import { DealStage, DealStatus } from '@prisma/client'
+import { formatCurrency, formatPercentage } from '@/lib/shared/formatters'
+import { softDelete, notDeleted } from '@/lib/shared/soft-delete'
+import { logAudit } from '@/lib/shared/audit'
+import { requireFundAccess } from '@/lib/shared/fund-access'
+import { canTransitionDealStage } from '@/lib/shared/stage-transitions'
 
 // Stage mapping between DB enum and UI display values
 const STAGE_TO_DISPLAY: Record<DealStage, string> = {
@@ -51,10 +56,6 @@ const createDealSchema = z.object({
     askingPrice: z.string().optional(),
     description: z.string().optional(),
     fundId: z.string(),
-})
-
-const updateDealSchema = createDealSchema.partial().extend({
-    id: z.string(),
 })
 
 // Types
@@ -123,25 +124,6 @@ export interface DealDetail {
     }[]
 }
 
-// Helper function to format decimal to string
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function formatDecimal(value: any): string | null {
-    if (!value) return null
-    return `$${Number(value).toLocaleString()}`
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function formatDecimalRaw(value: any): string | null {
-    if (!value) return null
-    return Number(value).toString()
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function formatPercentage(value: any): string | null {
-    if (!value) return null
-    return `${(Number(value) * 100).toFixed(1)}%`
-}
-
 // Get all deals for a fund (or first available fund)
 export async function getDeals(): Promise<DealListItem[]> {
     const session = await auth()
@@ -156,7 +138,7 @@ export async function getDeals(): Promise<DealListItem[]> {
     }
 
     const deals = await prisma.deal.findMany({
-        where: { fundId: fund.id },
+        where: { fundId: fund.id, ...notDeleted },
         orderBy: { createdAt: 'desc' },
         select: {
             id: true,
@@ -175,7 +157,7 @@ export async function getDeals(): Promise<DealListItem[]> {
         companyName: deal.companyName,
         stage: STAGE_TO_DISPLAY[deal.stage] || deal.stage,
         industry: deal.industry,
-        askingPrice: formatDecimal(deal.askingPrice),
+        askingPrice: formatCurrency(deal.askingPrice),
         createdAt: deal.createdAt,
     }))
 }
@@ -187,8 +169,8 @@ export async function getDeal(id: string): Promise<DealDetail | null> {
         return null
     }
 
-    const deal = await prisma.deal.findUnique({
-        where: { id },
+    const deal = await prisma.deal.findFirst({
+        where: { id, ...notDeleted },
         include: {
             contacts: {
                 select: {
@@ -220,6 +202,13 @@ export async function getDeal(id: string): Promise<DealDetail | null> {
         return null
     }
 
+    // Verify fund access
+    try {
+        await requireFundAccess(session.user.id!, deal.fundId)
+    } catch {
+        return null
+    }
+
     return {
         id: deal.id,
         name: deal.name,
@@ -230,11 +219,11 @@ export async function getDeal(id: string): Promise<DealDetail | null> {
         subIndustry: deal.subIndustry,
         description: deal.description,
         website: deal.website,
-        askingPrice: formatDecimal(deal.askingPrice),
-        revenue: formatDecimal(deal.revenue),
-        ebitda: formatDecimal(deal.ebitda),
-        grossProfit: formatDecimal(deal.grossProfit),
-        netIncome: formatDecimal(deal.netIncome),
+        askingPrice: formatCurrency(deal.askingPrice),
+        revenue: formatCurrency(deal.revenue),
+        ebitda: formatCurrency(deal.ebitda),
+        grossProfit: formatCurrency(deal.grossProfit),
+        netIncome: formatCurrency(deal.netIncome),
         ebitdaMargin: formatPercentage(deal.ebitdaMargin),
         employeeCount: deal.employeeCount,
         yearFounded: deal.yearFounded,
@@ -286,6 +275,13 @@ export async function createDeal(formData: FormData) {
         return { error: 'No fund found. Please create a fund first.' }
     }
 
+    // Verify fund access
+    try {
+        await requireFundAccess(session.user.id!, fund.id)
+    } catch {
+        return { error: 'Access denied' }
+    }
+
     const rawData = {
         name: formData.get('name') as string,
         companyName: formData.get('name') as string, // Use name as company name
@@ -330,9 +326,20 @@ export async function createDeal(formData: FormData) {
             },
         })
 
+        await logAudit({
+            userId: session.user.id!,
+            action: 'CREATE',
+            entityType: 'Deal',
+            entityId: deal.id,
+        })
+
         revalidatePath('/deals')
         redirect(`/deals/${deal.id}`)
     } catch (error) {
+        // redirect() throws a special Next.js error — re-throw it
+        if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
+            throw error
+        }
         console.error('Error creating deal:', error)
         return { error: 'Failed to create deal' }
     }
@@ -343,6 +350,21 @@ export async function updateDeal(id: string, formData: FormData) {
     const session = await auth()
     if (!session?.user) {
         return { error: 'Unauthorized' }
+    }
+
+    // Load the existing deal to verify access and capture old state
+    const existingDeal = await prisma.deal.findFirst({
+        where: { id, ...notDeleted },
+        select: { fundId: true, stage: true, name: true, industry: true, askingPrice: true, description: true },
+    })
+    if (!existingDeal) {
+        return { error: 'Deal not found' }
+    }
+
+    try {
+        await requireFundAccess(session.user.id!, existingDeal.fundId)
+    } catch {
+        return { error: 'Access denied' }
     }
 
     const stage = formData.get('stage') as string | null
@@ -358,7 +380,10 @@ export async function updateDeal(id: string, formData: FormData) {
     }
 
     if (stage) {
-        updateData.stage = DISPLAY_TO_STAGE[stage] || undefined
+        const targetStage = DISPLAY_TO_STAGE[stage]
+        if (targetStage && targetStage !== existingDeal.stage) {
+            updateData.stage = targetStage
+        }
     }
 
     const industry = formData.get('sector') as string | null
@@ -380,10 +405,49 @@ export async function updateDeal(id: string, formData: FormData) {
         updateData.description = description || null
     }
 
+    const yearFounded = formData.get('yearFounded') as string | null
+    if (yearFounded) {
+        const parsed = parseInt(yearFounded, 10)
+        if (!isNaN(parsed)) {
+            updateData.yearFounded = parsed
+        }
+    }
+
+    const employeeCount = formData.get('employeeCount') as string | null
+    if (employeeCount) {
+        const parsed = parseInt(employeeCount, 10)
+        if (!isNaN(parsed)) {
+            updateData.employeeCount = parsed
+        }
+    }
+
+    const city = formData.get('city') as string | null
+    if (city !== null) {
+        updateData.city = city || null
+    }
+
+    const state = formData.get('state') as string | null
+    if (state !== null) {
+        updateData.state = state || null
+    }
+
+    const country = formData.get('country') as string | null
+    if (country) {
+        updateData.country = country
+    }
+
     try {
         await prisma.deal.update({
             where: { id },
             data: updateData,
+        })
+
+        await logAudit({
+            userId: session.user.id!,
+            action: 'UPDATE',
+            entityType: 'Deal',
+            entityId: id,
+            changes: updateData,
         })
 
         revalidatePath('/deals')
@@ -395,27 +459,50 @@ export async function updateDeal(id: string, formData: FormData) {
     }
 }
 
-// Delete a deal
+// Soft-delete a deal
 export async function deleteDeal(id: string) {
     const session = await auth()
     if (!session?.user) {
         return { error: 'Unauthorized' }
     }
 
+    // Verify the deal exists and user has fund access
+    const deal = await prisma.deal.findFirst({
+        where: { id, ...notDeleted },
+        select: { fundId: true },
+    })
+    if (!deal) {
+        return { error: 'Deal not found' }
+    }
+
     try {
-        await prisma.deal.delete({
-            where: { id },
+        await requireFundAccess(session.user.id!, deal.fundId)
+    } catch {
+        return { error: 'Access denied' }
+    }
+
+    try {
+        await softDelete('deal', id)
+
+        await logAudit({
+            userId: session.user.id!,
+            action: 'DELETE',
+            entityType: 'Deal',
+            entityId: id,
         })
 
         revalidatePath('/deals')
         redirect('/deals')
     } catch (error) {
+        if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
+            throw error
+        }
         console.error('Error deleting deal:', error)
         return { error: 'Failed to delete deal' }
     }
 }
 
-// Update deal stage
+// Update deal stage with transition validation
 export async function updateDealStage(id: string, stage: string) {
     const session = await auth()
     if (!session?.user) {
@@ -427,10 +514,40 @@ export async function updateDealStage(id: string, stage: string) {
         return { error: 'Invalid stage' }
     }
 
+    // Load current deal to validate transition
+    const deal = await prisma.deal.findFirst({
+        where: { id, ...notDeleted },
+        select: { stage: true, fundId: true },
+    })
+    if (!deal) {
+        return { error: 'Deal not found' }
+    }
+
+    try {
+        await requireFundAccess(session.user.id!, deal.fundId)
+    } catch {
+        return { error: 'Access denied' }
+    }
+
+    // Validate stage transition
+    if (!canTransitionDealStage(deal.stage, dbStage)) {
+        return {
+            error: `Cannot transition from ${STAGE_TO_DISPLAY[deal.stage]} to ${stage}`,
+        }
+    }
+
     try {
         await prisma.deal.update({
             where: { id },
             data: { stage: dbStage },
+        })
+
+        await logAudit({
+            userId: session.user.id!,
+            action: 'UPDATE',
+            entityType: 'Deal',
+            entityId: id,
+            changes: { stage: { old: deal.stage, new: dbStage } },
         })
 
         revalidatePath('/deals')

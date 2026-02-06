@@ -246,6 +246,7 @@ model Deal {
   
   createdAt           DateTime   @default(now())
   updatedAt           DateTime   @updatedAt
+  deletedAt           DateTime?
 
   // Relations
   contacts            DealContact[]
@@ -259,6 +260,7 @@ model Deal {
   @@index([fundId])
   @@index([stage])
   @@index([status])
+  @@index([deletedAt])
 }
 
 enum DealStage {
@@ -413,9 +415,11 @@ model Document {
   uploadedBy    String
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
+  deletedAt     DateTime?
 
   @@index([fundId])
   @@index([dealId])
+  @@index([deletedAt])
 }
 
 enum DocumentCategory {
@@ -634,6 +638,7 @@ model Investor {
 
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
+  deletedAt       DateTime?
 
   // Relations
   commitments     Commitment[]
@@ -642,6 +647,7 @@ model Investor {
 
   @@index([type])
   @@index([status])
+  @@index([deletedAt])
 }
 
 enum InvestorType {
@@ -1001,12 +1007,14 @@ model PortfolioCompany {
 
   createdAt       DateTime            @default(now())
   updatedAt       DateTime            @updatedAt
+  deletedAt       DateTime?
 
   // Relations
   metrics         PortfolioMetric[]
 
   @@index([fundId])
   @@index([status])
+  @@index([deletedAt])
 }
 
 enum PortfolioStatus {

@@ -5,6 +5,9 @@ import { auth } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
+import { formatMoney as sharedFormatMoney } from '@/lib/shared/formatters'
+import { softDelete, notDeleted } from '@/lib/shared/soft-delete'
+import { logAudit } from '@/lib/shared/audit'
 
 // Display mappings
 const INVESTOR_TYPE_DISPLAY: Record<string, string> = {
@@ -127,12 +130,7 @@ export interface InvestorDetail {
     }[]
 }
 
-// Helper to format decimal
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function formatMoney(value: any): string {
-    if (!value) return '$0'
-    return `$${Number(value).toLocaleString()}`
-}
+const formatMoney = sharedFormatMoney
 
 // Get all investors
 export async function getInvestors(): Promise<InvestorListItem[]> {
@@ -142,6 +140,7 @@ export async function getInvestors(): Promise<InvestorListItem[]> {
     }
 
     const investors = await prisma.investor.findMany({
+        where: { ...notDeleted },
         orderBy: { createdAt: 'desc' },
         include: {
             commitments: {
@@ -177,8 +176,8 @@ export async function getInvestor(id: string): Promise<InvestorDetail | null> {
         return null
     }
 
-    const investor = await prisma.investor.findUnique({
-        where: { id },
+    const investor = await prisma.investor.findFirst({
+        where: { id, ...notDeleted },
         include: {
             commitments: {
                 include: {
@@ -279,9 +278,19 @@ export async function createInvestor(formData: FormData) {
             },
         })
 
+        await logAudit({
+            userId: session.user.id!,
+            action: 'CREATE',
+            entityType: 'Investor',
+            entityId: investor.id,
+        })
+
         revalidatePath('/investors')
         redirect(`/investors/${investor.id}`)
     } catch (error) {
+        if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
+            throw error
+        }
         console.error('Error creating investor:', error)
         return { error: 'Failed to create investor' }
     }
@@ -321,6 +330,14 @@ export async function updateInvestor(id: string, formData: FormData) {
             data: updateData,
         })
 
+        await logAudit({
+            userId: session.user.id!,
+            action: 'UPDATE',
+            entityType: 'Investor',
+            entityId: id,
+            changes: updateData,
+        })
+
         revalidatePath('/investors')
         revalidatePath(`/investors/${id}`)
         return { success: true }
@@ -330,21 +347,37 @@ export async function updateInvestor(id: string, formData: FormData) {
     }
 }
 
-// Delete investor
+// Soft-delete investor
 export async function deleteInvestor(id: string) {
     const session = await auth()
     if (!session?.user) {
         return { error: 'Unauthorized' }
     }
 
+    // Verify investor exists
+    const investor = await prisma.investor.findFirst({
+        where: { id, ...notDeleted },
+    })
+    if (!investor) {
+        return { error: 'Investor not found' }
+    }
+
     try {
-        await prisma.investor.delete({
-            where: { id },
+        await softDelete('investor', id)
+
+        await logAudit({
+            userId: session.user.id!,
+            action: 'DELETE',
+            entityType: 'Investor',
+            entityId: id,
         })
 
         revalidatePath('/investors')
         redirect('/investors')
     } catch (error) {
+        if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
+            throw error
+        }
         console.error('Error deleting investor:', error)
         return { error: 'Failed to delete investor' }
     }

@@ -5,6 +5,15 @@ import { auth } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
+import {
+    formatMoney as sharedFormatMoney,
+    formatPercent as sharedFormatPercent,
+    formatMultiple as sharedFormatMultiple,
+    parseMoney as sharedParseMoney,
+    parsePercent as sharedParsePercent,
+} from '@/lib/shared/formatters'
+import { softDelete, notDeleted } from '@/lib/shared/soft-delete'
+import { logAudit } from '@/lib/shared/audit'
 
 // Display mappings
 const STATUS_DISPLAY: Record<string, string> = {
@@ -127,39 +136,11 @@ export interface PortfolioCompanyDetail {
     } | null
 }
 
-// Helper to format decimal
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function formatMoney(value: any): string {
-    if (!value) return '$0'
-    return `$${Number(value).toLocaleString()}`
-}
-
-// Helper to format percentage
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function formatPercent(value: any): string {
-    if (!value) return '0%'
-    return `${(Number(value) * 100).toFixed(1)}%`
-}
-
-// Helper to format multiple
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function formatMultiple(value: any): string {
-    if (!value) return '-'
-    return `${Number(value).toFixed(2)}x`
-}
-
-// Helper to parse money string
-function parseMoney(value: string): number {
-    if (!value) return 0
-    return parseFloat(value.replace(/[$,]/g, '')) || 0
-}
-
-// Helper to parse percent (e.g., "85" -> 0.85)
-function parsePercent(value: string): number {
-    if (!value) return 0
-    const num = parseFloat(value.replace(/%/g, ''))
-    return num > 1 ? num / 100 : num
-}
+const formatMoney = sharedFormatMoney
+const formatPercent = sharedFormatPercent
+const formatMultiple = sharedFormatMultiple
+const parseMoney = sharedParseMoney
+const parsePercent = sharedParsePercent
 
 // Calculate holding period in months
 function calculateHoldingPeriod(acquisitionDate: Date, exitDate?: Date | null): number {
@@ -177,6 +158,7 @@ export async function getPortfolioCompanies(): Promise<PortfolioCompanyListItem[
     }
 
     const companies = await prisma.portfolioCompany.findMany({
+        where: { ...notDeleted },
         orderBy: { acquisitionDate: 'desc' },
         include: {
             fund: {
@@ -219,8 +201,8 @@ export async function getPortfolioCompany(id: string): Promise<PortfolioCompanyD
         return null
     }
 
-    const company = await prisma.portfolioCompany.findUnique({
-        where: { id },
+    const company = await prisma.portfolioCompany.findFirst({
+        where: { id, ...notDeleted },
         include: {
             fund: {
                 select: { name: true },
@@ -365,9 +347,19 @@ export async function createPortfolioCompany(formData: FormData) {
             },
         })
 
+        await logAudit({
+            userId: session.user.id!,
+            action: 'CREATE',
+            entityType: 'PortfolioCompany',
+            entityId: company.id,
+        })
+
         revalidatePath('/portfolio')
         redirect(`/portfolio/${company.id}`)
     } catch (error) {
+        if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
+            throw error
+        }
         console.error('Error creating portfolio company:', error)
         return { error: 'Failed to create portfolio company' }
     }
@@ -522,21 +514,36 @@ export async function getPortfolioMetrics(companyId: string) {
     }))
 }
 
-// Delete portfolio company
+// Soft-delete portfolio company
 export async function deletePortfolioCompany(id: string) {
     const session = await auth()
     if (!session?.user) {
         return { error: 'Unauthorized' }
     }
 
+    const company = await prisma.portfolioCompany.findFirst({
+        where: { id, ...notDeleted },
+    })
+    if (!company) {
+        return { error: 'Portfolio company not found' }
+    }
+
     try {
-        await prisma.portfolioCompany.delete({
-            where: { id },
+        await softDelete('portfolioCompany', id)
+
+        await logAudit({
+            userId: session.user.id!,
+            action: 'DELETE',
+            entityType: 'PortfolioCompany',
+            entityId: id,
         })
 
         revalidatePath('/portfolio')
         redirect('/portfolio')
     } catch (error) {
+        if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
+            throw error
+        }
         console.error('Error deleting portfolio company:', error)
         return { error: 'Failed to delete portfolio company' }
     }
@@ -570,6 +577,7 @@ export async function getPortfolioSummary() {
     const companies = await prisma.portfolioCompany.findMany({
         where: {
             status: { not: 'WRITTEN_OFF' },
+            ...notDeleted,
         },
     })
 
