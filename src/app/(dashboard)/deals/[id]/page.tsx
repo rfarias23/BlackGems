@@ -1,6 +1,5 @@
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { DealStageBadge, DealStage } from '@/components/deals/deal-stage-badge';
 import { ArrowLeft } from 'lucide-react';
@@ -9,6 +8,7 @@ import { notFound } from 'next/navigation';
 import { getDeal } from '@/lib/actions/deals';
 import { getDealDocuments } from '@/lib/actions/documents';
 import { getDealTimeline } from '@/lib/actions/activities';
+import { getDealNotes } from '@/lib/actions/notes';
 import { DeleteDealButton } from '@/components/deals/delete-deal-button';
 import { DealOverview } from '@/components/deals/deal-overview';
 import { DocumentUploadButton } from '@/components/documents/document-upload-button';
@@ -17,6 +17,7 @@ import { AddContactButton } from '@/components/deals/add-contact-button';
 import { ContactList } from '@/components/deals/contact-list';
 import { LogActivityButton } from '@/components/deals/log-activity-button';
 import { ActivityTimeline } from '@/components/deals/activity-timeline';
+import { NoteList } from '@/components/deals/note-list';
 import { auth } from '@/lib/auth';
 
 // Roles that can edit deals
@@ -25,9 +26,9 @@ const EDIT_ROLES = ['SUPER_ADMIN', 'FUND_ADMIN', 'INVESTMENT_MANAGER', 'ANALYST'
 export default async function DealDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
     const [deal, session] = await Promise.all([getDeal(id), auth()]);
-    const [documents, timeline] = deal
-        ? await Promise.all([getDealDocuments(id), getDealTimeline(id)])
-        : [[], []];
+    const [documents, timeline, notes] = deal
+        ? await Promise.all([getDealDocuments(id), getDealTimeline(id), getDealNotes(id)])
+        : [[], [], []];
 
     if (!deal) {
         notFound();
@@ -130,36 +131,11 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
                 </TabsContent>
 
                 <TabsContent value="notes">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Private Notes</CardTitle>
-                            <CardDescription>Internal team notes not shared with external parties.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            {deal.internalNotes ? (
-                                <div className="prose prose-sm max-w-none text-muted-foreground">
-                                    {deal.internalNotes}
-                                </div>
-                            ) : (
-                                <div className="bg-muted/50 p-4 rounded-md text-sm text-muted-foreground italic">
-                                    No notes yet. Start typing to add a note...
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    {deal.nextSteps && (
-                        <Card className="mt-4">
-                            <CardHeader>
-                                <CardTitle>Next Steps</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="prose prose-sm max-w-none text-muted-foreground">
-                                    {deal.nextSteps}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
+                    <div className="mb-4">
+                        <h3 className="text-lg font-medium">Notes</h3>
+                        <p className="text-sm text-[#64748B]">Internal team notes not shared with external parties.</p>
+                    </div>
+                    <NoteList notes={notes} dealId={deal.id} canEdit={canEdit} />
                 </TabsContent>
             </Tabs>
         </div>
