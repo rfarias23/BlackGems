@@ -120,18 +120,21 @@ export function EditDealButton({ deal }: EditDealButtonProps) {
                         </div>
                     </div>
 
-                    <div className="space-y-2">
-                        <Label htmlFor="askPrice" className={dark.label}>Asking Price</Label>
-                        <Input
-                            id="askPrice"
-                            name="askPrice"
-                            defaultValue={deal.askingPrice || ''}
-                            placeholder="$5,000,000"
-                            className={dark.input}
-                        />
-                    </div>
+                    {/* Financials Section */}
+                    <div className={dark.section}>Financials</div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="askPrice" className={dark.label}>Asking Price</Label>
+                            <Input
+                                id="askPrice"
+                                name="askPrice"
+                                defaultValue={deal.askingPrice || ''}
+                                placeholder="$5,000,000"
+                                className={dark.input}
+                            />
+                        </div>
+
                         <div className="space-y-2">
                             <Label htmlFor="revenue" className={dark.label}>Revenue (LTM)</Label>
                             <Input
