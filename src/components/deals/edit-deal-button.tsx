@@ -44,9 +44,12 @@ export function EditDealButton({ deal }: EditDealButtonProps) {
     const [open, setOpen] = useState(false);
     const [isPending, startTransition] = useTransition();
     const [error, setError] = useState<string | null>(null);
+    const [selectedStage, setSelectedStage] = useState<string>(deal.stage);
 
     const handleSubmit = (formData: FormData) => {
         setError(null);
+        // Append the stage from React state since the hidden input may not update with form action
+        formData.set('stage', selectedStage);
         startTransition(async () => {
             const result = await updateDeal(deal.id, formData);
             if (result?.error) {
@@ -58,7 +61,14 @@ export function EditDealButton({ deal }: EditDealButtonProps) {
     };
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={(isOpen) => {
+            setOpen(isOpen);
+            if (isOpen) {
+                // Reset to current deal values when opening
+                setSelectedStage(deal.stage);
+                setError(null);
+            }
+        }}>
             <DialogTrigger asChild>
                 <Button variant="outline">
                     <Edit className="mr-2 h-4 w-4" />
@@ -83,16 +93,13 @@ export function EditDealButton({ deal }: EditDealButtonProps) {
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="stage" className={dark.label}>Stage</Label>
+                            <Label className={dark.label}>Stage</Label>
                             <DealStageSelect
-                                value={deal.stage as DealStage}
-                                onValueChange={(value) => {
-                                    const input = document.getElementById('stage-input') as HTMLInputElement;
-                                    if (input) input.value = value;
-                                }}
+                                value={selectedStage as DealStage}
+                                onValueChange={(value) => setSelectedStage(value)}
                                 className={dark.input}
                             />
-                            <input type="hidden" id="stage-input" name="stage" defaultValue={deal.stage} />
+                            <input type="hidden" name="stage" value={selectedStage} />
                         </div>
 
                         <div className="space-y-2">
