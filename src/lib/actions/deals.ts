@@ -405,6 +405,37 @@ export async function updateDeal(id: string, formData: FormData) {
         updateData.description = description || null
     }
 
+    const yearFounded = formData.get('yearFounded') as string | null
+    if (yearFounded) {
+        const parsed = parseInt(yearFounded, 10)
+        if (!isNaN(parsed)) {
+            updateData.yearFounded = parsed
+        }
+    }
+
+    const employeeCount = formData.get('employeeCount') as string | null
+    if (employeeCount) {
+        const parsed = parseInt(employeeCount, 10)
+        if (!isNaN(parsed)) {
+            updateData.employeeCount = parsed
+        }
+    }
+
+    const city = formData.get('city') as string | null
+    if (city !== null) {
+        updateData.city = city || null
+    }
+
+    const state = formData.get('state') as string | null
+    if (state !== null) {
+        updateData.state = state || null
+    }
+
+    const country = formData.get('country') as string | null
+    if (country) {
+        updateData.country = country
+    }
+
     try {
         await prisma.deal.update({
             where: { id },

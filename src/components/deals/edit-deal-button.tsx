@@ -25,6 +25,11 @@ interface EditDealButtonProps {
         industry: string | null;
         askingPrice: string | null;
         description: string | null;
+        yearFounded: number | null;
+        employeeCount: number | null;
+        city: string | null;
+        state: string | null;
+        country: string;
     };
 }
 
@@ -35,6 +40,7 @@ const dark = {
     dialog: 'bg-[#1E293B] text-[#F8FAFC] border-[#334155]',
     input: 'bg-[#11141D] border-[#334155] text-[#F8FAFC] placeholder:text-[#94A3B8] focus-visible:ring-[#3E5CFF]',
     label: 'text-[#94A3B8]',
+    section: 'text-[#F8FAFC] text-sm font-medium border-t border-[#334155] pt-4 mt-2',
     error: 'bg-[#DC2626]/15 text-[#DC2626]',
     cancelBtn: 'border-[#334155] bg-transparent text-[#F8FAFC] hover:bg-[#334155] hover:text-[#F8FAFC]',
     saveBtn: 'bg-[#F8FAFC] text-[#11141D] hover:bg-[#F8FAFC]/90',
@@ -48,7 +54,6 @@ export function EditDealButton({ deal }: EditDealButtonProps) {
 
     const handleSubmit = (formData: FormData) => {
         setError(null);
-        // Append the stage from React state since the hidden input may not update with form action
         formData.set('stage', selectedStage);
         startTransition(async () => {
             const result = await updateDeal(deal.id, formData);
@@ -64,7 +69,6 @@ export function EditDealButton({ deal }: EditDealButtonProps) {
         <Dialog open={open} onOpenChange={(isOpen) => {
             setOpen(isOpen);
             if (isOpen) {
-                // Reset to current deal values when opening
                 setSelectedStage(deal.stage);
                 setError(null);
             }
@@ -75,7 +79,7 @@ export function EditDealButton({ deal }: EditDealButtonProps) {
                     Edit Deal
                 </Button>
             </DialogTrigger>
-            <DialogContent className={`sm:max-w-[525px] ${dark.dialog}`}>
+            <DialogContent className={`sm:max-w-[525px] max-h-[85vh] overflow-y-auto ${dark.dialog}`}>
                 <DialogHeader>
                     <DialogTitle className="text-[#F8FAFC]">Edit Deal</DialogTitle>
                 </DialogHeader>
@@ -133,8 +137,72 @@ export function EditDealButton({ deal }: EditDealButtonProps) {
                             defaultValue={deal.description || ''}
                             placeholder="Tell us about the deal..."
                             className={`resize-none ${dark.input}`}
-                            rows={4}
+                            rows={3}
                         />
+                    </div>
+
+                    {/* Company Details Section */}
+                    <div className={dark.section}>Company Details</div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="yearFounded" className={dark.label}>Year Founded</Label>
+                            <Input
+                                id="yearFounded"
+                                name="yearFounded"
+                                type="number"
+                                defaultValue={deal.yearFounded || ''}
+                                placeholder="2005"
+                                className={dark.input}
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="employeeCount" className={dark.label}>Employees</Label>
+                            <Input
+                                id="employeeCount"
+                                name="employeeCount"
+                                type="number"
+                                defaultValue={deal.employeeCount || ''}
+                                placeholder="50"
+                                className={dark.input}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="city" className={dark.label}>City</Label>
+                            <Input
+                                id="city"
+                                name="city"
+                                defaultValue={deal.city || ''}
+                                placeholder="Miami"
+                                className={dark.input}
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="state" className={dark.label}>State</Label>
+                            <Input
+                                id="state"
+                                name="state"
+                                defaultValue={deal.state || ''}
+                                placeholder="FL"
+                                className={dark.input}
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="country" className={dark.label}>Country</Label>
+                            <Input
+                                id="country"
+                                name="country"
+                                defaultValue={deal.country || ''}
+                                placeholder="USA"
+                                className={dark.input}
+                            />
+                        </div>
                     </div>
 
                     {error && (

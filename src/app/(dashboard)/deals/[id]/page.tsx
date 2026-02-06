@@ -65,6 +65,11 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
                         industry: deal.industry,
                         askingPrice: deal.askingPrice,
                         description: deal.description,
+                        yearFounded: deal.yearFounded,
+                        employeeCount: deal.employeeCount,
+                        city: deal.city,
+                        state: deal.state,
+                        country: deal.country,
                     }} />
                     <DeleteDealButton dealId={deal.id} dealName={deal.name} />
                 </div>
