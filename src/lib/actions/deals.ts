@@ -606,3 +606,118 @@ export async function updateDealStage(id: string, stage: string) {
         return { error: 'Failed to update stage' }
     }
 }
+
+// ============================================================================
+// DEAL CONTACTS
+// ============================================================================
+
+const CONTACT_MANAGE_ROLES = ['SUPER_ADMIN', 'FUND_ADMIN', 'INVESTMENT_MANAGER', 'ANALYST']
+
+/** Create a new contact for a deal */
+export async function createDealContact(dealId: string, formData: FormData) {
+    const session = await auth()
+    if (!session?.user) {
+        return { error: 'Unauthorized' }
+    }
+
+    const userRole = (session.user as { role?: string }).role || 'LP_VIEWER'
+    if (!CONTACT_MANAGE_ROLES.includes(userRole)) {
+        return { error: 'Insufficient permissions' }
+    }
+
+    const deal = await prisma.deal.findFirst({
+        where: { id: dealId, ...notDeleted },
+        select: { fundId: true },
+    })
+    if (!deal) {
+        return { error: 'Deal not found' }
+    }
+
+    try {
+        await requireFundAccess(session.user.id!, deal.fundId)
+    } catch {
+        return { error: 'Access denied' }
+    }
+
+    const name = (formData.get('name') as string)?.trim()
+    if (!name || name.length < 2) {
+        return { error: 'Name must be at least 2 characters' }
+    }
+
+    const role = formData.get('role') as string
+    if (!role) {
+        return { error: 'Role is required' }
+    }
+
+    try {
+        const contact = await prisma.dealContact.create({
+            data: {
+                dealId,
+                name,
+                title: (formData.get('title') as string)?.trim() || null,
+                email: (formData.get('email') as string)?.trim() || null,
+                phone: (formData.get('phone') as string)?.trim() || null,
+                role: role as import('@prisma/client').DealContactRole,
+                isPrimary: formData.get('isPrimary') === 'true',
+                notes: (formData.get('notes') as string)?.trim() || null,
+            },
+        })
+
+        await logAudit({
+            userId: session.user.id!,
+            action: 'CREATE',
+            entityType: 'DealContact',
+            entityId: contact.id,
+        })
+
+        revalidatePath(`/deals/${dealId}`)
+        return { success: true }
+    } catch (error) {
+        console.error('Error creating deal contact:', error)
+        return { error: 'Failed to create contact' }
+    }
+}
+
+/** Delete a deal contact */
+export async function deleteDealContact(contactId: string) {
+    const session = await auth()
+    if (!session?.user) {
+        return { error: 'Unauthorized' }
+    }
+
+    const userRole = (session.user as { role?: string }).role || 'LP_VIEWER'
+    if (!CONTACT_MANAGE_ROLES.includes(userRole)) {
+        return { error: 'Insufficient permissions' }
+    }
+
+    const contact = await prisma.dealContact.findUnique({
+        where: { id: contactId },
+        include: { deal: { select: { fundId: true, id: true } } },
+    })
+    if (!contact) {
+        return { error: 'Contact not found' }
+    }
+
+    try {
+        await requireFundAccess(session.user.id!, contact.deal.fundId)
+    } catch {
+        return { error: 'Access denied' }
+    }
+
+    try {
+        await prisma.dealContact.delete({ where: { id: contactId } })
+
+        await logAudit({
+            userId: session.user.id!,
+            action: 'DELETE',
+            entityType: 'DealContact',
+            entityId: contactId,
+        })
+
+        revalidatePath(`/deals/${contact.deal.id}`)
+        return { success: true }
+    } catch (error) {
+        console.error('Error deleting deal contact:', error)
+        return { error: 'Failed to delete contact' }
+    }
+}
