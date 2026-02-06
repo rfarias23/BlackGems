@@ -5,6 +5,7 @@ import { auth } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
+import { InvestorType, InvestorStatus } from '@prisma/client'
 import { formatMoney as sharedFormatMoney } from '@/lib/shared/formatters'
 import { softDelete, notDeleted } from '@/lib/shared/soft-delete'
 import { logAudit } from '@/lib/shared/audit'
@@ -265,8 +266,8 @@ export async function createInvestor(formData: FormData) {
         const investor = await prisma.investor.create({
             data: {
                 name: data.name,
-                type: dbType as any,
-                status: dbStatus as any,
+                type: dbType as InvestorType,
+                status: dbStatus as InvestorStatus,
                 email: data.email || null,
                 phone: data.phone || null,
                 contactName: data.contactName || null,

@@ -355,7 +355,7 @@ export async function updateDeal(id: string, formData: FormData) {
     // Load the existing deal to verify access and capture old state
     const existingDeal = await prisma.deal.findFirst({
         where: { id, ...notDeleted },
-        select: { fundId: true, stage: true, name: true, industry: true, askingPrice: true, description: true },
+        select: { fundId: true, stage: true, name: true, industry: true, askingPrice: true, revenue: true, ebitda: true, description: true },
     })
     if (!existingDeal) {
         return { error: 'Deal not found' }
@@ -400,6 +400,42 @@ export async function updateDeal(id: string, formData: FormData) {
         }
     }
 
+    const revenue = formData.get('revenue') as string | null
+    if (revenue) {
+        const cleanRevenue = revenue.replace(/[$,]/g, '')
+        const parsedRevenue = parseFloat(cleanRevenue)
+        if (!isNaN(parsedRevenue)) {
+            updateData.revenue = parsedRevenue
+        }
+    }
+
+    const ebitda = formData.get('ebitda') as string | null
+    if (ebitda) {
+        const cleanEbitda = ebitda.replace(/[$,]/g, '')
+        const parsedEbitda = parseFloat(cleanEbitda)
+        if (!isNaN(parsedEbitda)) {
+            updateData.ebitda = parsedEbitda
+        }
+    }
+
+    // Auto-calculate derived metrics using updated values or existing DB values
+    const finalRevenue = updateData.revenue ?? (existingDeal.revenue ? Number(existingDeal.revenue) : null)
+    const finalEbitda = updateData.ebitda ?? (existingDeal.ebitda ? Number(existingDeal.ebitda) : null)
+    const finalAskingPrice = updateData.askingPrice ?? (existingDeal.askingPrice ? Number(existingDeal.askingPrice) : null)
+
+    if (finalRevenue && finalEbitda && finalRevenue > 0) {
+        updateData.ebitdaMargin = finalEbitda / finalRevenue
+    }
+
+    if (finalAskingPrice) {
+        if (finalRevenue && finalRevenue > 0) {
+            updateData.revenueMultiple = finalAskingPrice / finalRevenue
+        }
+        if (finalEbitda && finalEbitda > 0) {
+            updateData.ebitdaMultiple = finalAskingPrice / finalEbitda
+        }
+    }
+
     const description = formData.get('description') as string | null
     if (description !== null) {
         updateData.description = description || null
@@ -434,6 +470,18 @@ export async function updateDeal(id: string, formData: FormData) {
     const country = formData.get('country') as string | null
     if (country) {
         updateData.country = country
+    }
+
+    // Date fields
+    const dateFields = [
+        'firstContactDate', 'ndaSignedDate', 'cimReceivedDate',
+        'managementMeetingDate', 'loiSubmittedDate', 'expectedCloseDate',
+    ] as const
+    for (const field of dateFields) {
+        const value = formData.get(field) as string | null
+        if (value) {
+            updateData[field] = new Date(value)
+        }
     }
 
     try {

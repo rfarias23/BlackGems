@@ -5,6 +5,7 @@ import { auth } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
+import { PortfolioStatus, MetricPeriodType } from '@prisma/client'
 import {
     formatMoney as sharedFormatMoney,
     formatPercent as sharedFormatPercent,
@@ -377,7 +378,7 @@ export async function updatePortfolioCompanyStatus(id: string, status: string) {
     try {
         await prisma.portfolioCompany.update({
             where: { id },
-            data: { status: dbStatus as any },
+            data: { status: dbStatus as PortfolioStatus },
         })
 
         revalidatePath('/portfolio')
@@ -459,7 +460,7 @@ export async function recordPortfolioMetrics(formData: FormData) {
             data: {
                 companyId,
                 periodDate: new Date(periodDate),
-                periodType: periodType as any,
+                periodType: periodType as MetricPeriodType,
                 revenue: formData.get('revenue') ? parseMoney(formData.get('revenue') as string) : null,
                 ebitda: formData.get('ebitda') ? parseMoney(formData.get('ebitda') as string) : null,
                 netIncome: formData.get('netIncome') ? parseMoney(formData.get('netIncome') as string) : null,

@@ -5,6 +5,7 @@ import { auth } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
+import { DistributionType } from '@prisma/client'
 
 // Display mappings
 const DIST_STATUS_DISPLAY: Record<string, string> = {
@@ -263,7 +264,7 @@ export async function createDistribution(formData: FormData) {
                 realizedGains: data.realizedGains ? parseMoney(data.realizedGains) : null,
                 dividends: data.dividends ? parseMoney(data.dividends) : null,
                 interest: data.interest ? parseMoney(data.interest) : null,
-                type: dbType as any,
+                type: dbType as DistributionType,
                 source: data.source || null,
                 notes: data.notes || null,
                 status: 'DRAFT',

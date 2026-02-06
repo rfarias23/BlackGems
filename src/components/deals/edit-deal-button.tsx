@@ -24,6 +24,8 @@ interface EditDealButtonProps {
         stage: string;
         industry: string | null;
         askingPrice: string | null;
+        revenue: string | null;
+        ebitda: string | null;
         description: string | null;
         yearFounded: number | null;
         employeeCount: number | null;
@@ -79,11 +81,12 @@ export function EditDealButton({ deal }: EditDealButtonProps) {
                     Edit Deal
                 </Button>
             </DialogTrigger>
-            <DialogContent className={`sm:max-w-[525px] max-h-[85vh] overflow-y-auto ${dark.dialog}`}>
+            <DialogContent className={`sm:max-w-[525px] ${dark.dialog}`}>
                 <DialogHeader>
                     <DialogTitle className="text-[#F8FAFC]">Edit Deal</DialogTitle>
                 </DialogHeader>
-                <form action={handleSubmit} className="space-y-4">
+                <form action={handleSubmit} className="flex flex-col gap-4">
+                  <div className="max-h-[60vh] overflow-y-auto space-y-4 pr-1">
                     <div className="space-y-2">
                         <Label htmlFor="name" className={dark.label}>Company Name</Label>
                         <Input
@@ -118,15 +121,42 @@ export function EditDealButton({ deal }: EditDealButtonProps) {
                         </div>
                     </div>
 
-                    <div className="space-y-2">
-                        <Label htmlFor="askPrice" className={dark.label}>Asking Price</Label>
-                        <Input
-                            id="askPrice"
-                            name="askPrice"
-                            defaultValue={deal.askingPrice || ''}
-                            placeholder="$5,000,000"
-                            className={dark.input}
-                        />
+                    {/* Financials Section */}
+                    <div className={dark.section}>Financials</div>
+
+                    <div className="grid grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="askPrice" className={dark.label}>Asking Price</Label>
+                            <Input
+                                id="askPrice"
+                                name="askPrice"
+                                defaultValue={deal.askingPrice || ''}
+                                placeholder="$5,000,000"
+                                className={dark.input}
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="revenue" className={dark.label}>Revenue (LTM)</Label>
+                            <Input
+                                id="revenue"
+                                name="revenue"
+                                defaultValue={deal.revenue || ''}
+                                placeholder="$10,000,000"
+                                className={dark.input}
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="ebitda" className={dark.label}>EBITDA (LTM)</Label>
+                            <Input
+                                id="ebitda"
+                                name="ebitda"
+                                defaultValue={deal.ebitda || ''}
+                                placeholder="$2,500,000"
+                                className={dark.input}
+                            />
+                        </div>
                     </div>
 
                     <div className="space-y-2">
@@ -205,13 +235,15 @@ export function EditDealButton({ deal }: EditDealButtonProps) {
                         </div>
                     </div>
 
+                  </div>
+
                     {error && (
                         <div className={`rounded-md p-3 text-sm ${dark.error}`}>
                             {error}
                         </div>
                     )}
 
-                    <div className="flex justify-end gap-2 pt-2">
+                    <div className="flex justify-end gap-2">
                         <Button
                             type="button"
                             variant="outline"

@@ -5,6 +5,7 @@ import { auth } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 import bcrypt from 'bcryptjs'
 import { z } from 'zod'
+import { FundStatus } from '@prisma/client'
 
 // ============================================================================
 // USER PROFILE
@@ -306,7 +307,7 @@ export async function updateFundStatus(fundId: string, status: string) {
     try {
         await prisma.fund.update({
             where: { id: fundId },
-            data: { status: dbStatus as any },
+            data: { status: dbStatus as FundStatus },
         })
 
         revalidatePath('/settings')
