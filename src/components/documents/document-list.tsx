@@ -9,7 +9,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { FileText, Download, Trash2, AlertTriangle } from 'lucide-react';
+import { FileText, Download, Trash2, AlertTriangle, Eye, X } from 'lucide-react';
 import { deleteDocument } from '@/lib/actions/documents';
 import type { DocumentItem } from '@/lib/shared/document-types';
 
@@ -18,6 +18,27 @@ const dark = {
     cancelBtn: 'border-[#334155] bg-transparent text-[#F8FAFC] hover:bg-[#334155] hover:text-[#F8FAFC]',
     deleteBtn: 'bg-[#DC2626] text-white hover:bg-[#DC2626]/90',
 } as const;
+
+// File types that can be previewed inline
+function isPreviewable(fileType: string): boolean {
+    const type = fileType.toLowerCase();
+    return type.includes('pdf') || type.includes('image') ||
+           type.includes('jpg') || type.includes('jpeg') ||
+           type.includes('png') || type.includes('gif') ||
+           type.includes('webp') || type.includes('svg');
+}
+
+function isPdf(fileType: string): boolean {
+    return fileType.toLowerCase().includes('pdf');
+}
+
+function isImage(fileType: string): boolean {
+    const type = fileType.toLowerCase();
+    return type.includes('image') || type.includes('jpg') ||
+           type.includes('jpeg') || type.includes('png') ||
+           type.includes('gif') || type.includes('webp') ||
+           type.includes('svg');
+}
 
 // Category badge colors
 const CATEGORY_COLORS: Record<string, string> = {
@@ -58,6 +79,7 @@ interface DocumentListProps {
 
 export function DocumentList({ documents, canManage }: DocumentListProps) {
     const [deleteTarget, setDeleteTarget] = useState<DocumentItem | null>(null);
+    const [previewDoc, setPreviewDoc] = useState<DocumentItem | null>(null);
     const [isPending, startTransition] = useTransition();
 
     const handleDelete = () => {
@@ -131,6 +153,15 @@ export function DocumentList({ documents, canManage }: DocumentListProps) {
                                         variant="ghost"
                                         size="icon"
                                         className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                        onClick={() => setPreviewDoc(doc)}
+                                        title="Preview"
+                                    >
+                                        <Eye className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
                                         asChild
                                     >
                                         <a href={`/api/documents/${doc.id}`} download>
@@ -153,6 +184,79 @@ export function DocumentList({ documents, canManage }: DocumentListProps) {
                     </div>
                 </CardContent>
             </Card>
+
+            {/* Document preview dialog */}
+            <Dialog open={!!previewDoc} onOpenChange={(isOpen) => { if (!isOpen) setPreviewDoc(null); }}>
+                <DialogContent className={`sm:max-w-[90vw] max-h-[90vh] w-full ${dark.dialog} p-0 overflow-hidden`}>
+                    <DialogHeader className="px-6 pt-6 pb-2 flex flex-row items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                            <DialogTitle className="text-[#F8FAFC] truncate">
+                                {previewDoc?.name}
+                            </DialogTitle>
+                            {previewDoc && (
+                                <p className="text-xs text-[#94A3B8] mt-1">
+                                    {previewDoc.categoryLabel} &middot; {formatFileSize(previewDoc.fileSize)}
+                                </p>
+                            )}
+                        </div>
+                        <div className="flex items-center gap-2 ml-4">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-[#94A3B8] hover:text-[#F8FAFC]"
+                                asChild
+                            >
+                                <a href={previewDoc ? `/api/documents/${previewDoc.id}` : '#'} download>
+                                    <Download className="h-4 w-4" />
+                                </a>
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-[#94A3B8] hover:text-[#F8FAFC]"
+                                onClick={() => setPreviewDoc(null)}
+                            >
+                                <X className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    </DialogHeader>
+                    <div className="px-6 pb-6 flex-1 min-h-0">
+                        {previewDoc && isPdf(previewDoc.fileType) && (
+                            <iframe
+                                src={`/api/documents/${previewDoc.id}?inline=1`}
+                                className="w-full rounded-lg border border-[#334155]"
+                                style={{ height: 'calc(80vh - 100px)' }}
+                                title={previewDoc.name}
+                            />
+                        )}
+                        {previewDoc && isImage(previewDoc.fileType) && (
+                            <div className="flex items-center justify-center" style={{ maxHeight: 'calc(80vh - 100px)' }}>
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                    src={`/api/documents/${previewDoc.id}?inline=1`}
+                                    alt={previewDoc.name}
+                                    className="max-w-full max-h-full object-contain rounded-lg"
+                                />
+                            </div>
+                        )}
+                        {previewDoc && !isPreviewable(previewDoc.fileType) && (
+                            <div className="flex flex-col items-center justify-center py-16 text-center">
+                                <FileText className="h-16 w-16 text-[#94A3B8] mb-4" />
+                                <p className="text-[#F8FAFC] font-medium">{previewDoc.fileName}</p>
+                                <p className="text-sm text-[#94A3B8] mt-1 mb-4">
+                                    Preview not available for this file type.
+                                </p>
+                                <Button className="bg-[#3E5CFF] text-white hover:bg-[#3E5CFF]/90" asChild>
+                                    <a href={`/api/documents/${previewDoc.id}`} download>
+                                        <Download className="mr-2 h-4 w-4" />
+                                        Download File
+                                    </a>
+                                </Button>
+                            </div>
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
 
             {/* Delete confirmation dialog */}
             <Dialog open={!!deleteTarget} onOpenChange={(isOpen) => { if (!isOpen) setDeleteTarget(null); }}>
