@@ -136,9 +136,9 @@ export function DealOverview({ deal, userRole }: DealOverviewProps) {
     const [editName, setEditName] = useState(deal.name);
     const [editStage, setEditStage] = useState(deal.stage);
     const [editIndustry, setEditIndustry] = useState(deal.industry || '');
-    const [editRevenue, setEditRevenue] = useState(deal.revenue || '');
-    const [editEbitda, setEditEbitda] = useState(deal.ebitda || '');
-    const [editAskingPrice, setEditAskingPrice] = useState(deal.askingPrice || '');
+    const [editRevenue, setEditRevenue] = useState((deal.revenue || '').replace(/[$,]/g, ''));
+    const [editEbitda, setEditEbitda] = useState((deal.ebitda || '').replace(/[$,]/g, ''));
+    const [editAskingPrice, setEditAskingPrice] = useState((deal.askingPrice || '').replace(/[$,]/g, ''));
     const [editDescription, setEditDescription] = useState(deal.description || deal.investmentThesis || '');
     const [editYearFounded, setEditYearFounded] = useState(deal.yearFounded?.toString() || '');
     const [editEmployeeCount, setEditEmployeeCount] = useState(deal.employeeCount?.toString() || '');
@@ -160,6 +160,25 @@ export function DealOverview({ deal, userRole }: DealOverviewProps) {
         setShowConfirm(false);
         setIsEditing(true);
         setError(null);
+        // Re-initialize edit state from current props to avoid stale values after a prior save
+        setEditName(deal.name);
+        setEditStage(deal.stage);
+        setEditIndustry(deal.industry || '');
+        setEditRevenue((deal.revenue || '').replace(/[$,]/g, ''));
+        setEditEbitda((deal.ebitda || '').replace(/[$,]/g, ''));
+        setEditAskingPrice((deal.askingPrice || '').replace(/[$,]/g, ''));
+        setEditDescription(deal.description || deal.investmentThesis || '');
+        setEditYearFounded(deal.yearFounded?.toString() || '');
+        setEditEmployeeCount(deal.employeeCount?.toString() || '');
+        setEditCity(deal.city || '');
+        setEditState(deal.state || '');
+        setEditCountry(deal.country || '');
+        setEditFirstContact(toInputDate(deal.firstContactDate));
+        setEditNdaSigned(toInputDate(deal.ndaSignedDate));
+        setEditCimReceived(toInputDate(deal.cimReceivedDate));
+        setEditMgmtMeeting(toInputDate(deal.managementMeetingDate));
+        setEditLoiSubmitted(toInputDate(deal.loiSubmittedDate));
+        setEditExpectedClose(toInputDate(deal.expectedCloseDate));
     };
 
     const handleDiscard = () => {
@@ -169,9 +188,9 @@ export function DealOverview({ deal, userRole }: DealOverviewProps) {
         setEditName(deal.name);
         setEditStage(deal.stage);
         setEditIndustry(deal.industry || '');
-        setEditRevenue(deal.revenue || '');
-        setEditEbitda(deal.ebitda || '');
-        setEditAskingPrice(deal.askingPrice || '');
+        setEditRevenue((deal.revenue || '').replace(/[$,]/g, ''));
+        setEditEbitda((deal.ebitda || '').replace(/[$,]/g, ''));
+        setEditAskingPrice((deal.askingPrice || '').replace(/[$,]/g, ''));
         setEditDescription(deal.description || deal.investmentThesis || '');
         setEditYearFounded(deal.yearFounded?.toString() || '');
         setEditEmployeeCount(deal.employeeCount?.toString() || '');
