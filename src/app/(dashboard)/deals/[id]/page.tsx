@@ -3,7 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { DealStageBadge, DealStage } from '@/components/deals/deal-stage-badge';
-import { ArrowLeft, Plus, Phone, Mail, Calendar, Users } from 'lucide-react';
+import { ArrowLeft, Calendar } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getDeal } from '@/lib/actions/deals';
@@ -12,6 +12,8 @@ import { DeleteDealButton } from '@/components/deals/delete-deal-button';
 import { DealOverview } from '@/components/deals/deal-overview';
 import { DocumentUploadButton } from '@/components/documents/document-upload-button';
 import { DocumentList } from '@/components/documents/document-list';
+import { AddContactButton } from '@/components/deals/add-contact-button';
+import { ContactList } from '@/components/deals/contact-list';
 import { auth } from '@/lib/auth';
 
 // Format date helper
@@ -22,16 +24,6 @@ function formatDate(date: Date | null): string {
         month: 'short',
         day: 'numeric',
     }).format(new Date(date));
-}
-
-// Get initials helper
-function getInitials(name: string): string {
-    return name
-        .split(' ')
-        .map((n) => n[0])
-        .join('')
-        .toUpperCase()
-        .slice(0, 2);
 }
 
 // Roles that can edit deals
@@ -129,56 +121,9 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
                 <TabsContent value="contacts">
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-lg font-medium">Deal Team & External</h3>
-                        <Button size="sm">
-                            <Plus className="mr-2 h-4 w-4" />
-                            Add Contact
-                        </Button>
+                        {canEdit && <AddContactButton dealId={deal.id} />}
                     </div>
-                    {deal.contacts.length > 0 ? (
-                        <div className="grid gap-4 md:grid-cols-2">
-                            {deal.contacts.map((contact) => (
-                                <Card key={contact.id}>
-                                    <CardHeader className="flex flex-row items-center gap-4 pb-2">
-                                        <div className="h-12 w-12 rounded-full bg-slate-200 flex items-center justify-center text-lg font-bold text-slate-700">
-                                            {getInitials(contact.name)}
-                                        </div>
-                                        <div>
-                                            <CardTitle className="text-base">{contact.name}</CardTitle>
-                                            <CardDescription>
-                                                {contact.title || contact.role}
-                                            </CardDescription>
-                                        </div>
-                                    </CardHeader>
-                                    <CardContent className="grid gap-2 text-sm">
-                                        {contact.email && (
-                                            <div className="flex items-center gap-2">
-                                                <Mail className="h-4 w-4 text-muted-foreground" />
-                                                <span>{contact.email}</span>
-                                            </div>
-                                        )}
-                                        {contact.phone && (
-                                            <div className="flex items-center gap-2">
-                                                <Phone className="h-4 w-4 text-muted-foreground" />
-                                                <span>{contact.phone}</span>
-                                            </div>
-                                        )}
-                                    </CardContent>
-                                </Card>
-                            ))}
-                        </div>
-                    ) : (
-                        <Card>
-                            <CardContent className="p-6">
-                                <div className="flex flex-col items-center justify-center py-8 text-center">
-                                    <Users className="h-12 w-12 text-muted-foreground mb-4" />
-                                    <p className="text-muted-foreground">No contacts added yet.</p>
-                                    <p className="text-sm text-muted-foreground mt-1">
-                                        Add owners, brokers, and other key contacts.
-                                    </p>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
+                    <ContactList contacts={deal.contacts} canManage={canEdit} />
                 </TabsContent>
 
                 <TabsContent value="activity">
