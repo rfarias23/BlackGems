@@ -64,6 +64,8 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
                         stage: deal.stage,
                         industry: deal.industry,
                         askingPrice: deal.askingPrice,
+                        revenue: deal.revenue,
+                        ebitda: deal.ebitda,
                         description: deal.description,
                         yearFounded: deal.yearFounded,
                         employeeCount: deal.employeeCount,

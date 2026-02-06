@@ -24,6 +24,8 @@ interface EditDealButtonProps {
         stage: string;
         industry: string | null;
         askingPrice: string | null;
+        revenue: string | null;
+        ebitda: string | null;
         description: string | null;
         yearFounded: number | null;
         employeeCount: number | null;
@@ -127,6 +129,30 @@ export function EditDealButton({ deal }: EditDealButtonProps) {
                             placeholder="$5,000,000"
                             className={dark.input}
                         />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="revenue" className={dark.label}>Revenue (LTM)</Label>
+                            <Input
+                                id="revenue"
+                                name="revenue"
+                                defaultValue={deal.revenue || ''}
+                                placeholder="$10,000,000"
+                                className={dark.input}
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="ebitda" className={dark.label}>EBITDA (LTM)</Label>
+                            <Input
+                                id="ebitda"
+                                name="ebitda"
+                                defaultValue={deal.ebitda || ''}
+                                placeholder="$2,500,000"
+                                className={dark.input}
+                            />
+                        </div>
                     </div>
 
                     <div className="space-y-2">
