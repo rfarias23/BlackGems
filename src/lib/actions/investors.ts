@@ -325,6 +325,42 @@ export async function updateInvestor(id: string, formData: FormData) {
     const contactName = formData.get('contactName') as string | null
     if (contactName !== null) updateData.contactName = contactName || null
 
+    const contactEmail = formData.get('contactEmail') as string | null
+    if (contactEmail !== null) updateData.contactEmail = contactEmail || null
+
+    const contactPhone = formData.get('contactPhone') as string | null
+    if (contactPhone !== null) updateData.contactPhone = contactPhone || null
+
+    const contactTitle = formData.get('contactTitle') as string | null
+    if (contactTitle !== null) updateData.contactTitle = contactTitle || null
+
+    const legalName = formData.get('legalName') as string | null
+    if (legalName !== null) updateData.legalName = legalName || null
+
+    const jurisdiction = formData.get('jurisdiction') as string | null
+    if (jurisdiction !== null) updateData.jurisdiction = jurisdiction || null
+
+    const investmentCapacity = formData.get('investmentCapacity') as string | null
+    if (investmentCapacity !== null) {
+        const parsed = parseFloat(investmentCapacity.replace(/[$,]/g, ''))
+        updateData.investmentCapacity = isNaN(parsed) ? null : parsed
+    }
+
+    const city = formData.get('city') as string | null
+    if (city !== null) updateData.city = city || null
+
+    const state = formData.get('state') as string | null
+    if (state !== null) updateData.state = state || null
+
+    const country = formData.get('country') as string | null
+    if (country !== null) updateData.country = country || 'USA'
+
+    const notes = formData.get('notes') as string | null
+    if (notes !== null) updateData.notes = notes || null
+
+    const source = formData.get('source') as string | null
+    if (source !== null) updateData.source = source || null
+
     try {
         await prisma.investor.update({
             where: { id },
