@@ -111,6 +111,45 @@ export async function deleteDocument(documentId: string) {
   if (doc.dealId) {
     revalidatePath(`/deals/${doc.dealId}`)
   }
+  if (doc.investorId) {
+    revalidatePath(`/investors/${doc.investorId}`)
+  }
 
   return { success: true }
+}
+
+/** List documents for an investor */
+export async function getInvestorDocuments(investorId: string): Promise<DocumentItem[]> {
+  const session = await auth()
+  if (!session?.user) return []
+
+  const investor = await prisma.investor.findFirst({
+    where: { id: investorId, ...notDeleted },
+  })
+  if (!investor) return []
+
+  const documents = await prisma.document.findMany({
+    where: { investorId, ...notDeleted },
+    orderBy: { createdAt: 'desc' },
+  })
+
+  const uploaderIds = [...new Set(documents.map(d => d.uploadedBy))]
+  const users = await prisma.user.findMany({
+    where: { id: { in: uploaderIds } },
+    select: { id: true, name: true },
+  })
+  const userMap = new Map(users.map(u => [u.id, u.name]))
+
+  return documents.map(doc => ({
+    id: doc.id,
+    name: doc.name,
+    fileName: doc.fileName,
+    fileType: doc.fileType,
+    fileSize: doc.fileSize,
+    category: doc.category,
+    categoryLabel: CATEGORY_LABELS[doc.category] || doc.category,
+    uploadedBy: doc.uploadedBy,
+    uploaderName: userMap.get(doc.uploadedBy) || null,
+    createdAt: doc.createdAt,
+  }))
 }
