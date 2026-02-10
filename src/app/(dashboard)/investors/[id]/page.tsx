@@ -5,6 +5,8 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { InvestorStatusBadge, InvestorStatus } from '@/components/investors/investor-status-badge';
 import { InvestorOverview } from '@/components/investors/investor-overview';
+import { AddCommitmentButton } from '@/components/investors/add-commitment-button';
+import { CommitmentList } from '@/components/investors/commitment-list';
 import { ArrowLeft, Shield, DollarSign, Building2 } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -40,6 +42,7 @@ export default async function InvestorDetailPage({ params }: { params: Promise<{
     }
 
     const userRole = (session?.user as { role?: string })?.role || 'LP_VIEWER';
+    const canEdit = ['SUPER_ADMIN', 'FUND_ADMIN', 'INVESTMENT_MANAGER', 'ANALYST'].includes(userRole);
 
     const totalCommitted = investor.commitments.reduce(
         (sum, c) => sum + parseFloat(c.committedAmount.replace(/[$,]/g, '')),
@@ -135,28 +138,16 @@ export default async function InvestorDetailPage({ params }: { params: Promise<{
 
                 <TabsContent value="commitments" className="space-y-4">
                     <Card>
-                        <CardHeader>
-                            <CardTitle>Fund Commitments</CardTitle>
-                            <CardDescription>Capital commitments across all funds</CardDescription>
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <div>
+                                <CardTitle>Fund Commitments</CardTitle>
+                                <CardDescription>Capital commitments across all funds</CardDescription>
+                            </div>
+                            {canEdit && <AddCommitmentButton investorId={investor.id} />}
                         </CardHeader>
                         <CardContent>
                             {investor.commitments.length > 0 ? (
-                                <div className="space-y-4">
-                                    {investor.commitments.map((commitment) => (
-                                        <div key={commitment.id} className="flex items-center justify-between p-4 border rounded-lg">
-                                            <div>
-                                                <div className="font-medium">{commitment.fundName}</div>
-                                                <div className="text-sm text-muted-foreground">
-                                                    Called: {commitment.calledAmount} / Paid: {commitment.paidAmount}
-                                                </div>
-                                            </div>
-                                            <div className="text-right">
-                                                <div className="text-lg font-bold">{commitment.committedAmount}</div>
-                                                <Badge variant="outline" className="mt-1">{commitment.status}</Badge>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
+                                <CommitmentList commitments={investor.commitments} canEdit={canEdit} />
                             ) : (
                                 <div className="flex flex-col items-center justify-center py-8 text-center">
                                     <DollarSign className="h-12 w-12 text-muted-foreground mb-4" />
