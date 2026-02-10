@@ -52,7 +52,7 @@ export function ToggleStatusButton({ userId, userName, isActive }: ToggleStatusB
                     </Button>
                 )}
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="bg-[#1E293B] text-[#F8FAFC] border-[#334155]">
                 <DialogHeader>
                     <DialogTitle>
                         {isActive ? 'Deactivate User' : 'Activate User'}

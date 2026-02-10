@@ -76,7 +76,7 @@ export function ResetPasswordButton({ userId, userName }: ResetPasswordButtonPro
                     Reset Password
                 </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="bg-[#1E293B] text-[#F8FAFC] border-[#334155]">
                 <DialogHeader>
                     <DialogTitle>Reset Password</DialogTitle>
                     <DialogDescription>
@@ -95,6 +95,7 @@ export function ResetPasswordButton({ userId, userName }: ResetPasswordButtonPro
                                     placeholder="Min. 6 characters"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
+                                    className="bg-[#11141D] border-[#334155] text-[#F8FAFC] placeholder:text-[#94A3B8] focus-visible:ring-[#3E5CFF]"
                                 />
                                 <Button
                                     type="button"

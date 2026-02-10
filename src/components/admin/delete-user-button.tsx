@@ -36,7 +36,7 @@ export function DeleteUserButton({ userId, userName }: DeleteUserButtonProps) {
                     <Trash2 className="h-4 w-4" />
                 </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="bg-[#1E293B] text-[#F8FAFC] border-[#334155]">
                 <DialogHeader>
                     <DialogTitle>Delete User</DialogTitle>
                     <DialogDescription>
