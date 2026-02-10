@@ -33,6 +33,7 @@ model User {
   auditLogs       AuditLog[]
   sessions        Session[]
   accounts        Account[]
+  investor        Investor?        // LP user linked to investor record
 }
 
 enum UserRole {
@@ -638,6 +639,10 @@ model Investor {
   // Notes
   notes           String?        @db.Text
   source          String?        // How they heard about the fund
+
+  // Portal access
+  user            User?          @relation(fields: [userId], references: [id])
+  userId          String?        @unique
 
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt

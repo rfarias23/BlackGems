@@ -1,6 +1,8 @@
 import type { NextAuthConfig } from "next-auth"
 import type { UserRole } from "@prisma/client"
 
+const LP_ROLES: UserRole[] = ['LP_PRIMARY', 'LP_VIEWER']
+
 export const authConfig = {
     pages: {
         signIn: "/login",
@@ -9,9 +11,10 @@ export const authConfig = {
         authorized({ auth, request: { nextUrl } }) {
             const isLoggedIn = !!auth?.user
             const isAuthPage = nextUrl.pathname.startsWith('/login')
+            const role = auth?.user?.role as UserRole | undefined
 
-            // Protected routes patterns
-            const isProtectedRoute =
+            // Dashboard (Cockpit) protected routes
+            const isDashboardRoute =
                 nextUrl.pathname.startsWith('/dashboard') ||
                 nextUrl.pathname.startsWith('/deals') ||
                 nextUrl.pathname.startsWith('/investors') ||
@@ -19,12 +22,28 @@ export const authConfig = {
                 nextUrl.pathname.startsWith('/capital') ||
                 nextUrl.pathname.startsWith('/reports')
 
-            if (isProtectedRoute) {
-                if (isLoggedIn) return true
-                return false // Redirect to login
+            // Portal (Library) protected routes
+            const isPortalRoute = nextUrl.pathname.startsWith('/portal')
+
+            if (isDashboardRoute) {
+                if (!isLoggedIn) return false
+                // LP users should not access the dashboard
+                if (role && LP_ROLES.includes(role)) {
+                    return Response.redirect(new URL('/portal', nextUrl))
+                }
+                return true
+            }
+
+            if (isPortalRoute) {
+                if (!isLoggedIn) return false
+                return true
             }
 
             if (isAuthPage && isLoggedIn) {
+                // Redirect based on role
+                if (role && LP_ROLES.includes(role)) {
+                    return Response.redirect(new URL('/portal', nextUrl))
+                }
                 return Response.redirect(new URL('/deals', nextUrl))
             }
 
@@ -34,13 +53,12 @@ export const authConfig = {
             if (user) {
                 token.role = user.role
                 token.sub = user.id
+                token.investorId = user.investorId ?? null
             }
             return token
         },
         async redirect({ url, baseUrl }) {
-            // Allows relative callback URLs
             if (url.startsWith("/")) return `${baseUrl}${url}`
-            // Allows callback URLs on the same origin
             else if (new URL(url).origin === baseUrl) return url
             return baseUrl
         },
@@ -48,9 +66,10 @@ export const authConfig = {
             if (token && session.user) {
                 session.user.id = token.sub as string
                 session.user.role = token.role as UserRole
+                session.user.investorId = token.investorId as string | null
             }
             return session
         },
     },
-    providers: [], // Providers configured in auth.ts
+    providers: [],
 } satisfies NextAuthConfig
