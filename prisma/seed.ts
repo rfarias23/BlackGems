@@ -19,6 +19,19 @@ async function main() {
     })
     console.log('User created:', user.email)
 
+    // Create LP user (for portal access)
+    const lpUser = await prisma.user.upsert({
+        where: { email: 'lp@blackgem.com' },
+        update: {},
+        create: {
+            email: 'lp@blackgem.com',
+            name: 'Robert Smith',
+            passwordHash: hashedPassword,
+            role: UserRole.LP_PRIMARY,
+        },
+    })
+    console.log('LP User created:', lpUser.email)
+
     // Create a default fund
     const fund = await prisma.fund.upsert({
         where: { slug: 'blackgem-fund-i' },
@@ -314,6 +327,18 @@ async function main() {
         } else {
             console.log('Investor already exists:', investorData.name)
         }
+    }
+
+    // Link LP user to Smith Family Office investor
+    const smithInvestor = await prisma.investor.findFirst({
+        where: { name: 'Smith Family Office' },
+    })
+    if (smithInvestor && !smithInvestor.userId) {
+        await prisma.investor.update({
+            where: { id: smithInvestor.id },
+            data: { userId: lpUser.id },
+        })
+        console.log('LP user linked to:', smithInvestor.name)
     }
 
     // Create sample capital calls
