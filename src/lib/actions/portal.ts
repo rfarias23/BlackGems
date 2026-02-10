@@ -3,6 +3,11 @@
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { Decimal } from '@prisma/client/runtime/library'
+import {
+    getLPCapitalStatement,
+    getFundPerformanceReport,
+    getPortfolioSummaryReport,
+} from '@/lib/actions/reports'
 
 function toNumber(d: Decimal | null | undefined): number {
     if (!d) return 0
@@ -164,6 +169,19 @@ export async function getPortalDashboard() {
         funds,
         recentTransactions: recentTransactions.slice(0, 10),
     }
+}
+
+export async function getPortalReports() {
+    const session = await auth()
+    if (!session?.user?.investorId) return null
+
+    const [capitalStatement, fundPerformance, portfolioSummary] = await Promise.all([
+        getLPCapitalStatement(session.user.investorId),
+        getFundPerformanceReport(),
+        getPortfolioSummaryReport(),
+    ])
+
+    return { capitalStatement, fundPerformance, portfolioSummary }
 }
 
 export async function getPortalDocuments() {
