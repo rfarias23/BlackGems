@@ -2,36 +2,17 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
 import { InvestorStatusBadge, InvestorStatus } from '@/components/investors/investor-status-badge';
 import { InvestorOverview } from '@/components/investors/investor-overview';
 import { AddCommitmentButton } from '@/components/investors/add-commitment-button';
 import { CommitmentList } from '@/components/investors/commitment-list';
-import { ArrowLeft, Shield, DollarSign, Building2 } from 'lucide-react';
+import { InvestorCompliance } from '@/components/investors/investor-compliance';
+import { ArrowLeft, DollarSign, Building2 } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getInvestor } from '@/lib/actions/investors';
 import { DeleteInvestorButton } from '@/components/investors/delete-investor-button';
 import { auth } from '@/lib/auth';
-
-function getKYCBadgeColor(status: string) {
-    switch (status) {
-        case 'APPROVED': return 'bg-emerald-500/20 text-emerald-400';
-        case 'IN_PROGRESS': return 'bg-yellow-500/20 text-yellow-400';
-        case 'REJECTED': return 'bg-red-500/20 text-red-400';
-        case 'EXPIRED': return 'bg-orange-500/20 text-orange-400';
-        default: return 'bg-slate-500/20 text-slate-400';
-    }
-}
-
-function getAMLBadgeColor(status: string) {
-    switch (status) {
-        case 'CLEARED': return 'bg-emerald-500/20 text-emerald-400';
-        case 'FLAGGED': return 'bg-orange-500/20 text-orange-400';
-        case 'REJECTED': return 'bg-red-500/20 text-red-400';
-        default: return 'bg-slate-500/20 text-slate-400';
-    }
-}
 
 export default async function InvestorDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -162,51 +143,7 @@ export default async function InvestorDetailPage({ params }: { params: Promise<{
                 </TabsContent>
 
                 <TabsContent value="compliance" className="space-y-4">
-                    <div className="grid gap-4 md:grid-cols-2">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Shield className="h-5 w-5" />
-                                    KYC Status
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-4">
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-muted-foreground">Status</span>
-                                        <Badge className={getKYCBadgeColor(investor.kycStatus)}>
-                                            {investor.kycStatus}
-                                        </Badge>
-                                    </div>
-                                    {investor.accreditedStatus && (
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-muted-foreground">Accreditation</span>
-                                            <span className="text-sm font-medium">
-                                                {investor.accreditedStatus.replace(/_/g, ' ')}
-                                            </span>
-                                        </div>
-                                    )}
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Shield className="h-5 w-5" />
-                                    AML Status
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-muted-foreground">Status</span>
-                                    <Badge className={getAMLBadgeColor(investor.amlStatus)}>
-                                        {investor.amlStatus}
-                                    </Badge>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
+                    <InvestorCompliance investor={investor} userRole={userRole} />
                 </TabsContent>
 
                 <TabsContent value="documents" className="space-y-4">

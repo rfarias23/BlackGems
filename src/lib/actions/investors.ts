@@ -115,7 +115,9 @@ export interface InvestorDetail {
     contactTitle: string | null
     accreditedStatus: string | null
     kycStatus: string
+    kycCompletedAt: Date | null
     amlStatus: string
+    amlCompletedAt: Date | null
     investmentCapacity: string | null
     notes: string | null
     source: string | null
@@ -215,7 +217,9 @@ export async function getInvestor(id: string): Promise<InvestorDetail | null> {
         contactTitle: investor.contactTitle,
         accreditedStatus: investor.accreditedStatus,
         kycStatus: investor.kycStatus,
+        kycCompletedAt: investor.kycCompletedAt,
         amlStatus: investor.amlStatus,
+        amlCompletedAt: investor.amlCompletedAt,
         investmentCapacity: formatMoney(investor.investmentCapacity),
         notes: investor.notes,
         source: investor.source,
@@ -360,6 +364,26 @@ export async function updateInvestor(id: string, formData: FormData) {
 
     const source = formData.get('source') as string | null
     if (source !== null) updateData.source = source || null
+
+    // Compliance fields
+    const kycStatus = formData.get('kycStatus') as string | null
+    if (kycStatus) updateData.kycStatus = kycStatus
+
+    const amlStatus = formData.get('amlStatus') as string | null
+    if (amlStatus) updateData.amlStatus = amlStatus
+
+    const accreditedStatus = formData.get('accreditedStatus') as string | null
+    if (accreditedStatus !== null) updateData.accreditedStatus = accreditedStatus || null
+
+    const kycCompletedAt = formData.get('kycCompletedAt') as string | null
+    if (kycCompletedAt !== null) {
+        updateData.kycCompletedAt = kycCompletedAt ? new Date(kycCompletedAt) : null
+    }
+
+    const amlCompletedAt = formData.get('amlCompletedAt') as string | null
+    if (amlCompletedAt !== null) {
+        updateData.amlCompletedAt = amlCompletedAt ? new Date(amlCompletedAt) : null
+    }
 
     try {
         await prisma.investor.update({
