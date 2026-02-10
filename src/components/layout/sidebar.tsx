@@ -11,6 +11,7 @@ import {
     Banknote,
     FileText,
     Settings,
+    Shield,
 } from 'lucide-react';
 
 const navigation = [
@@ -22,8 +23,13 @@ const navigation = [
     { name: 'Reports', href: '/reports', icon: FileText },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+    userRole?: string;
+}
+
+export function Sidebar({ userRole }: SidebarProps) {
     const pathname = usePathname();
+    const isAdmin = userRole === 'SUPER_ADMIN' || userRole === 'FUND_ADMIN';
 
     return (
         <div className="flex h-full w-64 flex-col bg-card border-r border-border text-card-foreground">
@@ -60,6 +66,33 @@ export function Sidebar() {
                         </Link>
                     );
                 })}
+
+                {/* Admin section - visible only to SUPER_ADMIN and FUND_ADMIN */}
+                {isAdmin && (
+                    <div className="pt-4">
+                        <div className="text-xs font-medium text-muted-foreground px-3 pb-2 uppercase tracking-wider">
+                            Administration
+                        </div>
+                        <Link
+                            href="/admin/users"
+                            className={cn(
+                                'group flex items-center px-3 py-2.5 text-sm font-medium rounded-md transition-colors',
+                                pathname?.startsWith('/admin')
+                                    ? 'bg-primary/10 text-primary'
+                                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                            )}
+                        >
+                            <Shield
+                                className={cn(
+                                    'mr-3 h-5 w-5 flex-shrink-0',
+                                    pathname?.startsWith('/admin') ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
+                                )}
+                                aria-hidden="true"
+                            />
+                            Team
+                        </Link>
+                    </div>
+                )}
             </nav>
             <div className="border-t border-border p-3">
                 <Link
