@@ -33,6 +33,16 @@ const DEAL_CATEGORIES = [
     { value: 'OTHER', label: 'Other' },
 ];
 
+const INVESTOR_DOC_CATEGORIES = [
+    { value: 'INVESTOR_COMMS', label: 'Investor Comms' },
+    { value: 'TAX', label: 'Tax' },
+    { value: 'COMPLIANCE', label: 'Compliance' },
+    { value: 'LEGAL', label: 'Legal' },
+    { value: 'NDA', label: 'NDA' },
+    { value: 'FINANCIAL_STATEMENTS', label: 'Financial Statements' },
+    { value: 'OTHER', label: 'Other' },
+];
+
 const dark = {
     dialog: 'bg-[#1E293B] text-[#F8FAFC] border-[#334155]',
     input: 'bg-[#11141D] border-[#334155] text-[#F8FAFC] placeholder:text-[#94A3B8] focus-visible:ring-[#3E5CFF]',
@@ -51,10 +61,12 @@ function formatFileSize(bytes: number): string {
 }
 
 interface DocumentUploadButtonProps {
-    dealId: string;
+    dealId?: string;
+    investorId?: string;
 }
 
-export function DocumentUploadButton({ dealId }: DocumentUploadButtonProps) {
+export function DocumentUploadButton({ dealId, investorId }: DocumentUploadButtonProps) {
+    const categories = investorId ? INVESTOR_DOC_CATEGORIES : DEAL_CATEGORIES;
     const [open, setOpen] = useState(false);
     const [file, setFile] = useState<File | null>(null);
     const [category, setCategory] = useState('');
@@ -104,7 +116,8 @@ export function DocumentUploadButton({ dealId }: DocumentUploadButtonProps) {
         try {
             const formData = new FormData();
             formData.append('file', file);
-            formData.append('dealId', dealId);
+            if (dealId) formData.append('dealId', dealId);
+            if (investorId) formData.append('investorId', investorId);
             formData.append('category', category);
             formData.append('name', docName || file.name);
 
@@ -210,7 +223,7 @@ export function DocumentUploadButton({ dealId }: DocumentUploadButtonProps) {
                                 <SelectValue placeholder="Select category..." />
                             </SelectTrigger>
                             <SelectContent>
-                                {DEAL_CATEGORIES.map((cat) => (
+                                {categories.map((cat) => (
                                     <SelectItem key={cat.value} value={cat.value}>
                                         {cat.label}
                                     </SelectItem>

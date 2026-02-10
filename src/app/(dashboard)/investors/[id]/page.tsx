@@ -7,16 +7,23 @@ import { InvestorOverview } from '@/components/investors/investor-overview';
 import { AddCommitmentButton } from '@/components/investors/add-commitment-button';
 import { CommitmentList } from '@/components/investors/commitment-list';
 import { InvestorCompliance } from '@/components/investors/investor-compliance';
+import { DocumentUploadButton } from '@/components/documents/document-upload-button';
+import { DocumentList } from '@/components/documents/document-list';
 import { ArrowLeft, DollarSign, Building2 } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getInvestor } from '@/lib/actions/investors';
+import { getInvestorDocuments } from '@/lib/actions/documents';
 import { DeleteInvestorButton } from '@/components/investors/delete-investor-button';
 import { auth } from '@/lib/auth';
 
 export default async function InvestorDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
-    const [investor, session] = await Promise.all([getInvestor(id), auth()]);
+    const [investor, session, documents] = await Promise.all([
+        getInvestor(id),
+        auth(),
+        getInvestorDocuments(id),
+    ]);
 
     if (!investor) {
         notFound();
@@ -148,14 +155,25 @@ export default async function InvestorDetailPage({ params }: { params: Promise<{
 
                 <TabsContent value="documents" className="space-y-4">
                     <Card>
-                        <CardContent className="p-6">
-                            <div className="flex flex-col items-center justify-center py-8 text-center">
-                                <Building2 className="h-12 w-12 text-muted-foreground mb-4" />
-                                <p className="text-muted-foreground">No documents uploaded yet.</p>
-                                <p className="text-sm text-muted-foreground mt-1">
-                                    Upload subscription agreements, tax forms, and compliance documents.
-                                </p>
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <div>
+                                <CardTitle>Documents</CardTitle>
+                                <CardDescription>Subscription agreements, tax forms, and compliance documents</CardDescription>
                             </div>
+                            {canEdit && <DocumentUploadButton investorId={investor.id} />}
+                        </CardHeader>
+                        <CardContent>
+                            {documents.length > 0 ? (
+                                <DocumentList documents={documents} canManage={canEdit} />
+                            ) : (
+                                <div className="flex flex-col items-center justify-center py-8 text-center">
+                                    <Building2 className="h-12 w-12 text-muted-foreground mb-4" />
+                                    <p className="text-muted-foreground">No documents uploaded yet.</p>
+                                    <p className="text-sm text-muted-foreground mt-1">
+                                        Upload subscription agreements, tax forms, and compliance documents.
+                                    </p>
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                 </TabsContent>

@@ -31,11 +31,12 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData()
     const file = formData.get('file') as File | null
     const dealId = formData.get('dealId') as string | null
+    const investorId = formData.get('investorId') as string | null
     const category = formData.get('category') as string | null
     const documentName = formData.get('name') as string | null
 
-    if (!file || !dealId || !category) {
-      return NextResponse.json({ error: 'Missing required fields: file, dealId, category' }, { status: 400 })
+    if (!file || !category || (!dealId && !investorId)) {
+      return NextResponse.json({ error: 'Missing required fields: file, category, and dealId or investorId' }, { status: 400 })
     }
 
     // Validate file size
@@ -54,19 +55,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid category' }, { status: 400 })
     }
 
-    // Verify deal exists and user has access
-    const deal = await prisma.deal.findFirst({
-      where: { id: dealId, ...notDeleted },
-      select: { fundId: true },
-    })
-    if (!deal) {
-      return NextResponse.json({ error: 'Deal not found' }, { status: 404 })
+    // Determine ownership folder and verify access
+    const ownerId = dealId || investorId!
+    if (dealId) {
+      const deal = await prisma.deal.findFirst({
+        where: { id: dealId, ...notDeleted },
+        select: { fundId: true },
+      })
+      if (!deal) {
+        return NextResponse.json({ error: 'Deal not found' }, { status: 404 })
+      }
+      await requireFundAccess(session.user.id, deal.fundId)
+    } else if (investorId) {
+      const investor = await prisma.investor.findFirst({
+        where: { id: investorId, deletedAt: null },
+      })
+      if (!investor) {
+        return NextResponse.json({ error: 'Investor not found' }, { status: 404 })
+      }
     }
 
-    await requireFundAccess(session.user.id, deal.fundId)
-
     // Create upload directory
-    const uploadDir = path.join(process.cwd(), 'uploads', dealId)
+    const uploadDir = path.join(process.cwd(), 'uploads', ownerId)
     await fs.mkdir(uploadDir, { recursive: true })
 
     // Generate unique filename to avoid collisions
@@ -74,7 +84,7 @@ export async function POST(request: NextRequest) {
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
     const storedName = `${timestamp}_${safeName}`
     const filePath = path.join(uploadDir, storedName)
-    const relativePath = `uploads/${dealId}/${storedName}`
+    const relativePath = `uploads/${ownerId}/${storedName}`
 
     // Write file to disk
     const buffer = Buffer.from(await file.arrayBuffer())
@@ -89,7 +99,8 @@ export async function POST(request: NextRequest) {
         fileType: file.type || ext,
         fileSize: file.size,
         category: category as DocumentCategory,
-        dealId,
+        dealId: dealId || undefined,
+        investorId: investorId || undefined,
         uploadedBy: session.user.id,
       },
     })
@@ -101,7 +112,8 @@ export async function POST(request: NextRequest) {
       entityId: doc.id,
     })
 
-    revalidatePath(`/deals/${dealId}`)
+    if (dealId) revalidatePath(`/deals/${dealId}`)
+    if (investorId) revalidatePath(`/investors/${investorId}`)
 
     return NextResponse.json({ success: true, documentId: doc.id })
   } catch (error) {

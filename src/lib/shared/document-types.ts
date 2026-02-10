@@ -36,6 +36,17 @@ export const DEAL_CATEGORIES: DocumentCategory[] = [
   'OTHER',
 ]
 
+// Investor-relevant categories
+export const INVESTOR_CATEGORIES: DocumentCategory[] = [
+  'INVESTOR_COMMS',
+  'TAX',
+  'COMPLIANCE',
+  'LEGAL',
+  'NDA',
+  'FINANCIAL_STATEMENTS',
+  'OTHER',
+]
+
 export interface DocumentItem {
   id: string
   name: string
