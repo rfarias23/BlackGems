@@ -25,6 +25,141 @@ function formatMultiple(value: any): string {
 }
 
 // ============================================================================
+// DASHBOARD DATA
+// ============================================================================
+
+export interface DashboardData {
+    fundName: string
+    totalAUM: string
+    totalCommitments: string
+    capitalCalled: string
+    capitalCallPct: string
+    activeDeals: number
+    totalDeals: number
+    investorCount: number
+    activeInvestors: number
+    grossMoic: string
+    netMoic: string
+    tvpi: string
+    portfolioCompanies: number
+    recentDeals: {
+        id: string
+        name: string
+        stage: string
+        askingPrice: string | null
+    }[]
+    recentActivity: {
+        id: string
+        action: string
+        entityType: string
+        entityId: string
+        userName: string | null
+        createdAt: Date
+    }[]
+}
+
+export async function getDashboardData(): Promise<DashboardData | null> {
+    const session = await auth()
+    if (!session?.user) {
+        return null
+    }
+
+    const fund = await prisma.fund.findFirst()
+    if (!fund) {
+        return null
+    }
+
+    // Parallel queries for performance
+    const [commitments, portfolioCompanies, deals, investors, recentAuditLogs] = await Promise.all([
+        prisma.commitment.findMany({ where: { fundId: fund.id } }),
+        prisma.portfolioCompany.findMany({ where: { fundId: fund.id } }),
+        prisma.deal.findMany({
+            where: { fundId: fund.id, deletedAt: null },
+            orderBy: { updatedAt: 'desc' },
+        }),
+        prisma.investor.findMany({ where: { deletedAt: null } }),
+        prisma.auditLog.findMany({
+            take: 10,
+            orderBy: { createdAt: 'desc' },
+            include: { user: { select: { name: true } } },
+        }),
+    ])
+
+    // Capital metrics
+    const totalCommitments = commitments.reduce((sum, c) => sum + Number(c.committedAmount), 0)
+    const totalCalled = commitments.reduce((sum, c) => sum + Number(c.calledAmount), 0)
+    const totalPaid = commitments.reduce((sum, c) => sum + Number(c.paidAmount), 0)
+    const totalDistributed = commitments.reduce((sum, c) => sum + Number(c.distributedAmount), 0)
+
+    // Portfolio metrics
+    const totalInvested = portfolioCompanies.reduce((sum, c) => sum + Number(c.equityInvested), 0)
+    const totalValue = portfolioCompanies.reduce((sum, c) => sum + Number(c.totalValue || 0), 0)
+    const unrealizedValue = portfolioCompanies.reduce((sum, c) => sum + Number(c.unrealizedValue || 0), 0)
+
+    const grossMoic = totalInvested > 0 ? totalValue / totalInvested : 0
+    const netMoic = grossMoic * 0.85
+    const tvpi = totalPaid > 0 ? (totalDistributed + unrealizedValue) / totalPaid : 0
+
+    // Deal metrics
+    const activeDeals = deals.filter(d => d.status === 'ACTIVE')
+
+    // Investor metrics
+    const activeInvestors = investors.filter(i => i.status === 'ACTIVE' || i.status === 'COMMITTED')
+
+    // Stage display names
+    const stageDisplay: Record<string, string> = {
+        IDENTIFIED: 'Identified',
+        INITIAL_REVIEW: 'Initial Review',
+        PRELIMINARY_ANALYSIS: 'Preliminary Analysis',
+        MANAGEMENT_MEETING: 'Management Meeting',
+        NDA_SIGNED: 'NDA Signed',
+        NDA_CIM: 'NDA/CIM',
+        IOI_SUBMITTED: 'IOI Submitted',
+        SITE_VISIT: 'Site Visit',
+        LOI_PREPARATION: 'LOI Preparation',
+        LOI_NEGOTIATION: 'LOI Negotiation',
+        DUE_DILIGENCE: 'Due Diligence',
+        FINAL_NEGOTIATION: 'Final Negotiation',
+        CLOSING: 'Closing',
+        CLOSED_WON: 'Closed Won',
+        CLOSED_LOST: 'Closed Lost',
+        CLOSED: 'Closed',
+        PASSED: 'Passed',
+        ON_HOLD: 'On Hold',
+    }
+
+    return {
+        fundName: fund.name,
+        totalAUM: formatMoney(totalValue || totalCommitments),
+        totalCommitments: formatMoney(totalCommitments),
+        capitalCalled: formatMoney(totalCalled),
+        capitalCallPct: formatPercent(totalCommitments > 0 ? totalCalled / totalCommitments : 0),
+        activeDeals: activeDeals.length,
+        totalDeals: deals.length,
+        investorCount: investors.length,
+        activeInvestors: activeInvestors.length,
+        grossMoic: formatMultiple(grossMoic),
+        netMoic: formatMultiple(netMoic),
+        tvpi: formatMultiple(tvpi),
+        portfolioCompanies: portfolioCompanies.length,
+        recentDeals: deals.slice(0, 5).map(d => ({
+            id: d.id,
+            name: d.name,
+            stage: stageDisplay[d.stage] || d.stage,
+            askingPrice: d.askingPrice ? formatMoney(d.askingPrice) : null,
+        })),
+        recentActivity: recentAuditLogs.map(log => ({
+            id: log.id,
+            action: log.action,
+            entityType: log.entityType,
+            entityId: log.entityId,
+            userName: log.user?.name || null,
+            createdAt: log.createdAt,
+        })),
+    }
+}
+
+// ============================================================================
 // FUND PERFORMANCE REPORT
 // ============================================================================
 
