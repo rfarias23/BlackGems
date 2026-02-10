@@ -4,20 +4,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { InvestorStatusBadge, InvestorStatus } from '@/components/investors/investor-status-badge';
-import { ArrowLeft, Edit, Mail, Phone, MapPin, Building2, Shield, DollarSign } from 'lucide-react';
+import { InvestorOverview } from '@/components/investors/investor-overview';
+import { AddCommitmentButton } from '@/components/investors/add-commitment-button';
+import { CommitmentList } from '@/components/investors/commitment-list';
+import { ArrowLeft, Shield, DollarSign, Building2 } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getInvestor } from '@/lib/actions/investors';
 import { DeleteInvestorButton } from '@/components/investors/delete-investor-button';
-
-function formatDate(date: Date | null): string {
-    if (!date) return '-';
-    return new Intl.DateTimeFormat('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-    }).format(new Date(date));
-}
+import { auth } from '@/lib/auth';
 
 function getKYCBadgeColor(status: string) {
     switch (status) {
@@ -40,11 +35,14 @@ function getAMLBadgeColor(status: string) {
 
 export default async function InvestorDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
-    const investor = await getInvestor(id);
+    const [investor, session] = await Promise.all([getInvestor(id), auth()]);
 
     if (!investor) {
         notFound();
     }
+
+    const userRole = (session?.user as { role?: string })?.role || 'LP_VIEWER';
+    const canEdit = ['SUPER_ADMIN', 'FUND_ADMIN', 'INVESTMENT_MANAGER', 'ANALYST'].includes(userRole);
 
     const totalCommitted = investor.commitments.reduce(
         (sum, c) => sum + parseFloat(c.committedAmount.replace(/[$,]/g, '')),
@@ -79,10 +77,6 @@ export default async function InvestorDetailPage({ params }: { params: Promise<{
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button variant="outline">
-                        <Edit className="mr-2 h-4 w-4" />
-                        Edit
-                    </Button>
                     <DeleteInvestorButton investorId={investor.id} investorName={investor.name} />
                 </div>
             </div>
@@ -138,133 +132,22 @@ export default async function InvestorDetailPage({ params }: { params: Promise<{
                         </Card>
                     </div>
 
-                    {/* Contact & Details */}
-                    <div className="grid gap-4 md:grid-cols-2">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Contact Information</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                {investor.contactName && (
-                                    <div>
-                                        <div className="text-sm font-medium">{investor.contactName}</div>
-                                        {investor.contactTitle && (
-                                            <div className="text-xs text-muted-foreground">{investor.contactTitle}</div>
-                                        )}
-                                    </div>
-                                )}
-                                {investor.email && (
-                                    <div className="flex items-center gap-2 text-sm">
-                                        <Mail className="h-4 w-4 text-muted-foreground" />
-                                        <span>{investor.email}</span>
-                                    </div>
-                                )}
-                                {investor.contactEmail && investor.contactEmail !== investor.email && (
-                                    <div className="flex items-center gap-2 text-sm">
-                                        <Mail className="h-4 w-4 text-muted-foreground" />
-                                        <span>{investor.contactEmail} (contact)</span>
-                                    </div>
-                                )}
-                                {investor.phone && (
-                                    <div className="flex items-center gap-2 text-sm">
-                                        <Phone className="h-4 w-4 text-muted-foreground" />
-                                        <span>{investor.phone}</span>
-                                    </div>
-                                )}
-                                {(investor.city || investor.state || investor.country) && (
-                                    <div className="flex items-center gap-2 text-sm">
-                                        <MapPin className="h-4 w-4 text-muted-foreground" />
-                                        <span>
-                                            {[investor.city, investor.state, investor.country].filter(Boolean).join(', ')}
-                                        </span>
-                                    </div>
-                                )}
-                                {!investor.email && !investor.phone && !investor.contactName && (
-                                    <div className="text-sm text-muted-foreground italic">
-                                        No contact information provided.
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Entity Details</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="flex items-center justify-between text-sm">
-                                    <span className="text-muted-foreground">Legal Name</span>
-                                    <span className="font-medium">{investor.legalName || investor.name}</span>
-                                </div>
-                                <div className="flex items-center justify-between text-sm">
-                                    <span className="text-muted-foreground">Type</span>
-                                    <span className="font-medium">{investor.type}</span>
-                                </div>
-                                {investor.jurisdiction && (
-                                    <div className="flex items-center justify-between text-sm">
-                                        <span className="text-muted-foreground">Jurisdiction</span>
-                                        <span className="font-medium">{investor.jurisdiction}</span>
-                                    </div>
-                                )}
-                                {investor.investmentCapacity && investor.investmentCapacity !== '$0' && (
-                                    <div className="flex items-center justify-between text-sm">
-                                        <span className="text-muted-foreground">Investment Capacity</span>
-                                        <span className="font-medium">{investor.investmentCapacity}</span>
-                                    </div>
-                                )}
-                                {investor.source && (
-                                    <div className="flex items-center justify-between text-sm">
-                                        <span className="text-muted-foreground">Source</span>
-                                        <span className="font-medium">{investor.source}</span>
-                                    </div>
-                                )}
-                                <div className="flex items-center justify-between text-sm">
-                                    <span className="text-muted-foreground">Added</span>
-                                    <span className="font-medium">{formatDate(investor.createdAt)}</span>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
-
-                    {/* Notes */}
-                    {investor.notes && (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Notes</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                                    {investor.notes}
-                                </p>
-                            </CardContent>
-                        </Card>
-                    )}
+                    {/* Inline-editable overview */}
+                    <InvestorOverview investor={investor} userRole={userRole} />
                 </TabsContent>
 
                 <TabsContent value="commitments" className="space-y-4">
                     <Card>
-                        <CardHeader>
-                            <CardTitle>Fund Commitments</CardTitle>
-                            <CardDescription>Capital commitments across all funds</CardDescription>
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <div>
+                                <CardTitle>Fund Commitments</CardTitle>
+                                <CardDescription>Capital commitments across all funds</CardDescription>
+                            </div>
+                            {canEdit && <AddCommitmentButton investorId={investor.id} />}
                         </CardHeader>
                         <CardContent>
                             {investor.commitments.length > 0 ? (
-                                <div className="space-y-4">
-                                    {investor.commitments.map((commitment) => (
-                                        <div key={commitment.id} className="flex items-center justify-between p-4 border rounded-lg">
-                                            <div>
-                                                <div className="font-medium">{commitment.fundName}</div>
-                                                <div className="text-sm text-muted-foreground">
-                                                    Called: {commitment.calledAmount} / Paid: {commitment.paidAmount}
-                                                </div>
-                                            </div>
-                                            <div className="text-right">
-                                                <div className="text-lg font-bold">{commitment.committedAmount}</div>
-                                                <Badge variant="outline" className="mt-1">{commitment.status}</Badge>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
+                                <CommitmentList commitments={investor.commitments} canEdit={canEdit} />
                             ) : (
                                 <div className="flex flex-col items-center justify-center py-8 text-center">
                                     <DollarSign className="h-12 w-12 text-muted-foreground mb-4" />
