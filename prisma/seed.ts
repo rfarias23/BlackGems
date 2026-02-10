@@ -1,12 +1,22 @@
 import { PrismaClient, UserRole, FundType, FundStatus, DealStage, DealStatus, InvestorType, InvestorStatus, AccreditedStatus, KYCStatus, AMLStatus, CommitmentStatus, CapitalCallStatus, CallItemStatus, DistributionType, DistributionStatus, DistItemStatus, PortfolioStatus, MetricPeriodType } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient({
+    log: ['query', 'error', 'warn'],
+})
 
 async function main() {
+    console.log('[SEED] Starting seed...')
+    console.log('[SEED] Connecting to database...')
+    await prisma.$connect()
+    console.log('[SEED] Connected!')
+
+    console.log('[SEED] Hashing password...')
     const hashedPassword = await bcrypt.hash('admin123', 10)
+    console.log('[SEED] Password hashed')
 
     // Create admin user
+    console.log('[SEED] Creating admin user...')
     const user = await prisma.user.upsert({
         where: { email: 'admin@blackgem.com' },
         update: {},
@@ -19,7 +29,22 @@ async function main() {
     })
     console.log('User created:', user.email)
 
+    // Create LP user (for portal access)
+    console.log('[SEED] Creating LP user...')
+    const lpUser = await prisma.user.upsert({
+        where: { email: 'lp@blackgem.com' },
+        update: {},
+        create: {
+            email: 'lp@blackgem.com',
+            name: 'Robert Smith',
+            passwordHash: hashedPassword,
+            role: UserRole.LP_PRIMARY,
+        },
+    })
+    console.log('LP User created:', lpUser.email)
+
     // Create a default fund
+    console.log('[SEED] Creating fund...')
     const fund = await prisma.fund.upsert({
         where: { slug: 'blackgem-fund-i' },
         update: {},
@@ -43,6 +68,7 @@ async function main() {
     console.log('Fund created:', fund.name)
 
     // Create FundMember linking admin user to the fund
+    console.log('[SEED] Creating fund member...')
     const existingMember = await prisma.fundMember.findUnique({
         where: { fundId_userId: { fundId: fund.id, userId: user.id } },
     })
@@ -61,6 +87,7 @@ async function main() {
     }
 
     // Create sample deals
+    console.log('[SEED] Creating deals...')
     const deals = [
         {
             name: 'ABC Manufacturing',
@@ -185,6 +212,7 @@ async function main() {
     }
 
     // Create sample investors
+    console.log('[SEED] Creating investors...')
     const investors = [
         {
             name: 'Smith Family Office',
@@ -316,7 +344,21 @@ async function main() {
         }
     }
 
+    // Link LP user to Smith Family Office investor
+    console.log('[SEED] Linking LP user to Smith Family Office...')
+    const smithInvestor = await prisma.investor.findFirst({
+        where: { name: 'Smith Family Office' },
+    })
+    if (smithInvestor && !smithInvestor.userId) {
+        await prisma.investor.update({
+            where: { id: smithInvestor.id },
+            data: { userId: lpUser.id },
+        })
+        console.log('LP user linked to:', smithInvestor.name)
+    }
+
     // Create sample capital calls
+    console.log('[SEED] Creating capital calls...')
     const existingCall = await prisma.capitalCall.findFirst({
         where: { fundId: fund.id, callNumber: 1 },
     })
@@ -418,6 +460,7 @@ async function main() {
     }
 
     // Create sample distribution
+    console.log('[SEED] Creating distributions...')
     const existingDist = await prisma.distribution.findFirst({
         where: { fundId: fund.id, distributionNumber: 1 },
     })
@@ -483,6 +526,7 @@ async function main() {
     }
 
     // Create sample portfolio companies
+    console.log('[SEED] Creating portfolio companies...')
     const existingPortfolio = await prisma.portfolioCompany.findFirst({
         where: { fundId: fund.id },
     })
