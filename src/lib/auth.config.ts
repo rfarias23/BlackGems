@@ -20,7 +20,9 @@ export const authConfig = {
                 nextUrl.pathname.startsWith('/investors') ||
                 nextUrl.pathname.startsWith('/portfolio') ||
                 nextUrl.pathname.startsWith('/capital') ||
-                nextUrl.pathname.startsWith('/reports')
+                nextUrl.pathname.startsWith('/reports') ||
+                nextUrl.pathname.startsWith('/admin') ||
+                nextUrl.pathname.startsWith('/settings')
 
             // Portal (Library) protected routes
             const isPortalRoute = nextUrl.pathname.startsWith('/portal')

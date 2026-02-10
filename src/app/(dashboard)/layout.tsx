@@ -39,7 +39,7 @@ export default async function DashboardLayout({
         >
             {/* Sidebar fixed on the left */}
             <div className="fixed inset-y-0 z-50 hidden w-64 md:flex md:flex-col">
-                <Sidebar />
+                <Sidebar userRole={session?.user?.role as string | undefined} />
             </div>
 
             {/* Main content area */}
