@@ -13,6 +13,8 @@ import {
 import { ChainPattern } from '@/components/landing/chain-pattern';
 import { MobileNav } from '@/components/landing/mobile-nav';
 import { FadeIn } from '@/components/landing/fade-in';
+import { SectionTransition } from '@/components/landing/section-transition';
+import { SmoothScrollLink } from '@/components/landing/smooth-scroll-link';
 
 /* =============================================
    BLACKGEM LANDING PAGE — Responsive + Animated
@@ -26,11 +28,14 @@ export default function Home() {
     return (
         <main className="bg-midnight-ink text-slate-100">
             <HeroSection />
+            <SectionTransition variant="hero-to-problem" />
             <ProblemSection />
+            <SectionTransition variant="problem-to-platform" />
             <PlatformSection />
             <DualInterfaceSection />
             <FeaturesSection />
             <SocialProofSection />
+            <SectionTransition variant="to-pricing" />
             <PricingSection />
             <FinalCtaSection />
             <FooterSection />
@@ -67,18 +72,22 @@ function HeroSection() {
 
             {/* Desktop right-side navigation — hidden below lg */}
             <nav className="hidden lg:flex absolute right-[100px] top-[260px] z-10 w-[180px] flex-col gap-2">
-                <Link
-                    href="/login"
+                <a
+                    href="http://localhost:3000/portal"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-[13px] text-slate-600 hover:text-slate-400 transition-colors"
                 >
                     LP Login
-                </Link>
-                <Link
-                    href="/login"
+                </a>
+                <a
+                    href="http://localhost:3000/login"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-[13px] text-slate-600 hover:text-slate-400 transition-colors"
                 >
                     Manager Login
-                </Link>
+                </a>
 
                 <div className="w-10 h-px bg-slate-700 my-2" />
 
@@ -89,12 +98,7 @@ function HeroSection() {
                     <NavItem label="The Problem" href="#problem" />
                     <NavItem label="The Platform" href="#platform" />
                     <NavItem label="Pricing" href="#pricing" />
-                    <Link
-                        href="#contact"
-                        className="text-[15px] text-slate-100 hover:text-heritage-sapphire transition-colors"
-                    >
-                        Contact
-                    </Link>
+                    <NavItem label="Contact" href="#contact" />
                 </div>
             </nav>
 
@@ -115,12 +119,12 @@ function HeroSection() {
                     </FadeIn>
                     <FadeIn delay={300}>
                         <div className="pt-2">
-                            <Link
+                            <SmoothScrollLink
                                 href="#contact"
                                 className="inline-flex items-center justify-center px-8 py-3.5 bg-heritage-sapphire text-white text-sm font-semibold rounded-md hover:bg-[#3350E0] transition-all hover:shadow-[0_0_24px_rgba(62,92,255,0.3)]"
                             >
                                 Request a Demo
-                            </Link>
+                            </SmoothScrollLink>
                         </div>
                     </FadeIn>
                 </div>
@@ -138,7 +142,7 @@ function HeroSection() {
 
 function NavItem({ label, href }: { label: string; href: string }) {
     return (
-        <Link
+        <SmoothScrollLink
             href={href}
             className="flex items-center gap-2 group"
         >
@@ -148,7 +152,7 @@ function NavItem({ label, href }: { label: string; href: string }) {
             <span className="text-[15px] text-slate-100 group-hover:text-heritage-sapphire transition-colors">
                 {label}
             </span>
-        </Link>
+        </SmoothScrollLink>
     );
 }
 
@@ -176,10 +180,7 @@ function ProblemSection() {
     ];
 
     return (
-        <section id="problem" className="bg-deep-surface py-16 px-6 md:py-20 md:px-12 lg:py-[100px] lg:px-[120px]">
-            {/* Gradient divider top */}
-            <div className="section-divider h-px w-full max-w-[1200px] mx-auto mb-16 md:mb-20" aria-hidden="true" />
-
+        <section id="problem" className="bg-deep-surface pt-8 pb-16 px-6 md:pt-10 md:pb-20 md:px-12 lg:pt-[60px] lg:pb-[100px] lg:px-[120px]">
             <div className="max-w-[1200px] mx-auto">
                 <FadeIn>
                     <p className="text-xs font-medium text-heritage-sapphire tracking-[3px] uppercase text-center mb-4 md:mb-6">
@@ -223,7 +224,7 @@ function PlatformSection() {
     const modules = ['Deals', 'Investors', 'Portfolio', 'Capital', 'Reports'];
 
     return (
-        <section id="platform" className="bg-midnight-ink py-16 px-6 md:py-20 md:px-12 lg:py-[100px] lg:px-[120px]">
+        <section id="platform" className="bg-midnight-ink pt-8 pb-16 px-6 md:pt-10 md:pb-20 md:px-12 lg:pt-[60px] lg:pb-[100px] lg:px-[120px]">
             <div className="max-w-[1200px] mx-auto">
                 <FadeIn>
                     <p className="text-xs font-medium text-heritage-sapphire tracking-[3px] uppercase text-center mb-4 md:mb-6">
@@ -250,7 +251,7 @@ function PlatformSection() {
                     <div className="w-full max-w-[1100px] mx-auto h-[240px] md:h-[400px] lg:h-[520px] bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-center mb-6 md:mb-8 overflow-hidden relative">
                         {/* Subtle inner glow */}
                         <div className="absolute inset-0 bg-gradient-to-b from-heritage-sapphire/[0.03] to-transparent pointer-events-none" />
-                        <span className="text-base text-slate-600 relative z-10">Dashboard Screenshot</span>
+                        <span className="text-base text-slate-600 relative z-10">Platform Screenshot</span>
                     </div>
                 </FadeIn>
 
@@ -297,9 +298,12 @@ function DualInterfaceSection() {
                     </p>
                 </FadeIn>
                 <FadeIn delay={300}>
-                    <div className="landing-card w-full max-w-[500px] h-[220px] md:h-[320px] bg-slate-800 border border-slate-700 rounded-lg flex items-center justify-center overflow-hidden relative">
-                        <div className="absolute inset-0 bg-gradient-to-br from-heritage-sapphire/[0.03] to-transparent pointer-events-none" />
-                        <span className="text-sm text-slate-600 relative z-10">Cockpit Preview</span>
+                    <div className="landing-card w-full max-w-[500px] h-[220px] md:h-[320px] bg-slate-800 border border-slate-700 rounded-lg overflow-hidden relative">
+                        <img
+                            src="/images/cockpit-preview.png"
+                            alt="BlackGem Manager Dashboard — Deal Pipeline"
+                            className="w-full h-full object-cover object-top"
+                        />
                     </div>
                 </FadeIn>
             </div>
@@ -325,9 +329,12 @@ function DualInterfaceSection() {
                     </p>
                 </FadeIn>
                 <FadeIn delay={300}>
-                    <div className="landing-card w-full max-w-[500px] h-[220px] md:h-[320px] bg-white border border-slate-200 rounded-lg flex items-center justify-center overflow-hidden relative">
-                        <div className="absolute inset-0 bg-gradient-to-br from-heritage-sapphire/[0.02] to-transparent pointer-events-none" />
-                        <span className="text-sm text-slate-400 relative z-10">Library Preview</span>
+                    <div className="landing-card w-full max-w-[500px] h-[220px] md:h-[320px] bg-white border border-slate-200 rounded-lg overflow-hidden relative">
+                        <img
+                            src="/images/library-preview.png"
+                            alt="BlackGem LP Portal — Investment Overview"
+                            className="w-full h-full object-cover object-top"
+                        />
                     </div>
                 </FadeIn>
             </div>
@@ -510,7 +517,7 @@ function PricingSection() {
     ];
 
     return (
-        <section id="pricing" className="bg-deep-surface py-16 px-6 md:py-20 md:px-12 lg:py-[100px] lg:px-[120px]">
+        <section id="pricing" className="bg-deep-surface pt-8 pb-16 px-6 md:pt-10 md:pb-20 md:px-12 lg:pt-[60px] lg:pb-[100px] lg:px-[120px]">
             <div className="max-w-[1200px] mx-auto">
                 <FadeIn>
                     <p className="text-xs font-medium text-heritage-sapphire tracking-[3px] uppercase text-center mb-4 md:mb-6">
@@ -615,12 +622,12 @@ function FinalCtaSection() {
                 </FadeIn>
 
                 <FadeIn delay={300}>
-                    <Link
+                    <SmoothScrollLink
                         href="#contact"
                         className="inline-flex items-center justify-center px-8 py-3.5 md:px-10 md:py-4 bg-heritage-sapphire text-white text-sm md:text-[15px] font-semibold rounded-md hover:bg-[#3350E0] transition-all hover:shadow-[0_0_32px_rgba(62,92,255,0.3)]"
                     >
                         Request a Demo
-                    </Link>
+                    </SmoothScrollLink>
                 </FadeIn>
 
                 <FadeIn delay={400}>

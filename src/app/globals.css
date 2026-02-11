@@ -153,6 +153,233 @@ body {
 }
 
 /* ============================================
+   LANDING PAGE — Section blend transitions
+   Gradient zones that smoothly merge background
+   colors between sections + sapphire accent lines
+   ============================================ */
+
+/* Base: gradient blend zone between sections */
+.section-blend {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+/* Shared accent line styling */
+.section-blend__line {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%) scaleX(0);
+    width: 100%;
+    max-width: 800px;
+    height: 1px;
+    transition: transform 1.4s cubic-bezier(0.16, 1, 0.3, 1),
+                opacity 1s ease;
+    opacity: 0;
+}
+
+.transition-active .section-blend__line {
+    transform: translate(-50%, -50%) scaleX(1);
+    opacity: 1;
+}
+
+/* --- Transition 1: Hero → Problem (midnight-ink → deep-surface) --- */
+.section-blend--hero-to-problem {
+    height: 160px;
+    background: linear-gradient(
+        180deg,
+        #11141D 0%,
+        #0F1119 30%,
+        #0E1017 50%,
+        #0D0E14 70%,
+        #0D0D12 100%
+    );
+}
+
+/* Sapphire accent + ambient glow */
+.section-blend--hero-to-problem .section-blend__line {
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(62, 92, 255, 0.08) 15%,
+        rgba(62, 92, 255, 0.4) 45%,
+        rgba(62, 92, 255, 0.5) 50%,
+        rgba(62, 92, 255, 0.4) 55%,
+        rgba(62, 92, 255, 0.08) 85%,
+        transparent 100%
+    );
+    box-shadow: 0 0 40px 8px rgba(62, 92, 255, 0.06),
+                0 0 80px 16px rgba(62, 92, 255, 0.03);
+}
+
+/* Soft atmospheric glow behind */
+.section-blend--hero-to-problem::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 500px;
+    height: 100px;
+    background: radial-gradient(
+        ellipse 100% 100% at 50% 50%,
+        rgba(62, 92, 255, 0.05) 0%,
+        transparent 70%
+    );
+    opacity: 0;
+    transition: opacity 2s ease 0.4s;
+    pointer-events: none;
+}
+
+.section-blend--hero-to-problem.transition-active::after {
+    opacity: 1;
+}
+
+/* --- Transition 2: Problem → Platform (deep-surface → midnight-ink) --- */
+.section-blend--problem-to-platform {
+    height: 140px;
+    background: linear-gradient(
+        180deg,
+        #0D0D12 0%,
+        #0E0E14 25%,
+        #0F1017 50%,
+        #101219 75%,
+        #11141D 100%
+    );
+}
+
+.section-blend--problem-to-platform .section-blend__line {
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(51, 65, 85, 0.3) 20%,
+        rgba(62, 92, 255, 0.3) 45%,
+        rgba(62, 92, 255, 0.4) 50%,
+        rgba(62, 92, 255, 0.3) 55%,
+        rgba(51, 65, 85, 0.3) 80%,
+        transparent 100%
+    );
+    box-shadow: 0 0 30px 6px rgba(62, 92, 255, 0.04);
+}
+
+/* Upward glow — signals transition to solution */
+.section-blend--problem-to-platform::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 400px;
+    height: 80px;
+    background: radial-gradient(
+        ellipse 100% 100% at 50% 100%,
+        rgba(62, 92, 255, 0.04) 0%,
+        transparent 70%
+    );
+    opacity: 0;
+    transition: opacity 1.8s ease 0.3s;
+    pointer-events: none;
+}
+
+.section-blend--problem-to-platform.transition-active::after {
+    opacity: 1;
+}
+
+/* --- Transition 3: → Pricing (midnight-ink → deep-surface) --- */
+.section-blend--to-pricing {
+    height: 180px;
+    background: linear-gradient(
+        180deg,
+        #11141D 0%,
+        #0F1119 30%,
+        #0E1017 50%,
+        #0D0E14 70%,
+        #0D0D12 100%
+    );
+}
+
+.section-blend--to-pricing .section-blend__line {
+    max-width: 600px;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(62, 92, 255, 0.15) 20%,
+        rgba(62, 92, 255, 0.4) 45%,
+        transparent 49%,
+        transparent 51%,
+        rgba(62, 92, 255, 0.4) 55%,
+        rgba(62, 92, 255, 0.15) 80%,
+        transparent 100%
+    );
+    box-shadow: 0 0 30px 6px rgba(62, 92, 255, 0.04);
+}
+
+/* Diamond beacon at center */
+.section-blend__diamond {
+    width: 8px;
+    height: 8px;
+    background: rgba(62, 92, 255, 0.8);
+    transform: rotate(45deg) scale(0);
+    position: relative;
+    z-index: 2;
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 1.2s ease 0.4s;
+    box-shadow: 0 0 0px rgba(62, 92, 255, 0);
+}
+
+.transition-active .section-blend__diamond {
+    transform: rotate(45deg) scale(1);
+    box-shadow: 0 0 24px rgba(62, 92, 255, 0.3),
+                0 0 50px rgba(62, 92, 255, 0.1);
+    animation: beacon-pulse 3s ease-in-out 1.8s infinite;
+}
+
+@keyframes beacon-pulse {
+    0%, 100% {
+        box-shadow: 0 0 18px rgba(62, 92, 255, 0.2),
+                    0 0 36px rgba(62, 92, 255, 0.05);
+    }
+    50% {
+        box-shadow: 0 0 28px rgba(62, 92, 255, 0.35),
+                    0 0 56px rgba(62, 92, 255, 0.1);
+    }
+}
+
+/* --- Responsive: mobile blend zones --- */
+@media (max-width: 768px) {
+    .section-blend--hero-to-problem {
+        height: 100px;
+    }
+    .section-blend--hero-to-problem::after {
+        width: 280px;
+        height: 60px;
+    }
+    .section-blend--problem-to-platform {
+        height: 90px;
+    }
+    .section-blend--to-pricing {
+        height: 120px;
+    }
+    .section-blend__diamond {
+        width: 6px;
+        height: 6px;
+    }
+}
+
+/* --- Accessibility: reduced motion --- */
+@media (prefers-reduced-motion: reduce) {
+    .section-blend__line,
+    .section-blend__diamond,
+    .section-blend::after {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+    }
+}
+
+/* ============================================
    LANDING PAGE — Chain pattern: breathing opacity
    ============================================ */
 @keyframes chain-breathe {
