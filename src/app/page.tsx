@@ -12,9 +12,10 @@ import {
 } from 'lucide-react';
 import { ChainPattern } from '@/components/landing/chain-pattern';
 import { MobileNav } from '@/components/landing/mobile-nav';
+import { FadeIn } from '@/components/landing/fade-in';
 
 /* =============================================
-   BLACKGEM LANDING PAGE — Responsive
+   BLACKGEM LANDING PAGE — Responsive + Animated
    Sections 1-9: Hero, Problem, Platform, Dual Interface, Features,
                  Social Proof, Pricing, Final CTA, Footer
    Breakpoints: mobile-first → md (768px) → lg (1024px) → xl (1280px)
@@ -41,8 +42,11 @@ export default function Home() {
 function HeroSection() {
     return (
         <section className="relative min-h-screen overflow-hidden bg-midnight-ink">
+            {/* Ambient glow — atmospheric depth */}
+            <div className="hero-glow absolute inset-0 pointer-events-none" aria-hidden="true" />
+
             {/* Decorative chain pattern — hidden on mobile */}
-            <div className="hidden lg:block">
+            <div className="hidden lg:block chain-breathe">
                 <ChainPattern />
             </div>
 
@@ -97,23 +101,28 @@ function HeroSection() {
             {/* Hero content */}
             <div className="relative z-10 flex flex-col justify-center min-h-screen px-6 md:px-12 lg:px-[100px] max-w-[900px]">
                 <div className="flex flex-col gap-6">
-                    {/* H1: Fraunces 56px normal #FFFFFF */}
-                    <h1 className="font-display text-[32px] md:text-[44px] lg:text-[56px] leading-[1.1] font-normal text-white max-w-[800px]">
-                        Institutional excellence
-                        <br />
-                        from day one.
-                    </h1>
-                    <p className="text-base md:text-lg text-slate-400 max-w-[700px] leading-relaxed">
-                        Private equity infrastructure for the next generation of fund managers.
-                    </p>
-                    <div className="pt-2">
-                        <Link
-                            href="#contact"
-                            className="inline-flex items-center justify-center px-8 py-3.5 bg-heritage-sapphire text-white text-sm font-semibold rounded-md hover:bg-[#3350E0] transition-colors"
-                        >
-                            Request a Demo
-                        </Link>
-                    </div>
+                    <FadeIn>
+                        <h1 className="font-display text-[32px] md:text-[44px] lg:text-[56px] leading-[1.1] font-normal text-white max-w-[800px]">
+                            Institutional excellence
+                            <br />
+                            from day one.
+                        </h1>
+                    </FadeIn>
+                    <FadeIn delay={150}>
+                        <p className="text-base md:text-lg text-slate-400 max-w-[700px] leading-relaxed">
+                            Private equity infrastructure for the next generation of fund managers.
+                        </p>
+                    </FadeIn>
+                    <FadeIn delay={300}>
+                        <div className="pt-2">
+                            <Link
+                                href="#contact"
+                                className="inline-flex items-center justify-center px-8 py-3.5 bg-heritage-sapphire text-white text-sm font-semibold rounded-md hover:bg-[#3350E0] transition-all hover:shadow-[0_0_24px_rgba(62,92,255,0.3)]"
+                            >
+                                Request a Demo
+                            </Link>
+                        </div>
+                    </FadeIn>
                 </div>
             </div>
 
@@ -168,36 +177,40 @@ function ProblemSection() {
 
     return (
         <section id="problem" className="bg-deep-surface py-16 px-6 md:py-20 md:px-12 lg:py-[100px] lg:px-[120px]">
+            {/* Gradient divider top */}
+            <div className="section-divider h-px w-full max-w-[1200px] mx-auto mb-16 md:mb-20" aria-hidden="true" />
+
             <div className="max-w-[1200px] mx-auto">
-                {/* Section label */}
-                <p className="text-xs font-medium text-heritage-sapphire tracking-[3px] uppercase text-center mb-4 md:mb-6">
-                    THE PROBLEM
-                </p>
+                <FadeIn>
+                    <p className="text-xs font-medium text-heritage-sapphire tracking-[3px] uppercase text-center mb-4 md:mb-6">
+                        THE PROBLEM
+                    </p>
+                </FadeIn>
 
-                {/* H2: Fraunces 40px normal */}
-                <h2 className="font-display text-[28px] md:text-[34px] lg:text-[40px] leading-[1.15] font-normal text-slate-100 text-center max-w-[800px] mx-auto mb-8 md:mb-12">
-                    Fund managers spend more time
-                    <br className="hidden md:block" />
-                    {' '}on spreadsheets than on deals.
-                </h2>
+                <FadeIn delay={100}>
+                    <h2 className="font-display text-[28px] md:text-[34px] lg:text-[40px] leading-[1.15] font-normal text-slate-100 text-center max-w-[800px] mx-auto mb-8 md:mb-12">
+                        Fund managers spend more time
+                        <br className="hidden md:block" />
+                        {' '}on spreadsheets than on deals.
+                    </h2>
+                </FadeIn>
 
-                {/* Problem cards — 1 col mobile, 3 cols desktop */}
+                {/* Problem cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-                    {problems.map((p) => (
-                        <div
-                            key={p.stat}
-                            className="bg-slate-800 border border-slate-700 rounded-lg p-6 md:p-8 flex flex-col gap-4"
-                        >
-                            <span className="font-mono text-3xl md:text-4xl font-medium text-heritage-sapphire">
-                                {p.stat}
-                            </span>
-                            <span className="text-sm font-medium text-slate-100">
-                                {p.label}
-                            </span>
-                            <p className="text-sm text-slate-400 leading-relaxed">
-                                {p.description}
-                            </p>
-                        </div>
+                    {problems.map((p, i) => (
+                        <FadeIn key={p.stat} delay={200 + i * 120}>
+                            <div className="landing-card bg-slate-800 border border-slate-700 rounded-lg p-6 md:p-8 flex flex-col gap-4 h-full">
+                                <span className="font-mono text-3xl md:text-4xl font-medium text-heritage-sapphire">
+                                    {p.stat}
+                                </span>
+                                <span className="text-sm font-medium text-slate-100">
+                                    {p.label}
+                                </span>
+                                <p className="text-sm text-slate-400 leading-relaxed">
+                                    {p.description}
+                                </p>
+                            </div>
+                        </FadeIn>
                     ))}
                 </div>
             </div>
@@ -212,39 +225,48 @@ function PlatformSection() {
     return (
         <section id="platform" className="bg-midnight-ink py-16 px-6 md:py-20 md:px-12 lg:py-[100px] lg:px-[120px]">
             <div className="max-w-[1200px] mx-auto">
-                {/* Section label */}
-                <p className="text-xs font-medium text-heritage-sapphire tracking-[3px] uppercase text-center mb-4 md:mb-6">
-                    THE PLATFORM
-                </p>
+                <FadeIn>
+                    <p className="text-xs font-medium text-heritage-sapphire tracking-[3px] uppercase text-center mb-4 md:mb-6">
+                        THE PLATFORM
+                    </p>
+                </FadeIn>
 
-                {/* H2: Fraunces 40px normal */}
-                <h2 className="font-display text-[28px] md:text-[34px] lg:text-[40px] leading-[1.15] font-normal text-slate-100 text-center max-w-[800px] mx-auto mb-3 md:mb-4">
-                    Everything a fund needs.
-                    <br />
-                    Nothing it doesn&apos;t.
-                </h2>
+                <FadeIn delay={100}>
+                    <h2 className="font-display text-[28px] md:text-[34px] lg:text-[40px] leading-[1.15] font-normal text-slate-100 text-center max-w-[800px] mx-auto mb-3 md:mb-4">
+                        Everything a fund needs.
+                        <br />
+                        Nothing it doesn&apos;t.
+                    </h2>
+                </FadeIn>
 
-                {/* Subtitle */}
-                <p className="text-base md:text-lg text-slate-400 text-center max-w-[700px] mx-auto mb-8 md:mb-12">
-                    One platform for deals, investors, portfolio, capital, and reporting.
-                </p>
+                <FadeIn delay={150}>
+                    <p className="text-base md:text-lg text-slate-400 text-center max-w-[700px] mx-auto mb-8 md:mb-12">
+                        One platform for deals, investors, portfolio, capital, and reporting.
+                    </p>
+                </FadeIn>
 
-                {/* Screenshot placeholder — responsive height */}
-                <div className="w-full max-w-[1100px] mx-auto h-[240px] md:h-[400px] lg:h-[520px] bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-center mb-6 md:mb-8">
-                    <span className="text-base text-slate-600">Dashboard Screenshot</span>
-                </div>
+                {/* Screenshot placeholder */}
+                <FadeIn delay={250}>
+                    <div className="w-full max-w-[1100px] mx-auto h-[240px] md:h-[400px] lg:h-[520px] bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-center mb-6 md:mb-8 overflow-hidden relative">
+                        {/* Subtle inner glow */}
+                        <div className="absolute inset-0 bg-gradient-to-b from-heritage-sapphire/[0.03] to-transparent pointer-events-none" />
+                        <span className="text-base text-slate-600 relative z-10">Dashboard Screenshot</span>
+                    </div>
+                </FadeIn>
 
-                {/* Module pills — wrap on mobile */}
-                <div className="flex items-center justify-center gap-2 md:gap-4 flex-wrap">
-                    {modules.map((m) => (
-                        <span
-                            key={m}
-                            className="px-4 py-1.5 md:px-5 md:py-2 bg-slate-800 border border-slate-700 rounded-full text-[12px] md:text-[13px] font-medium text-slate-400"
-                        >
-                            {m}
-                        </span>
-                    ))}
-                </div>
+                {/* Module pills */}
+                <FadeIn delay={350}>
+                    <div className="flex items-center justify-center gap-2 md:gap-4 flex-wrap">
+                        {modules.map((m) => (
+                            <span
+                                key={m}
+                                className="px-4 py-1.5 md:px-5 md:py-2 bg-slate-800 border border-slate-700 rounded-full text-[12px] md:text-[13px] font-medium text-slate-400 hover:border-slate-500 hover:text-slate-300 transition-colors cursor-default"
+                            >
+                                {m}
+                            </span>
+                        ))}
+                    </div>
+                </FadeIn>
             </div>
         </section>
     );
@@ -255,37 +277,59 @@ function DualInterfaceSection() {
     return (
         <section className="grid grid-cols-1 lg:grid-cols-2 min-h-0 lg:min-h-[700px]">
             {/* Left: The Cockpit (dark) */}
-            <div className="bg-midnight-ink py-12 px-6 md:py-16 md:px-12 lg:py-20 lg:pl-[120px] lg:pr-16 flex flex-col justify-center">
-                <p className="text-xs font-medium text-heritage-sapphire tracking-[3px] uppercase mb-4">
-                    FOR FUND MANAGERS
-                </p>
-                {/* H3: Fraunces 36px normal */}
-                <h3 className="font-display text-3xl md:text-4xl font-normal text-slate-100 mb-4">
-                    The Cockpit
-                </h3>
-                <p className="text-[15px] text-slate-400 leading-relaxed max-w-[500px] mb-8">
-                    Dark mode. Built for efficiency. Track deals, manage capital, monitor portfolio.
-                </p>
-                <div className="w-full max-w-[500px] h-[220px] md:h-[320px] bg-slate-800 border border-slate-700 rounded-lg flex items-center justify-center">
-                    <span className="text-sm text-slate-600">Cockpit Preview</span>
-                </div>
+            <div className="bg-midnight-ink py-12 px-6 md:py-16 md:px-12 lg:py-20 lg:pl-[120px] lg:pr-16 flex flex-col justify-center relative overflow-hidden">
+                {/* Subtle radial accent */}
+                <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_40%_50%_at_70%_0%,rgba(62,92,255,0.04),transparent)] pointer-events-none" aria-hidden="true" />
+
+                <FadeIn>
+                    <p className="text-xs font-medium text-heritage-sapphire tracking-[3px] uppercase mb-4">
+                        FOR FUND MANAGERS
+                    </p>
+                </FadeIn>
+                <FadeIn delay={100}>
+                    <h3 className="font-display text-3xl md:text-4xl font-normal text-slate-100 mb-4">
+                        The Cockpit
+                    </h3>
+                </FadeIn>
+                <FadeIn delay={200}>
+                    <p className="text-[15px] text-slate-400 leading-relaxed max-w-[500px] mb-8">
+                        Dark mode. Built for efficiency. Track deals, manage capital, monitor portfolio.
+                    </p>
+                </FadeIn>
+                <FadeIn delay={300}>
+                    <div className="landing-card w-full max-w-[500px] h-[220px] md:h-[320px] bg-slate-800 border border-slate-700 rounded-lg flex items-center justify-center overflow-hidden relative">
+                        <div className="absolute inset-0 bg-gradient-to-br from-heritage-sapphire/[0.03] to-transparent pointer-events-none" />
+                        <span className="text-sm text-slate-600 relative z-10">Cockpit Preview</span>
+                    </div>
+                </FadeIn>
             </div>
 
             {/* Right: The Library (light) */}
-            <div className="bg-soft-parchment py-12 px-6 md:py-16 md:px-12 lg:py-20 lg:pr-[120px] lg:pl-16 flex flex-col justify-center">
-                <p className="text-xs font-medium text-heritage-sapphire tracking-[3px] uppercase mb-4">
-                    FOR INVESTORS
-                </p>
-                {/* H3: Fraunces 36px normal */}
-                <h3 className="font-display text-3xl md:text-4xl font-normal text-slate-800 mb-4">
-                    The Library
-                </h3>
-                <p className="text-[15px] text-slate-600 leading-relaxed max-w-[500px] mb-8">
-                    Clean portal. Documents, reports, and capital accounts — 24/7 self-service.
-                </p>
-                <div className="w-full max-w-[500px] h-[220px] md:h-[320px] bg-white border border-slate-200 rounded-lg flex items-center justify-center">
-                    <span className="text-sm text-slate-400">Library Preview</span>
-                </div>
+            <div className="bg-soft-parchment py-12 px-6 md:py-16 md:px-12 lg:py-20 lg:pr-[120px] lg:pl-16 flex flex-col justify-center relative overflow-hidden">
+                {/* Subtle radial accent */}
+                <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(ellipse_40%_50%_at_30%_100%,rgba(62,92,255,0.04),transparent)] pointer-events-none" aria-hidden="true" />
+
+                <FadeIn>
+                    <p className="text-xs font-medium text-heritage-sapphire tracking-[3px] uppercase mb-4">
+                        FOR INVESTORS
+                    </p>
+                </FadeIn>
+                <FadeIn delay={100}>
+                    <h3 className="font-display text-3xl md:text-4xl font-normal text-slate-800 mb-4">
+                        The Library
+                    </h3>
+                </FadeIn>
+                <FadeIn delay={200}>
+                    <p className="text-[15px] text-slate-600 leading-relaxed max-w-[500px] mb-8">
+                        Clean portal. Documents, reports, and capital accounts — 24/7 self-service.
+                    </p>
+                </FadeIn>
+                <FadeIn delay={300}>
+                    <div className="landing-card w-full max-w-[500px] h-[220px] md:h-[320px] bg-white border border-slate-200 rounded-lg flex items-center justify-center overflow-hidden relative">
+                        <div className="absolute inset-0 bg-gradient-to-br from-heritage-sapphire/[0.02] to-transparent pointer-events-none" />
+                        <span className="text-sm text-slate-400 relative z-10">Library Preview</span>
+                    </div>
+                </FadeIn>
             </div>
         </section>
     );
@@ -335,31 +379,32 @@ function FeaturesSection() {
     return (
         <section className="bg-deep-surface py-16 px-6 md:py-20 md:px-12 lg:py-[100px] lg:px-[120px]">
             <div className="max-w-[1200px] mx-auto">
-                {/* Section label */}
-                <p className="text-xs font-medium text-heritage-sapphire tracking-[3px] uppercase text-center mb-4 md:mb-6">
-                    CAPABILITIES
-                </p>
+                <FadeIn>
+                    <p className="text-xs font-medium text-heritage-sapphire tracking-[3px] uppercase text-center mb-4 md:mb-6">
+                        CAPABILITIES
+                    </p>
+                </FadeIn>
 
-                {/* H2: Fraunces 40px normal */}
-                <h2 className="font-display text-[28px] md:text-[34px] lg:text-[40px] leading-[1.15] font-normal text-slate-100 text-center max-w-[800px] mx-auto mb-8 md:mb-12">
-                    Built for how funds actually work.
-                </h2>
+                <FadeIn delay={100}>
+                    <h2 className="font-display text-[28px] md:text-[34px] lg:text-[40px] leading-[1.15] font-normal text-slate-100 text-center max-w-[800px] mx-auto mb-8 md:mb-12">
+                        Built for how funds actually work.
+                    </h2>
+                </FadeIn>
 
-                {/* Feature grid: 1 col mobile → 2 cols tablet → 3 cols desktop */}
+                {/* Feature grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                    {features.map((f) => (
-                        <div
-                            key={f.title}
-                            className="bg-slate-800 border border-slate-700 rounded-lg p-6 md:p-8 flex flex-col gap-3"
-                        >
-                            <f.icon className="w-6 h-6 text-heritage-sapphire" />
-                            <h4 className="text-base font-semibold text-slate-100">
-                                {f.title}
-                            </h4>
-                            <p className="text-sm text-slate-400 leading-relaxed">
-                                {f.description}
-                            </p>
-                        </div>
+                    {features.map((f, i) => (
+                        <FadeIn key={f.title} delay={200 + i * 100}>
+                            <div className="landing-card bg-slate-800 border border-slate-700 rounded-lg p-6 md:p-8 flex flex-col gap-3 h-full group">
+                                <f.icon className="w-6 h-6 text-heritage-sapphire transition-transform group-hover:scale-110" />
+                                <h4 className="text-base font-semibold text-slate-100">
+                                    {f.title}
+                                </h4>
+                                <p className="text-sm text-slate-400 leading-relaxed">
+                                    {f.description}
+                                </p>
+                            </div>
+                        </FadeIn>
                     ))}
                 </div>
             </div>
@@ -377,34 +422,45 @@ function SocialProofSection() {
     ];
 
     return (
-        <section className="bg-midnight-ink py-16 px-6 md:py-20 md:px-12 lg:py-[100px] lg:px-[120px]">
+        <section className="bg-midnight-ink py-16 px-6 md:py-20 md:px-12 lg:py-[100px] lg:px-[120px] relative overflow-hidden">
+            {/* Subtle top accent */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[1px] bg-gradient-to-r from-transparent via-slate-700 to-transparent" aria-hidden="true" />
+
             <div className="max-w-[1200px] mx-auto">
-                {/* Metrics row — 2x2 grid on mobile, single row on desktop */}
+                {/* Metrics row */}
                 <div className="grid grid-cols-2 md:flex md:items-start md:justify-around gap-8 md:gap-0 mb-12 md:mb-16">
-                    {metrics.map((m) => (
-                        <div key={m.value} className="flex flex-col items-center gap-2 md:gap-3">
-                            <span className={`font-mono text-[36px] md:text-[48px] font-light ${m.color}`}>
-                                {m.value}
-                            </span>
-                            <span className="text-xs md:text-sm text-slate-400 text-center">
-                                {m.label}
-                            </span>
-                        </div>
+                    {metrics.map((m, i) => (
+                        <FadeIn key={m.value} delay={i * 150}>
+                            <div className="flex flex-col items-center gap-2 md:gap-3 relative">
+                                {/* Glow behind the number */}
+                                <span className={`metric-glow font-mono text-[36px] md:text-[48px] font-light ${m.color}`} aria-hidden="true">
+                                    {m.value}
+                                </span>
+                                <span className={`font-mono text-[36px] md:text-[48px] font-light ${m.color} relative`}>
+                                    {m.value}
+                                </span>
+                                <span className="text-xs md:text-sm text-slate-400 text-center">
+                                    {m.label}
+                                </span>
+                            </div>
+                        </FadeIn>
                     ))}
                 </div>
 
                 {/* Divider */}
-                <div className="w-full max-w-[800px] mx-auto h-px bg-slate-700 mb-12 md:mb-16" />
+                <div className="section-divider h-px w-full max-w-[800px] mx-auto mb-12 md:mb-16" aria-hidden="true" />
 
-                {/* Testimonial: Source Serif 4 italic */}
-                <div className="text-center max-w-[800px] mx-auto px-2">
-                    <p className="font-serif text-lg md:text-xl italic text-slate-400 leading-relaxed mb-4">
-                        &ldquo;BlackGem made our $5M fund look like a $500M operation. Our LPs noticed immediately.&rdquo;
-                    </p>
-                    <span className="text-sm font-medium text-slate-600">
-                        — Search Fund Principal, Former Goldman Sachs
-                    </span>
-                </div>
+                {/* Testimonial */}
+                <FadeIn>
+                    <div className="text-center max-w-[800px] mx-auto px-2">
+                        <p className="font-serif text-lg md:text-xl italic text-slate-400 leading-relaxed mb-4">
+                            &ldquo;BlackGem made our $5M fund look like a $500M operation. Our LPs noticed immediately.&rdquo;
+                        </p>
+                        <span className="text-sm font-medium text-slate-600">
+                            — Search Fund Principal, Former Goldman Sachs
+                        </span>
+                    </div>
+                </FadeIn>
             </div>
         </section>
     );
@@ -456,81 +512,79 @@ function PricingSection() {
     return (
         <section id="pricing" className="bg-deep-surface py-16 px-6 md:py-20 md:px-12 lg:py-[100px] lg:px-[120px]">
             <div className="max-w-[1200px] mx-auto">
-                {/* Section label */}
-                <p className="text-xs font-medium text-heritage-sapphire tracking-[3px] uppercase text-center mb-4 md:mb-6">
-                    PRICING
-                </p>
+                <FadeIn>
+                    <p className="text-xs font-medium text-heritage-sapphire tracking-[3px] uppercase text-center mb-4 md:mb-6">
+                        PRICING
+                    </p>
+                </FadeIn>
 
-                {/* H2: Fraunces 40px normal */}
-                <h2 className="font-display text-[28px] md:text-[34px] lg:text-[40px] leading-[1.15] font-normal text-slate-100 text-center max-w-[800px] mx-auto mb-3 md:mb-4">
-                    Right-sized for every stage.
-                </h2>
+                <FadeIn delay={100}>
+                    <h2 className="font-display text-[28px] md:text-[34px] lg:text-[40px] leading-[1.15] font-normal text-slate-100 text-center max-w-[800px] mx-auto mb-3 md:mb-4">
+                        Right-sized for every stage.
+                    </h2>
+                </FadeIn>
 
-                {/* Subtitle */}
-                <p className="text-base md:text-lg text-slate-400 text-center max-w-[700px] mx-auto mb-8 md:mb-12">
-                    No AUM-based pricing. No per-seat fees. Predictable.
-                </p>
+                <FadeIn delay={150}>
+                    <p className="text-base md:text-lg text-slate-400 text-center max-w-[700px] mx-auto mb-8 md:mb-12">
+                        No AUM-based pricing. No per-seat fees. Predictable.
+                    </p>
+                </FadeIn>
 
-                {/* Pricing cards — 1 col mobile, 3 cols desktop */}
+                {/* Pricing cards */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-                    {tiers.map((tier) => (
-                        <div
-                            key={tier.name}
-                            className={`bg-slate-800 rounded-lg p-6 md:p-9 flex flex-col border ${
-                                tier.highlighted
-                                    ? 'border-heritage-sapphire'
-                                    : 'border-slate-700'
-                            }`}
-                        >
-                            {/* Badge */}
-                            {tier.highlighted && (
-                                <span className="inline-flex self-start px-3 py-1 bg-heritage-sapphire text-white text-[11px] font-semibold rounded-full mb-4">
-                                    Most Popular
-                                </span>
-                            )}
-
-                            {/* Tier name */}
-                            <span className="text-sm font-medium text-slate-400 mb-3">
-                                {tier.name}
-                            </span>
-
-                            {/* Price */}
-                            <div className="flex items-baseline gap-1 mb-3">
-                                <span className="font-mono text-3xl md:text-4xl font-medium text-slate-100">
-                                    &euro;{tier.price}
-                                </span>
-                                <span className="text-sm text-slate-600">/mo</span>
-                            </div>
-
-                            {/* Description */}
-                            <p className="text-sm text-slate-400 leading-relaxed mb-6">
-                                {tier.description}
-                            </p>
-
-                            {/* Divider */}
-                            <div className="h-px bg-slate-700 mb-6" />
-
-                            {/* Features */}
-                            <ul className="flex flex-col gap-3 mb-8 flex-1">
-                                {tier.features.map((f) => (
-                                    <li key={f} className="flex items-center gap-2">
-                                        <Check className="w-4 h-4 text-emerald-forest shrink-0" />
-                                        <span className="text-sm text-slate-400">{f}</span>
-                                    </li>
-                                ))}
-                            </ul>
-
-                            {/* CTA */}
-                            <button
-                                className={`w-full py-3 rounded-md text-sm font-medium transition-colors ${
+                    {tiers.map((tier, i) => (
+                        <FadeIn key={tier.name} delay={250 + i * 120}>
+                            <div
+                                className={`landing-card ${tier.highlighted ? 'landing-card-highlight' : ''} bg-slate-800 rounded-lg p-6 md:p-9 flex flex-col border h-full ${
                                     tier.highlighted
-                                        ? 'bg-heritage-sapphire text-white hover:bg-[#3350E0]'
-                                        : 'bg-transparent border border-slate-700 text-slate-100 hover:border-slate-500'
+                                        ? 'border-heritage-sapphire'
+                                        : 'border-slate-700'
                                 }`}
                             >
-                                {tier.cta}
-                            </button>
-                        </div>
+                                {/* Badge */}
+                                {tier.highlighted && (
+                                    <span className="inline-flex self-start px-3 py-1 bg-heritage-sapphire text-white text-[11px] font-semibold rounded-full mb-4">
+                                        Most Popular
+                                    </span>
+                                )}
+
+                                <span className="text-sm font-medium text-slate-400 mb-3">
+                                    {tier.name}
+                                </span>
+
+                                <div className="flex items-baseline gap-1 mb-3">
+                                    <span className="font-mono text-3xl md:text-4xl font-medium text-slate-100">
+                                        &euro;{tier.price}
+                                    </span>
+                                    <span className="text-sm text-slate-600">/mo</span>
+                                </div>
+
+                                <p className="text-sm text-slate-400 leading-relaxed mb-6">
+                                    {tier.description}
+                                </p>
+
+                                <div className="h-px bg-slate-700 mb-6" />
+
+                                <ul className="flex flex-col gap-3 mb-8 flex-1">
+                                    {tier.features.map((f) => (
+                                        <li key={f} className="flex items-center gap-2">
+                                            <Check className="w-4 h-4 text-emerald-forest shrink-0" />
+                                            <span className="text-sm text-slate-400">{f}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+
+                                <button
+                                    className={`w-full py-3 rounded-md text-sm font-medium transition-all ${
+                                        tier.highlighted
+                                            ? 'bg-heritage-sapphire text-white hover:bg-[#3350E0] hover:shadow-[0_0_20px_rgba(62,92,255,0.25)]'
+                                            : 'bg-transparent border border-slate-700 text-slate-100 hover:border-slate-500'
+                                    }`}
+                                >
+                                    {tier.cta}
+                                </button>
+                            </div>
+                        </FadeIn>
                     ))}
                 </div>
             </div>
@@ -541,32 +595,39 @@ function PricingSection() {
 /* ----- SECTION 8: FINAL CTA ----- */
 function FinalCtaSection() {
     return (
-        <section id="contact" className="bg-midnight-ink py-16 px-6 md:py-20 md:px-12 lg:py-[100px] lg:px-[120px]">
-            <div className="max-w-[800px] mx-auto text-center">
-                {/* CTA H2: Fraunces 44px normal */}
-                <h2 className="font-display text-[28px] md:text-[36px] lg:text-[44px] leading-[1.15] font-normal text-white mb-4">
-                    Your fund deserves better
-                    <br className="hidden md:block" />
-                    {' '}than spreadsheets.
-                </h2>
+        <section id="contact" className="bg-midnight-ink py-16 px-6 md:py-20 md:px-12 lg:py-[100px] lg:px-[120px] relative overflow-hidden">
+            {/* Atmospheric glow */}
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_60%_at_50%_40%,rgba(62,92,255,0.05),transparent)] pointer-events-none" aria-hidden="true" />
 
-                {/* Subtitle */}
-                <p className="text-base md:text-lg text-slate-400 mb-6 md:mb-8">
-                    Join the next generation of fund managers.
-                </p>
+            <div className="max-w-[800px] mx-auto text-center relative z-10">
+                <FadeIn>
+                    <h2 className="font-display text-[28px] md:text-[36px] lg:text-[44px] leading-[1.15] font-normal text-white mb-4">
+                        Your fund deserves better
+                        <br className="hidden md:block" />
+                        {' '}than spreadsheets.
+                    </h2>
+                </FadeIn>
 
-                {/* CTA */}
-                <Link
-                    href="#contact"
-                    className="inline-flex items-center justify-center px-8 py-3.5 md:px-10 md:py-4 bg-heritage-sapphire text-white text-sm md:text-[15px] font-semibold rounded-md hover:bg-[#3350E0] transition-colors"
-                >
-                    Request a Demo
-                </Link>
+                <FadeIn delay={150}>
+                    <p className="text-base md:text-lg text-slate-400 mb-6 md:mb-8">
+                        Join the next generation of fund managers.
+                    </p>
+                </FadeIn>
 
-                {/* Trust line */}
-                <p className="mt-5 md:mt-6 text-[12px] md:text-[13px] text-slate-600">
-                    No credit card required &middot; Free onboarding &middot; Setup in minutes
-                </p>
+                <FadeIn delay={300}>
+                    <Link
+                        href="#contact"
+                        className="inline-flex items-center justify-center px-8 py-3.5 md:px-10 md:py-4 bg-heritage-sapphire text-white text-sm md:text-[15px] font-semibold rounded-md hover:bg-[#3350E0] transition-all hover:shadow-[0_0_32px_rgba(62,92,255,0.3)]"
+                    >
+                        Request a Demo
+                    </Link>
+                </FadeIn>
+
+                <FadeIn delay={400}>
+                    <p className="mt-5 md:mt-6 text-[12px] md:text-[13px] text-slate-600">
+                        No credit card required &middot; Free onboarding &middot; Setup in minutes
+                    </p>
+                </FadeIn>
             </div>
         </section>
     );
@@ -591,6 +652,9 @@ function FooterSection() {
 
     return (
         <footer className="bg-deep-surface pt-12 pb-8 px-6 md:pt-16 md:pb-10 md:px-12 lg:px-[120px]">
+            {/* Top gradient divider */}
+            <div className="section-divider h-px w-full max-w-[1200px] mx-auto mb-12 md:mb-16" aria-hidden="true" />
+
             <div className="max-w-[1200px] mx-auto">
                 {/* Top row: brand + columns */}
                 <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-8 md:gap-0 mb-8 md:mb-10">
@@ -604,7 +668,7 @@ function FooterSection() {
                         </span>
                     </div>
 
-                    {/* Link columns — 3 cols on mobile too, but with smaller gaps */}
+                    {/* Link columns */}
                     <div className="grid grid-cols-3 gap-8 md:flex md:gap-24">
                         {columns.map((col) => (
                             <div key={col.title} className="flex flex-col gap-3">

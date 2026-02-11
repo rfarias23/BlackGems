@@ -68,7 +68,7 @@ export function ChainPattern() {
 
     return (
         <svg
-            className="absolute top-0 left-0 bottom-0 right-[300px] h-full opacity-[0.08]"
+            className="absolute top-0 left-0 bottom-0 right-[300px] h-full"
             viewBox={`0 0 1100 ${rows * rowSpacing}`}
             preserveAspectRatio="xMinYMid slice"
             aria-hidden="true"

@@ -86,3 +86,95 @@ body {
   color: var(--foreground);
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
+
+/* ============================================
+   LANDING PAGE — Scroll-triggered animations
+   ============================================ */
+
+/* Initial state: invisible + shifted down */
+.fade-in-up {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Revealed state */
+.fade-in-up.animate-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ============================================
+   LANDING PAGE — Card hover effects
+   Premium interaction: subtle lift + glow
+   ============================================ */
+.landing-card {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.3s ease,
+              box-shadow 0.3s ease;
+}
+
+.landing-card:hover {
+  transform: translateY(-2px);
+  border-color: #334155;
+  box-shadow: 0 4px 24px rgba(62, 92, 255, 0.06),
+              0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+.landing-card-highlight:hover {
+  border-color: #3E5CFF;
+  box-shadow: 0 4px 32px rgba(62, 92, 255, 0.12),
+              0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* ============================================
+   LANDING PAGE — Hero ambient glow
+   ============================================ */
+.hero-glow {
+  background: radial-gradient(
+    ellipse 60% 50% at 20% 50%,
+    rgba(62, 92, 255, 0.06) 0%,
+    transparent 70%
+  );
+}
+
+/* ============================================
+   LANDING PAGE — Section divider gradient
+   ============================================ */
+.section-divider {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    #334155 30%,
+    #334155 70%,
+    transparent 100%
+  );
+}
+
+/* ============================================
+   LANDING PAGE — Subtle pulse for chain pattern
+   ============================================ */
+@keyframes chain-breathe {
+  0%, 100% { opacity: 0.06; }
+  50% { opacity: 0.10; }
+}
+
+.chain-breathe {
+  animation: chain-breathe 8s ease-in-out infinite;
+}
+
+/* ============================================
+   LANDING PAGE — Metric counter glow
+   ============================================ */
+.metric-glow {
+  text-shadow: 0 0 40px currentColor;
+  opacity: 0.15;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  filter: blur(8px);
+}
