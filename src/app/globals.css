@@ -4,6 +4,26 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ============================================
+   BLACKGEM LANDING - Theme extensions for Tailwind v4
+   These @theme values ensure custom colors/fonts work
+   even if @config loading has issues in v4
+   ============================================ */
+@theme {
+  /* Brand colors */
+  --color-midnight-ink: #11141D;
+  --color-deep-surface: #0D0D12;
+  --color-soft-parchment: #F9FAFB;
+  --color-heritage-sapphire: #3E5CFF;
+  --color-emerald-forest: #059669;
+
+  /* Font families */
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-serif: 'Source Serif 4 Variable', 'Source Serif 4', Georgia, serif;
+  --font-display: 'Fraunces Variable', 'Fraunces', Georgia, serif;
+  --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', Consolas, monospace;
+}
+
+/* ============================================
    THE LIBRARY - Light Mode (LP Portal)
    Psychology: Trust, clarity, traditional finance
    ============================================ */
