@@ -4,6 +4,26 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ============================================
+   BLACKGEM LANDING - Theme extensions for Tailwind v4
+   These @theme values ensure custom colors/fonts work
+   even if @config loading has issues in v4
+   ============================================ */
+@theme {
+  /* Brand colors */
+  --color-midnight-ink: #11141D;
+  --color-deep-surface: #0D0D12;
+  --color-soft-parchment: #F9FAFB;
+  --color-heritage-sapphire: #3E5CFF;
+  --color-emerald-forest: #059669;
+
+  /* Font families */
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-serif: 'Source Serif 4 Variable', 'Source Serif 4', Georgia, serif;
+  --font-display: 'Fraunces Variable', 'Fraunces', Georgia, serif;
+  --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', Consolas, monospace;
+}
+
+/* ============================================
    THE LIBRARY - Light Mode (LP Portal)
    Psychology: Trust, clarity, traditional finance
    ============================================ */
@@ -65,4 +85,210 @@ body {
   background-color: var(--background);
   color: var(--foreground);
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* ============================================
+   LANDING PAGE — Scroll-triggered animations
+   ============================================ */
+
+/* Initial state: invisible + shifted down */
+.fade-in-up {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Revealed state */
+.fade-in-up.animate-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ============================================
+   LANDING PAGE — Card hover effects
+   Premium interaction: subtle lift + glow
+   ============================================ */
+.landing-card {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.3s ease,
+              box-shadow 0.3s ease;
+}
+
+.landing-card:hover {
+  transform: translateY(-2px);
+  border-color: #334155;
+  box-shadow: 0 4px 24px rgba(62, 92, 255, 0.06),
+              0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+.landing-card-highlight:hover {
+  border-color: #3E5CFF;
+  box-shadow: 0 4px 32px rgba(62, 92, 255, 0.12),
+              0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* ============================================
+   LANDING PAGE — Hero ambient glow
+   ============================================ */
+.hero-glow {
+  background: radial-gradient(
+    ellipse 60% 50% at 20% 50%,
+    rgba(62, 92, 255, 0.06) 0%,
+    transparent 70%
+  );
+}
+
+/* ============================================
+   LANDING PAGE — Section divider gradient
+   ============================================ */
+.section-divider {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    #334155 30%,
+    #334155 70%,
+    transparent 100%
+  );
+}
+
+/* ============================================
+   LANDING PAGE — Chain pattern: breathing opacity
+   ============================================ */
+@keyframes chain-breathe {
+  0%, 100% { opacity: 0.06; }
+  50% { opacity: 0.10; }
+}
+
+.chain-breathe {
+  animation: chain-breathe 8s ease-in-out infinite;
+}
+
+/* ============================================
+   LANDING PAGE — Shape morphing: circle → square → triangle → circle
+
+   Technique: Outer div has clip-path + white bg (acts as the "stroke").
+   Inner ::after has the same clip-path slightly inset + dark bg (acts as "fill").
+   The gap between outer and inner creates a visible outline effect.
+   All shapes use 8-point polygon for smooth CSS interpolation.
+   ============================================ */
+
+/* Outer shape clip-path (the visible "border") */
+@keyframes morph-outer {
+  0%, 100% {
+    clip-path: polygon(
+      50% 0%, 85.36% 14.64%, 100% 50%, 85.36% 85.36%,
+      50% 100%, 14.64% 85.36%, 0% 50%, 14.64% 14.64%
+    );
+  }
+  33.33% {
+    clip-path: polygon(
+      0% 0%, 50% 0%, 100% 0%, 100% 50%,
+      100% 100%, 50% 100%, 0% 100%, 0% 50%
+    );
+  }
+  66.66% {
+    clip-path: polygon(
+      50% 0%, 75% 50%, 100% 100%, 75% 100%,
+      50% 100%, 25% 100%, 0% 100%, 25% 50%
+    );
+  }
+}
+
+/* Inner shape clip-path — inset ~3% to create the stroke gap */
+@keyframes morph-inner {
+  0%, 100% {
+    clip-path: polygon(
+      50% 3%, 83% 16.5%, 97% 50%, 83% 83.5%,
+      50% 97%, 17% 83.5%, 3% 50%, 17% 16.5%
+    );
+  }
+  33.33% {
+    clip-path: polygon(
+      3% 3%, 50% 3%, 97% 3%, 97% 50%,
+      97% 97%, 50% 97%, 3% 97%, 3% 50%
+    );
+  }
+  66.66% {
+    clip-path: polygon(
+      50% 4%, 73.5% 51%, 97% 97%, 73.5% 97%,
+      50% 97%, 26.5% 97%, 3% 97%, 26.5% 51%
+    );
+  }
+}
+
+.morph-shape {
+  position: relative;
+  background: white;
+  animation: morph-outer 12s ease-in-out infinite;
+  will-change: clip-path;
+}
+
+.morph-shape::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: #11141D;
+  animation: morph-inner 12s ease-in-out infinite;
+  animation-delay: var(--morph-delay, 0s);
+  will-change: clip-path;
+}
+
+/* Connector line between shapes — animated in sync with morph cycle */
+@keyframes morph-connector {
+  0%, 100% {
+    /* Circle phase — normal connector */
+    transform: scaleX(1);
+    opacity: 1;
+  }
+  16% {
+    /* Transitioning to square — expanding */
+    transform: scaleX(1.15);
+    opacity: 1;
+  }
+  33.33% {
+    /* Square phase — wide, bold connector */
+    transform: scaleX(1.3);
+    opacity: 1;
+    height: 2.5px;
+  }
+  50% {
+    /* Transitioning to triangle — shrinking */
+    transform: scaleX(0.8);
+    opacity: 0.6;
+  }
+  66.66% {
+    /* Triangle phase — thin, retracted connector */
+    transform: scaleX(0.4);
+    opacity: 0.3;
+  }
+  83% {
+    /* Returning to circle — growing back */
+    transform: scaleX(0.7);
+    opacity: 0.7;
+  }
+}
+
+.chain-connector {
+  height: 1.5px;
+  background: white;
+  align-self: center;
+  animation: morph-connector 12s ease-in-out infinite;
+  will-change: transform, opacity;
+  transform-origin: center center;
+}
+
+/* ============================================
+   LANDING PAGE — Metric counter glow
+   ============================================ */
+.metric-glow {
+  text-shadow: 0 0 40px currentColor;
+  opacity: 0.15;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  filter: blur(8px);
 }
