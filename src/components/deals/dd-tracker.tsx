@@ -467,7 +467,7 @@ export function DDTracker({ items, stats, dealId, canManage }: DDTrackerProps) {
                                                             </td>
                                                             {canManage && (
                                                                 <td className="py-2 px-4 text-right">
-                                                                    <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                    <div className="flex items-center justify-end gap-1">
                                                                         <button
                                                                             onClick={() => startEditing(item)}
                                                                             className="p-1 rounded text-muted-foreground hover:text-[#3E5CFF] transition-colors"

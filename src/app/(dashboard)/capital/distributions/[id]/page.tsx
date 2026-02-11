@@ -17,6 +17,7 @@ import { getDistribution } from '@/lib/actions/distributions';
 import { DistributionStatusActions } from '@/components/capital/distribution-status-actions';
 import { ProcessDistributionButton } from '@/components/capital/process-distribution-button';
 import { DeleteDistributionButton } from '@/components/capital/delete-distribution-button';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
 
 function formatDate(date: Date | null): string {
     if (!date) return '-';
@@ -94,6 +95,7 @@ export default async function DistributionDetailPage({ params }: { params: Promi
     const paidCount = distribution.items.filter((item) => item.status === 'Paid').length;
 
     return (
+        <ErrorBoundary module="capital">
         <div className="space-y-6">
             {/* Header */}
             <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
@@ -323,5 +325,6 @@ export default async function DistributionDetailPage({ params }: { params: Promi
                 </CardContent>
             </Card>
         </div>
+        </ErrorBoundary>
     );
 }

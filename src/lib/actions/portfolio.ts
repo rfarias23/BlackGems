@@ -15,6 +15,7 @@ import {
 } from '@/lib/shared/formatters'
 import { softDelete, notDeleted } from '@/lib/shared/soft-delete'
 import { logAudit } from '@/lib/shared/audit'
+import { requireFundAccess } from '@/lib/shared/fund-access'
 
 // Display mappings
 const STATUS_DISPLAY: Record<string, string> = {
@@ -314,6 +315,12 @@ export async function createPortfolioCompany(formData: FormData) {
     const data = validated.data
 
     try {
+        await requireFundAccess(session.user.id!, data.fundId)
+    } catch {
+        return { error: 'Access denied' }
+    }
+
+    try {
         const equityInvested = parseMoney(data.equityInvested)
         const debtFinancing = data.debtFinancing ? parseMoney(data.debtFinancing) : 0
         const totalInvestment = equityInvested + debtFinancing
@@ -376,9 +383,31 @@ export async function updatePortfolioCompanyStatus(id: string, status: string) {
     const dbStatus = DISPLAY_TO_STATUS[status] || status
 
     try {
+        const existing = await prisma.portfolioCompany.findFirst({
+            where: { id, ...notDeleted },
+            select: { status: true, fundId: true },
+        })
+        if (!existing) {
+            return { error: 'Company not found' }
+        }
+
+        try {
+            await requireFundAccess(session.user.id!, existing.fundId)
+        } catch {
+            return { error: 'Access denied' }
+        }
+
         await prisma.portfolioCompany.update({
             where: { id },
             data: { status: dbStatus as PortfolioStatus },
+        })
+
+        await logAudit({
+            userId: session.user.id!,
+            action: 'UPDATE',
+            entityType: 'PortfolioCompany',
+            entityId: id,
+            changes: { status: { old: existing.status, new: dbStatus } },
         })
 
         revalidatePath('/portfolio')
@@ -410,6 +439,12 @@ export async function updatePortfolioValuation(
             return { error: 'Company not found' }
         }
 
+        try {
+            await requireFundAccess(session.user.id!, company.fundId)
+        } catch {
+            return { error: 'Access denied' }
+        }
+
         // Calculate new MOIC
         const equityValue = currentValuation * Number(company.ownershipPct)
         const moic = equityValue / Number(company.equityInvested)
@@ -435,6 +470,17 @@ export async function updatePortfolioValuation(
             },
         })
 
+        await logAudit({
+            userId: session.user.id!,
+            action: 'UPDATE',
+            entityType: 'PortfolioCompany',
+            entityId: id,
+            changes: {
+                unrealizedValue: { old: Number(company.unrealizedValue || 0), new: equityValue },
+                moic: { old: Number(company.moic || 0), new: moic },
+            },
+        })
+
         revalidatePath('/portfolio')
         revalidatePath(`/portfolio/${id}`)
         return { success: true }
@@ -455,6 +501,19 @@ export async function recordPortfolioMetrics(formData: FormData) {
     const periodDate = formData.get('periodDate') as string
     const periodType = formData.get('periodType') as string || 'QUARTERLY'
 
+    const company = await prisma.portfolioCompany.findFirst({
+        where: { id: companyId, ...notDeleted },
+        select: { fundId: true },
+    })
+    if (!company) {
+        return { error: 'Company not found' }
+    }
+    try {
+        await requireFundAccess(session.user.id!, company.fundId)
+    } catch {
+        return { error: 'Access denied' }
+    }
+
     try {
         await prisma.portfolioMetric.create({
             data: {
@@ -470,6 +529,13 @@ export async function recordPortfolioMetrics(formData: FormData) {
                 concerns: formData.get('concerns') as string || null,
                 notes: formData.get('notes') as string || null,
             },
+        })
+
+        await logAudit({
+            userId: session.user.id!,
+            action: 'CREATE',
+            entityType: 'PortfolioMetric',
+            entityId: companyId,
         })
 
         // Update company valuation if provided
@@ -527,6 +593,12 @@ export async function deletePortfolioCompany(id: string) {
     })
     if (!company) {
         return { error: 'Portfolio company not found' }
+    }
+
+    try {
+        await requireFundAccess(session.user.id!, company.fundId)
+    } catch {
+        return { error: 'Access denied' }
     }
 
     try {

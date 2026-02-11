@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache'
 import bcrypt from 'bcryptjs'
 import { z } from 'zod'
 import { FundStatus } from '@prisma/client'
+import { logAudit } from '@/lib/shared/audit'
 
 // ============================================================================
 // USER PROFILE
@@ -63,6 +64,11 @@ export async function updateProfile(formData: FormData) {
     }
 
     try {
+        const currentUser = await prisma.user.findUnique({
+            where: { email: session.user.email },
+            select: { id: true, name: true, email: true },
+        })
+
         // Check if email is already taken by another user
         if (rawData.email !== session.user.email) {
             const existingUser = await prisma.user.findUnique({
@@ -80,6 +86,19 @@ export async function updateProfile(formData: FormData) {
                 email: rawData.email,
             },
         })
+
+        if (currentUser) {
+            await logAudit({
+                userId: currentUser.id,
+                action: 'UPDATE',
+                entityType: 'User',
+                entityId: currentUser.id,
+                changes: {
+                    ...(rawData.name !== currentUser.name ? { name: { old: currentUser.name, new: rawData.name } } : {}),
+                    ...(rawData.email !== currentUser.email ? { email: { old: currentUser.email, new: rawData.email } } : {}),
+                },
+            })
+        }
 
         revalidatePath('/settings')
         return { success: true }
@@ -135,6 +154,14 @@ export async function changePassword(formData: FormData) {
         await prisma.user.update({
             where: { email: session.user.email },
             data: { passwordHash: hashedPassword },
+        })
+
+        await logAudit({
+            userId: user.id,
+            action: 'UPDATE',
+            entityType: 'User',
+            entityId: user.id,
+            changes: { password: { old: '[redacted]', new: '[redacted]' } },
         })
 
         return { success: true }
@@ -257,6 +284,11 @@ export async function updateFundConfig(formData: FormData) {
     }
 
     try {
+        const currentUser = await prisma.user.findUnique({
+            where: { email: session.user?.email || '' },
+            select: { id: true },
+        })
+
         await prisma.fund.update({
             where: { id: fundId },
             data: {
@@ -271,6 +303,15 @@ export async function updateFundConfig(formData: FormData) {
                 hurdleRate: rawData.hurdleRate ? parsePercent(rawData.hurdleRate) : null,
             },
         })
+
+        if (currentUser) {
+            await logAudit({
+                userId: currentUser.id,
+                action: 'UPDATE',
+                entityType: 'Fund',
+                entityId: fundId,
+            })
+        }
 
         revalidatePath('/settings')
         return { success: true }
@@ -305,10 +346,29 @@ export async function updateFundStatus(fundId: string, status: string) {
     const dbStatus = DISPLAY_TO_STATUS[status] || status
 
     try {
+        const currentUser = await prisma.user.findUnique({
+            where: { email: session.user?.email || '' },
+            select: { id: true },
+        })
+        const existingFund = await prisma.fund.findUnique({
+            where: { id: fundId },
+            select: { status: true },
+        })
+
         await prisma.fund.update({
             where: { id: fundId },
             data: { status: dbStatus as FundStatus },
         })
+
+        if (currentUser) {
+            await logAudit({
+                userId: currentUser.id,
+                action: 'UPDATE',
+                entityType: 'Fund',
+                entityId: fundId,
+                changes: { status: { old: existingFund?.status, new: dbStatus } },
+            })
+        }
 
         revalidatePath('/settings')
         return { success: true }
