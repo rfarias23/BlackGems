@@ -166,52 +166,71 @@ body {
 
 /* ============================================
    LANDING PAGE — Shape morphing: circle → square → triangle → circle
+
+   Technique: Outer div has clip-path + white bg (acts as the "stroke").
+   Inner ::after has the same clip-path slightly inset + dark bg (acts as "fill").
+   The gap between outer and inner creates a visible outline effect.
    All shapes use 8-point polygon for smooth CSS interpolation.
    ============================================ */
-@keyframes morph-shape {
+
+/* Outer shape clip-path (the visible "border") */
+@keyframes morph-outer {
   0%, 100% {
-    /* Circle — 8 points approximating a circle */
     clip-path: polygon(
-      50% 0%,
-      85.36% 14.64%,
-      100% 50%,
-      85.36% 85.36%,
-      50% 100%,
-      14.64% 85.36%,
-      0% 50%,
-      14.64% 14.64%
+      50% 0%, 85.36% 14.64%, 100% 50%, 85.36% 85.36%,
+      50% 100%, 14.64% 85.36%, 0% 50%, 14.64% 14.64%
     );
   }
   33.33% {
-    /* Square — 8 points on rectangle edges */
     clip-path: polygon(
-      0% 0%,
-      50% 0%,
-      100% 0%,
-      100% 50%,
-      100% 100%,
-      50% 100%,
-      0% 100%,
-      0% 50%
+      0% 0%, 50% 0%, 100% 0%, 100% 50%,
+      100% 100%, 50% 100%, 0% 100%, 0% 50%
     );
   }
   66.66% {
-    /* Triangle — 8 points with 3 visible vertices */
     clip-path: polygon(
-      50% 0%,
-      75% 50%,
-      100% 100%,
-      75% 100%,
-      50% 100%,
-      25% 100%,
-      0% 100%,
-      25% 50%
+      50% 0%, 75% 50%, 100% 100%, 75% 100%,
+      50% 100%, 25% 100%, 0% 100%, 25% 50%
+    );
+  }
+}
+
+/* Inner shape clip-path — inset ~3% to create the stroke gap */
+@keyframes morph-inner {
+  0%, 100% {
+    clip-path: polygon(
+      50% 3%, 83% 16.5%, 97% 50%, 83% 83.5%,
+      50% 97%, 17% 83.5%, 3% 50%, 17% 16.5%
+    );
+  }
+  33.33% {
+    clip-path: polygon(
+      3% 3%, 50% 3%, 97% 3%, 97% 50%,
+      97% 97%, 50% 97%, 3% 97%, 3% 50%
+    );
+  }
+  66.66% {
+    clip-path: polygon(
+      50% 4%, 73.5% 51%, 97% 97%, 73.5% 97%,
+      50% 97%, 26.5% 97%, 3% 97%, 26.5% 51%
     );
   }
 }
 
 .morph-shape {
-  animation: morph-shape 12s ease-in-out infinite;
+  position: relative;
+  background: white;
+  animation: morph-outer 12s ease-in-out infinite;
+  will-change: clip-path;
+}
+
+.morph-shape::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: #11141D;
+  animation: morph-inner 12s ease-in-out infinite;
+  animation-delay: var(--morph-delay, 0s);
   will-change: clip-path;
 }
 

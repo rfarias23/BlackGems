@@ -105,7 +105,12 @@ function ChainRow({ rowIndex }: { rowIndex: number }) {
     );
 }
 
-/** A single morphing shape: div with clip-path animation */
+/**
+ * A single morphing shape using the double-layer clip-path technique.
+ * Outer div (white bg + morph-outer) creates the shape fill.
+ * Inner ::after (dark bg + morph-inner) punches a hole, leaving only the "stroke".
+ * The --morph-delay custom property syncs both animations.
+ */
 function MorphShape({ delay }: { delay: number }) {
     return (
         <div
@@ -114,8 +119,9 @@ function MorphShape({ delay }: { delay: number }) {
                 width: `${SHAPE_SIZE}px`,
                 height: `${SHAPE_SIZE}px`,
                 flexShrink: 0,
-                border: '1.5px solid white',
                 animationDelay: `${delay}s`,
+                // Pass delay to ::after via CSS custom property
+                ['--morph-delay' as string]: `${delay}s`,
             }}
         />
     );
