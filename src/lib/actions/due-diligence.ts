@@ -14,7 +14,7 @@ import { requireFundAccess } from '@/lib/shared/fund-access'
 
 const DD_MANAGE_ROLES = ['SUPER_ADMIN', 'FUND_ADMIN', 'INVESTMENT_MANAGER', 'ANALYST']
 
-export const DD_CATEGORY_LABELS: Record<DDCategory, string> = {
+const DD_CATEGORY_LABELS: Record<DDCategory, string> = {
     FINANCIAL: 'Financial',
     ACCOUNTING: 'Accounting',
     TAX: 'Tax',
@@ -32,7 +32,7 @@ export const DD_CATEGORY_LABELS: Record<DDCategory, string> = {
     OTHER: 'Other',
 }
 
-export const DD_STATUS_LABELS: Record<DDStatus, string> = {
+const DD_STATUS_LABELS: Record<DDStatus, string> = {
     NOT_STARTED: 'Not Started',
     IN_PROGRESS: 'In Progress',
     PENDING_INFO: 'Pending Info',
@@ -433,5 +433,3 @@ export async function deleteDDItem(itemId: string) {
     }
 }
 
-// Re-export labels for use in client components
-export { PRIORITY_LABELS }
