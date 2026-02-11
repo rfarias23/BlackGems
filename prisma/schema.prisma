@@ -791,12 +791,14 @@ model CapitalCall {
 
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
+  deletedAt       DateTime?
 
   // Relations
   items           CapitalCallItem[]
 
   @@index([fundId])
   @@index([status])
+  @@index([deletedAt])
 }
 
 enum CapitalCallStatus {
@@ -878,12 +880,14 @@ model Distribution {
 
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
+  deletedAt       DateTime?
 
   // Relations
   items           DistributionItem[]
 
   @@index([fundId])
   @@index([status])
+  @@index([deletedAt])
 }
 
 enum DistributionType {

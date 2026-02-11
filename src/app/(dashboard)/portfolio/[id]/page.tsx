@@ -9,6 +9,7 @@ import { getPortfolioCompany, getPortfolioMetrics } from '@/lib/actions/portfoli
 import { PortfolioStatusActions } from '@/components/portfolio/portfolio-status-actions';
 import { UpdateValuationButton } from '@/components/portfolio/update-valuation-button';
 import { DeletePortfolioButton } from '@/components/portfolio/delete-portfolio-button';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
 
 function formatDate(date: Date | null): string {
     if (!date) return '-';
@@ -50,6 +51,7 @@ export default async function PortfolioCompanyDetailPage({ params }: { params: P
     }
 
     return (
+        <ErrorBoundary module="portfolio">
         <div className="space-y-6">
             {/* Header */}
             <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
@@ -349,5 +351,6 @@ export default async function PortfolioCompanyDetailPage({ params }: { params: P
                 </Card>
             )}
         </div>
+        </ErrorBoundary>
     );
 }

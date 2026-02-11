@@ -17,6 +17,7 @@ import { getCapitalCall } from '@/lib/actions/capital-calls';
 import { CapitalCallStatusActions } from '@/components/capital/capital-call-status-actions';
 import { RecordPaymentButton } from '@/components/capital/record-payment-button';
 import { DeleteCapitalCallButton } from '@/components/capital/delete-capital-call-button';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
 
 function formatDate(date: Date | null): string {
     if (!date) return '-';
@@ -84,6 +85,7 @@ export default async function CapitalCallDetailPage({ params }: { params: Promis
     const paidCount = call.items.filter((item) => item.status === 'Paid').length;
 
     return (
+        <ErrorBoundary module="capital">
         <div className="space-y-6">
             {/* Header */}
             <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
@@ -311,5 +313,6 @@ export default async function CapitalCallDetailPage({ params }: { params: Promis
                 </CardContent>
             </Card>
         </div>
+        </ErrorBoundary>
     );
 }

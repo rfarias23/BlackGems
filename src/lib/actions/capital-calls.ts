@@ -5,6 +5,9 @@ import { auth } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
+import { logAudit } from '@/lib/shared/audit'
+import { softDelete, notDeleted } from '@/lib/shared/soft-delete'
+import { requireFundAccess } from '@/lib/shared/fund-access'
 
 // Display mappings
 const CALL_STATUS_DISPLAY: Record<string, string> = {
@@ -110,6 +113,7 @@ export async function getCapitalCalls(): Promise<CapitalCallListItem[]> {
     }
 
     const calls = await prisma.capitalCall.findMany({
+        where: { ...notDeleted },
         orderBy: { callDate: 'desc' },
         include: {
             fund: {
@@ -149,8 +153,8 @@ export async function getCapitalCall(id: string): Promise<CapitalCallDetail | nu
         return null
     }
 
-    const call = await prisma.capitalCall.findUnique({
-        where: { id },
+    const call = await prisma.capitalCall.findFirst({
+        where: { id, ...notDeleted },
         include: {
             fund: {
                 select: { name: true },
@@ -226,6 +230,12 @@ export async function createCapitalCall(formData: FormData) {
     const data = validated.data
 
     try {
+        await requireFundAccess(session.user.id!, data.fundId)
+    } catch {
+        return { error: 'Access denied' }
+    }
+
+    try {
         // Get the next call number for this fund
         const lastCall = await prisma.capitalCall.findFirst({
             where: { fundId: data.fundId },
@@ -284,6 +294,13 @@ export async function createCapitalCall(formData: FormData) {
             })
         }
 
+        await logAudit({
+            userId: session.user.id!,
+            action: 'CREATE',
+            entityType: 'CapitalCall',
+            entityId: capitalCall.id,
+        })
+
         revalidatePath('/capital')
         redirect(`/capital/calls/${capitalCall.id}`)
     } catch (error) {
@@ -302,6 +319,17 @@ export async function updateCapitalCallStatus(id: string, status: string) {
     const dbStatus = DISPLAY_TO_STATUS[status] || status
 
     try {
+        const existingCall = await prisma.capitalCall.findUnique({ where: { id } })
+        if (!existingCall) {
+            return { error: 'Capital call not found' }
+        }
+
+        try {
+            await requireFundAccess(session.user.id!, existingCall.fundId)
+        } catch {
+            return { error: 'Access denied' }
+        }
+
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const updateData: Record<string, any> = {
             status: dbStatus,
@@ -316,6 +344,14 @@ export async function updateCapitalCallStatus(id: string, status: string) {
         await prisma.capitalCall.update({
             where: { id },
             data: updateData,
+        })
+
+        await logAudit({
+            userId: session.user.id!,
+            action: 'UPDATE',
+            entityType: 'CapitalCall',
+            entityId: id,
+            changes: { status: { old: existingCall.status, new: dbStatus } },
         })
 
         revalidatePath('/capital')
@@ -357,6 +393,12 @@ export async function recordCallItemPayment(
             return { error: 'Capital call item not found' }
         }
 
+        try {
+            await requireFundAccess(session.user.id!, item.capitalCall.fundId)
+        } catch {
+            return { error: 'Access denied' }
+        }
+
         const newPaidAmount = Number(item.paidAmount) + amount
         const callAmount = Number(item.callAmount)
 
@@ -375,6 +417,14 @@ export async function recordCallItemPayment(
                 status: newStatus,
                 paidDate: newStatus === 'PAID' ? new Date() : null,
             },
+        })
+
+        await logAudit({
+            userId: session.user.id!,
+            action: 'UPDATE',
+            entityType: 'CapitalCallItem',
+            entityId: itemId,
+            changes: { paidAmount: { old: Number(item.paidAmount), new: newPaidAmount }, status: { old: item.status, new: newStatus } },
         })
 
         // Update the commitment's called and paid amounts
@@ -438,20 +488,31 @@ export async function deleteCapitalCall(id: string) {
 
     try {
         // Only allow deleting draft calls
-        const call = await prisma.capitalCall.findUnique({
-            where: { id },
+        const call = await prisma.capitalCall.findFirst({
+            where: { id, ...notDeleted },
         })
 
         if (!call) {
             return { error: 'Capital call not found' }
         }
 
+        try {
+            await requireFundAccess(session.user.id!, call.fundId)
+        } catch {
+            return { error: 'Access denied' }
+        }
+
         if (call.status !== 'DRAFT') {
             return { error: 'Can only delete draft capital calls' }
         }
 
-        await prisma.capitalCall.delete({
-            where: { id },
+        await softDelete('capitalCall', id)
+
+        await logAudit({
+            userId: session.user.id!,
+            action: 'DELETE',
+            entityType: 'CapitalCall',
+            entityId: id,
         })
 
         revalidatePath('/capital')

@@ -21,6 +21,7 @@ import { NoteList } from '@/components/deals/note-list';
 import { DDTracker } from '@/components/deals/dd-tracker';
 import { AddDDItemButton } from '@/components/deals/add-dd-item-button';
 import { getDealDueDiligence, getDDStats } from '@/lib/actions/due-diligence';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { auth } from '@/lib/auth';
 
 // Roles that can edit deals
@@ -41,6 +42,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
     const canEdit = EDIT_ROLES.includes(userRole);
 
     return (
+        <ErrorBoundary module="deals">
         <div className="space-y-6">
             {/* Header */}
             <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
@@ -163,5 +165,6 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
                 </TabsContent>
             </Tabs>
         </div>
+        </ErrorBoundary>
     );
 }

@@ -6,6 +6,9 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { DistributionType } from '@prisma/client'
+import { logAudit } from '@/lib/shared/audit'
+import { softDelete, notDeleted } from '@/lib/shared/soft-delete'
+import { requireFundAccess } from '@/lib/shared/fund-access'
 
 // Display mappings
 const DIST_STATUS_DISPLAY: Record<string, string> = {
@@ -126,6 +129,7 @@ export async function getDistributions(): Promise<DistributionListItem[]> {
     }
 
     const distributions = await prisma.distribution.findMany({
+        where: { ...notDeleted },
         orderBy: { distributionDate: 'desc' },
         include: {
             fund: {
@@ -165,8 +169,8 @@ export async function getDistribution(id: string): Promise<DistributionDetail | 
         return null
     }
 
-    const dist = await prisma.distribution.findUnique({
-        where: { id },
+    const dist = await prisma.distribution.findFirst({
+        where: { id, ...notDeleted },
         include: {
             fund: {
                 select: { name: true },
@@ -246,6 +250,12 @@ export async function createDistribution(formData: FormData) {
     const dbType = DISPLAY_TO_TYPE[data.type] || 'PROFIT_DISTRIBUTION'
 
     try {
+        await requireFundAccess(session.user.id!, data.fundId)
+    } catch {
+        return { error: 'Access denied' }
+    }
+
+    try {
         // Get the next distribution number for this fund
         const lastDist = await prisma.distribution.findFirst({
             where: { fundId: data.fundId },
@@ -309,6 +319,13 @@ export async function createDistribution(formData: FormData) {
             })
         }
 
+        await logAudit({
+            userId: session.user.id!,
+            action: 'CREATE',
+            entityType: 'Distribution',
+            entityId: distribution.id,
+        })
+
         revalidatePath('/capital')
         redirect(`/capital/distributions/${distribution.id}`)
     } catch (error) {
@@ -327,6 +344,17 @@ export async function updateDistributionStatus(id: string, status: string) {
     const dbStatus = DISPLAY_TO_STATUS[status] || status
 
     try {
+        const existingDist = await prisma.distribution.findUnique({ where: { id } })
+        if (!existingDist) {
+            return { error: 'Distribution not found' }
+        }
+
+        try {
+            await requireFundAccess(session.user.id!, existingDist.fundId)
+        } catch {
+            return { error: 'Access denied' }
+        }
+
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const updateData: Record<string, any> = {
             status: dbStatus,
@@ -341,6 +369,14 @@ export async function updateDistributionStatus(id: string, status: string) {
         await prisma.distribution.update({
             where: { id },
             data: updateData,
+        })
+
+        await logAudit({
+            userId: session.user.id!,
+            action: 'UPDATE',
+            entityType: 'Distribution',
+            entityId: id,
+            changes: { status: { old: existingDist.status, new: dbStatus } },
         })
 
         revalidatePath('/capital')
@@ -371,6 +407,12 @@ export async function processDistributionItem(itemId: string) {
             return { error: 'Distribution item not found' }
         }
 
+        try {
+            await requireFundAccess(session.user.id!, item.distribution.fundId)
+        } catch {
+            return { error: 'Access denied' }
+        }
+
         // Update the distribution item
         await prisma.distributionItem.update({
             where: { id: itemId },
@@ -378,6 +420,14 @@ export async function processDistributionItem(itemId: string) {
                 status: 'PAID',
                 paidDate: new Date(),
             },
+        })
+
+        await logAudit({
+            userId: session.user.id!,
+            action: 'UPDATE',
+            entityType: 'DistributionItem',
+            entityId: itemId,
+            changes: { status: { old: item.status, new: 'PAID' } },
         })
 
         // Update the commitment's distributed amount
@@ -440,20 +490,31 @@ export async function deleteDistribution(id: string) {
 
     try {
         // Only allow deleting draft distributions
-        const dist = await prisma.distribution.findUnique({
-            where: { id },
+        const dist = await prisma.distribution.findFirst({
+            where: { id, ...notDeleted },
         })
 
         if (!dist) {
             return { error: 'Distribution not found' }
         }
 
+        try {
+            await requireFundAccess(session.user.id!, dist.fundId)
+        } catch {
+            return { error: 'Access denied' }
+        }
+
         if (dist.status !== 'DRAFT') {
             return { error: 'Can only delete draft distributions' }
         }
 
-        await prisma.distribution.delete({
-            where: { id },
+        await softDelete('distribution', id)
+
+        await logAudit({
+            userId: session.user.id!,
+            action: 'DELETE',
+            entityType: 'Distribution',
+            entityId: id,
         })
 
         revalidatePath('/capital')
