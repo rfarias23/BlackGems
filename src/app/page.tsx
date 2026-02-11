@@ -45,8 +45,8 @@ function HeroSection() {
             {/* Ambient glow — atmospheric depth */}
             <div className="hero-glow absolute inset-0 pointer-events-none" aria-hidden="true" />
 
-            {/* Decorative chain pattern — hidden on mobile */}
-            <div className="hidden lg:block chain-breathe">
+            {/* Decorative chain pattern — visible on all sizes */}
+            <div className="chain-breathe">
                 <ChainPattern />
             </div>
 

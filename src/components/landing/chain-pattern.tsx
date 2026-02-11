@@ -38,7 +38,7 @@ const ROW_GAP = 38; // px vertical gap between rows
 export function ChainPattern() {
     return (
         <div
-            className="absolute top-0 left-0 bottom-0 right-[300px] overflow-hidden pointer-events-none"
+            className="absolute top-0 left-0 bottom-0 right-0 lg:right-[300px] overflow-hidden pointer-events-none"
             aria-hidden="true"
         >
             <div className="flex flex-col justify-center h-full" style={{ gap: `${ROW_GAP}px` }}>
