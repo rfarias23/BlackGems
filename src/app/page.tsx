@@ -53,10 +53,10 @@ function HeroSection() {
             {/* Top bar: Logo + mobile menu toggle */}
             <div className="absolute top-8 left-6 md:top-12 md:left-12 lg:left-[100px] z-20">
                 <Link href="/" className="flex items-baseline gap-0">
-                    <span className="font-serif text-lg text-slate-100 font-normal tracking-tight">
+                    <span className="font-serif text-[25px] text-slate-100 font-normal tracking-tight">
                         Black
                     </span>
-                    <span className="font-serif text-lg text-slate-100 font-semibold tracking-tight">
+                    <span className="font-serif text-[25px] text-slate-100 font-semibold tracking-tight">
                         Gem
                     </span>
                 </Link>
