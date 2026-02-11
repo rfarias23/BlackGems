@@ -1,83 +1,116 @@
 'use client';
 
 /**
- * ChainPattern — Decorative background pattern of connected circles
- * Inspired by the BlackGem .pen design: rows of ellipses connected by thin lines,
- * rotated -90° and stacked at low opacity to create a subtle molecular/network texture.
+ * ChainPattern — Decorative background of morphing shapes connected by lines.
+ *
+ * Pure HTML5/CSS implementation. Each shape is a <div> with CSS `clip-path`
+ * animated via @keyframes morph-shape (circle → square → triangle → circle).
+ * Shapes have staggered animation-delay to create a cascading wave effect.
+ *
+ * No SVG. No canvas. No JS animation libraries.
  */
+
+/** Segment definition: how many shapes + connector width */
+interface Segment {
+    shapes: number;
+    connector: number; // px width of the connecting line (0 = no line)
+}
+
+/** Row pattern from the original .pen design */
+const ROW_PATTERN: Segment[] = [
+    { shapes: 2, connector: 40 },
+    { shapes: 2, connector: 50 },
+    { shapes: 1, connector: 60 },
+    { shapes: 2, connector: 50 },
+    { shapes: 2, connector: 40 },
+    { shapes: 2, connector: 0 },
+    { shapes: 1, connector: 50 },
+    { shapes: 2, connector: 40 },
+    { shapes: 2, connector: 60 },
+    { shapes: 1, connector: 0 },
+];
+
+const SHAPE_SIZE = 50; // px
+const SHAPE_GAP = 8; // px between shapes in same segment
+const ROW_COUNT = 8;
+const ROW_GAP = 38; // px vertical gap between rows
+
 export function ChainPattern() {
-    // Pattern data from the .pen file: each row has a specific sequence
-    // of circle-pairs and connecting lines of varying heights
-    const rowPattern = [
-        { circles: 2, lineH: 40 },
-        { circles: 2, lineH: 50 },
-        { circles: 1, lineH: 60 },
-        { circles: 2, lineH: 50 },
-        { circles: 2, lineH: 40 },
-        { circles: 2, lineH: 0 },
-        { circles: 1, lineH: 50 },
-        { circles: 2, lineH: 40 },
-        { circles: 2, lineH: 60 },
-        { circles: 1, lineH: 0 },
-    ];
+    return (
+        <div
+            className="absolute top-0 left-0 bottom-0 right-[300px] overflow-hidden pointer-events-none"
+            aria-hidden="true"
+        >
+            <div className="flex flex-col justify-center h-full" style={{ gap: `${ROW_GAP}px` }}>
+                {Array.from({ length: ROW_COUNT }, (_, rowIdx) => (
+                    <ChainRow key={rowIdx} rowIndex={rowIdx} />
+                ))}
+            </div>
+        </div>
+    );
+}
 
-    // Build an SVG row as a horizontal chain
-    const buildRow = (rowIndex: number, yOffset: number) => {
-        const items: React.ReactNode[] = [];
-        let xCursor = 0;
+/** A single horizontal row of morphing shapes and connectors */
+function ChainRow({ rowIndex }: { rowIndex: number }) {
+    const elements: React.ReactNode[] = [];
+    let shapeCounter = 0;
 
-        for (let s = 0; s < rowPattern.length; s++) {
-            const seg = rowPattern[s];
+    for (let s = 0; s < ROW_PATTERN.length; s++) {
+        const seg = ROW_PATTERN[s];
 
-            for (let c = 0; c < seg.circles; c++) {
-                items.push(
-                    <circle
-                        key={`r${rowIndex}-s${s}-c${c}`}
-                        cx={xCursor + 25}
-                        cy={yOffset + 30}
-                        r={25}
-                        fill="none"
-                        stroke="white"
-                        strokeWidth={1.5}
+        // Render shapes for this segment
+        for (let c = 0; c < seg.shapes; c++) {
+            const delay = rowIndex * 1.5 + shapeCounter * 0.4;
+            elements.push(
+                <MorphShape
+                    key={`shape-${s}-${c}`}
+                    delay={delay}
+                />
+            );
+            shapeCounter++;
+
+            // Gap between shapes in same segment (except after last)
+            if (c < seg.shapes - 1) {
+                elements.push(
+                    <div
+                        key={`gap-${s}-${c}`}
+                        style={{ width: `${SHAPE_GAP}px`, flexShrink: 0 }}
                     />
                 );
-                xCursor += 58;
-            }
-
-            if (seg.lineH > 0) {
-                // Horizontal connector line
-                items.push(
-                    <rect
-                        key={`r${rowIndex}-s${s}-line`}
-                        x={xCursor}
-                        y={yOffset + 29}
-                        width={seg.lineH}
-                        height={2}
-                        fill="white"
-                    />
-                );
-                xCursor += seg.lineH + 8;
             }
         }
 
-        return items;
-    };
-
-    const rows = 8;
-    const rowSpacing = 88;
+        // Connector line to next segment
+        if (seg.connector > 0) {
+            elements.push(
+                <div
+                    key={`conn-${s}`}
+                    className="chain-connector"
+                    style={{ width: `${seg.connector}px`, flexShrink: 0 }}
+                />
+            );
+        }
+    }
 
     return (
-        <svg
-            className="absolute top-0 left-0 bottom-0 right-[300px] h-full"
-            viewBox={`0 0 1100 ${rows * rowSpacing}`}
-            preserveAspectRatio="xMinYMid slice"
-            aria-hidden="true"
-        >
-            {Array.from({ length: rows }, (_, i) => (
-                <g key={i}>
-                    {buildRow(i, i * rowSpacing)}
-                </g>
-            ))}
-        </svg>
+        <div className="flex items-center" style={{ height: `${SHAPE_SIZE}px` }}>
+            {elements}
+        </div>
+    );
+}
+
+/** A single morphing shape: div with clip-path animation */
+function MorphShape({ delay }: { delay: number }) {
+    return (
+        <div
+            className="morph-shape"
+            style={{
+                width: `${SHAPE_SIZE}px`,
+                height: `${SHAPE_SIZE}px`,
+                flexShrink: 0,
+                border: '1.5px solid white',
+                animationDelay: `${delay}s`,
+            }}
+        />
     );
 }
