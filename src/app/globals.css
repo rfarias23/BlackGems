@@ -215,11 +215,48 @@ body {
   will-change: clip-path;
 }
 
-/* Connector line between shapes */
+/* Connector line between shapes — animated in sync with morph cycle */
+@keyframes morph-connector {
+  0%, 100% {
+    /* Circle phase — normal connector */
+    transform: scaleX(1);
+    opacity: 1;
+  }
+  16% {
+    /* Transitioning to square — expanding */
+    transform: scaleX(1.15);
+    opacity: 1;
+  }
+  33.33% {
+    /* Square phase — wide, bold connector */
+    transform: scaleX(1.3);
+    opacity: 1;
+    height: 2.5px;
+  }
+  50% {
+    /* Transitioning to triangle — shrinking */
+    transform: scaleX(0.8);
+    opacity: 0.6;
+  }
+  66.66% {
+    /* Triangle phase — thin, retracted connector */
+    transform: scaleX(0.4);
+    opacity: 0.3;
+  }
+  83% {
+    /* Returning to circle — growing back */
+    transform: scaleX(0.7);
+    opacity: 0.7;
+  }
+}
+
 .chain-connector {
   height: 1.5px;
   background: white;
   align-self: center;
+  animation: morph-connector 12s ease-in-out infinite;
+  will-change: transform, opacity;
+  transform-origin: center center;
 }
 
 /* ============================================

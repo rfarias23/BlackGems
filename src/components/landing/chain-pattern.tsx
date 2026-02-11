@@ -80,13 +80,19 @@ function ChainRow({ rowIndex }: { rowIndex: number }) {
             }
         }
 
-        // Connector line to next segment
+        // Connector line to next segment — animated in sync with shapes
         if (seg.connector > 0) {
+            // Connector delay matches the last shape before it
+            const connectorDelay = rowIndex * 1.5 + (shapeCounter - 1) * 0.4;
             elements.push(
                 <div
                     key={`conn-${s}`}
                     className="chain-connector"
-                    style={{ width: `${seg.connector}px`, flexShrink: 0 }}
+                    style={{
+                        width: `${seg.connector}px`,
+                        flexShrink: 0,
+                        animationDelay: `${connectorDelay}s`,
+                    }}
                 />
             );
         }
