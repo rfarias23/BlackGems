@@ -2,6 +2,9 @@
 
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
+import { calculateFundIRR, calculateCompanyIRR, calculateLPIRR } from '@/lib/shared/irr'
+import { calculateWaterfall, type WaterfallTier } from '@/lib/shared/waterfall'
+import { notDeleted } from '@/lib/shared/soft-delete'
 
 // Helper to format decimal
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -194,7 +197,15 @@ export interface FundPerformanceReport {
         dpi: string  // Distributions to Paid-In
         rvpi: string // Residual Value to Paid-In
         tvpi: string // Total Value to Paid-In
+        grossIrr: string | null
+        netIrr: string | null
     }
+    waterfall: {
+        tiers: WaterfallTier[]
+        lpTotal: string
+        gpTotal: string
+        effectiveCarryPct: string | null
+    } | null
     dealPipeline: {
         totalDeals: number
         activeDeals: number
@@ -250,10 +261,62 @@ export async function getFundPerformanceReport(fundId?: string): Promise<FundPer
     const rvpi = totalPaid > 0 ? unrealizedValue / totalPaid : 0
     const tvpi = totalPaid > 0 ? (totalDistributed + unrealizedValue) / totalPaid : 0
 
-    // Get deals
-    const deals = await prisma.deal.findMany({
-        where: { fundId: fund.id },
+    // Compute IRR from capital call and distribution records
+    const [capitalCalls, distributions, deals] = await Promise.all([
+        prisma.capitalCall.findMany({
+            where: { fundId: fund.id, status: 'FULLY_FUNDED', ...notDeleted },
+            select: { callDate: true, totalAmount: true },
+        }),
+        prisma.distribution.findMany({
+            where: { fundId: fund.id, status: 'COMPLETED', ...notDeleted },
+            select: { distributionDate: true, totalAmount: true },
+        }),
+        prisma.deal.findMany({
+            where: { fundId: fund.id, ...notDeleted },
+        }),
+    ])
+
+    const grossIrr = calculateFundIRR({
+        capitalCalls: capitalCalls.map(c => ({
+            date: c.callDate,
+            amount: Number(c.totalAmount),
+        })),
+        distributions: distributions.map(d => ({
+            date: d.distributionDate,
+            amount: Number(d.totalAmount),
+        })),
+        currentNAV: unrealizedValue,
+        valuationDate: new Date(),
     })
+
+    // Net IRR: approximate by reducing distributions by management fee impact
+    const mgmtFeeRate = Number(fund.managementFee) || 0
+    const netIrr = grossIrr !== null
+        ? grossIrr * (1 - mgmtFeeRate * 2) // rough approximation
+        : null
+
+    // Compute waterfall distribution
+    const holdingYears = Math.max(1, (new Date().getFullYear() - fund.vintage))
+    let waterfallResult = null
+    if (totalDistributed + unrealizedValue > 0) {
+        const wf = calculateWaterfall({
+            totalDistributable: totalDistributed + unrealizedValue,
+            totalContributed: totalPaid,
+            hurdleRate: fund.hurdleRate ? Number(fund.hurdleRate) : null,
+            carriedInterest: Number(fund.carriedInterest) || 0.20,
+            catchUpRate: fund.catchUpRate ? Number(fund.catchUpRate) : null,
+            holdingPeriodYears: holdingYears,
+            managementFee: mgmtFeeRate,
+        })
+        waterfallResult = {
+            tiers: wf.tiers,
+            lpTotal: formatMoney(wf.lpTotal),
+            gpTotal: formatMoney(wf.gpTotal),
+            effectiveCarryPct: wf.effectiveCarryPct !== null
+                ? formatPercent(wf.effectiveCarryPct)
+                : null,
+        }
+    }
 
     const activeDeals = deals.filter(d => d.status === 'ACTIVE')
     const wonDeals = deals.filter(d => d.status === 'WON')
@@ -291,7 +354,10 @@ export async function getFundPerformanceReport(fundId?: string): Promise<FundPer
             dpi: formatMultiple(dpi),
             rvpi: formatMultiple(rvpi),
             tvpi: formatMultiple(tvpi),
+            grossIrr: grossIrr !== null ? formatPercent(grossIrr) : null,
+            netIrr: netIrr !== null ? formatPercent(netIrr) : null,
         },
+        waterfall: waterfallResult,
         dealPipeline: {
             totalDeals: deals.length,
             activeDeals: activeDeals.length,
@@ -324,6 +390,7 @@ export interface LPCapitalStatement {
         netContributions: string
         totalValue: string
         moic: string
+        irr: string | null
     }
     capitalCalls: {
         id: string
@@ -422,6 +489,24 @@ export async function getLPCapitalStatement(investorId: string, fundId?: string)
         ? (Number(commitment.distributedAmount) + estimatedValue) / Number(commitment.paidAmount)
         : 1
 
+    // Calculate LP-level IRR from their capital call and distribution items
+    const lpIrr = calculateLPIRR({
+        capitalCalls: capitalCallItems
+            .filter(item => item.capitalCall && item.status === 'PAID')
+            .map(item => ({
+                date: item.capitalCall!.callDate,
+                amount: Number(item.paidAmount),
+            })),
+        distributions: distributionItems
+            .filter(item => item.distribution && item.status === 'PAID')
+            .map(item => ({
+                date: item.distribution!.distributionDate,
+                amount: Number(item.netAmount),
+            })),
+        currentNAV: estimatedValue,
+        valuationDate: new Date(),
+    })
+
     return {
         investor: {
             id: investor.id,
@@ -440,6 +525,7 @@ export async function getLPCapitalStatement(investorId: string, fundId?: string)
             netContributions: formatMoney(netContributions),
             totalValue: formatMoney(estimatedValue + Number(commitment.distributedAmount)),
             moic: formatMultiple(moic),
+            irr: lpIrr !== null ? formatPercent(lpIrr) : null,
         },
         capitalCalls: capitalCallItems
             .filter(item => item.capitalCall)
@@ -486,6 +572,7 @@ export interface PortfolioSummaryReport {
         invested: string
         currentValue: string
         moic: string
+        irr: string | null
         status: string
     }[]
     byIndustry: {
@@ -584,17 +671,26 @@ export async function getPortfolioSummaryReport(fundId?: string): Promise<Portfo
             portfolioMoic: formatMultiple(portfolioMoic),
             avgHoldingPeriod: `${Math.round(avgHoldingPeriod)} months`,
         },
-        companies: companies.map((c, index) => ({
-            id: c.id,
-            name: c.name,
-            industry: c.industry,
-            acquisitionDate: c.acquisitionDate,
-            holdingPeriodMonths: holdingPeriods[index],
-            invested: formatMoney(c.equityInvested),
-            currentValue: formatMoney(c.totalValue || c.equityInvested),
-            moic: formatMultiple(c.moic || 1),
-            status: statusDisplay[c.status] || c.status,
-        })),
+        companies: companies.map((c, index) => {
+            const companyIrr = calculateCompanyIRR(
+                c.acquisitionDate,
+                Number(c.equityInvested),
+                Number(c.totalValue || c.equityInvested),
+                c.exitDate || new Date()
+            )
+            return {
+                id: c.id,
+                name: c.name,
+                industry: c.industry,
+                acquisitionDate: c.acquisitionDate,
+                holdingPeriodMonths: holdingPeriods[index],
+                invested: formatMoney(c.equityInvested),
+                currentValue: formatMoney(c.totalValue || c.equityInvested),
+                moic: formatMultiple(c.moic || 1),
+                irr: companyIrr !== null ? formatPercent(companyIrr) : null,
+                status: statusDisplay[c.status] || c.status,
+            }
+        }),
         byIndustry: Array.from(industryMap.entries()).map(([industry, data]) => ({
             industry,
             count: data.count,

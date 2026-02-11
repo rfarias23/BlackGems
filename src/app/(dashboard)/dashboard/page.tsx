@@ -4,6 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { DollarSign, Activity, Users, TrendingUp, Briefcase, ArrowUpRight } from 'lucide-react';
 import { DownloadReportButton } from '@/components/dashboard/download-report-button';
 import { getDashboardData } from '@/lib/actions/reports';
+import { getDashboardChartData } from '@/lib/actions/chart-data';
+import { DashboardCharts } from '@/components/charts/dashboard-charts';
 
 // Map audit actions to human-readable descriptions
 function describeActivity(action: string, entityType: string): string {
@@ -35,7 +37,10 @@ function timeAgo(date: Date): string {
 }
 
 export default async function DashboardPage() {
-    const data = await getDashboardData();
+    const [data, chartData] = await Promise.all([
+        getDashboardData(),
+        getDashboardChartData(),
+    ]);
 
     if (!data) {
         return (
@@ -183,6 +188,16 @@ export default async function DashboardPage() {
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Charts Row */}
+            {chartData && (
+                <DashboardCharts
+                    moicByCompany={chartData.moicByCompany}
+                    sectorAllocation={chartData.sectorAllocation}
+                    capitalTimeline={chartData.capitalTimeline}
+                    fundIrr={chartData.fundIrr}
+                />
+            )}
 
             {/* Bottom Row: Recent Activity + Deal Pipeline */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">

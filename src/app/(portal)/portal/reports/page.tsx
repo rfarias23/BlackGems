@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { getPortalReports } from '@/lib/actions/portal';
 import { PortalReportsTabs, TabsContent } from '@/components/portal/portal-reports-tabs';
+import { FundPerformanceCharts, PortfolioCharts } from '@/components/charts/reports-charts';
 
 function formatDate(date: Date): string {
     return new Intl.DateTimeFormat('en-US', {
@@ -131,6 +132,18 @@ export default async function PortalReportsPage() {
                                         </div>
                                     </CardContent>
                                 </Card>
+                                {capitalStatement.performance.irr && (
+                                    <Card className="bg-white border-slate-200">
+                                        <CardHeader className="pb-2">
+                                            <CardTitle className="text-sm font-medium text-slate-500">Est. IRR</CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="text-2xl font-bold text-emerald-600">
+                                                {capitalStatement.performance.irr}
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                )}
                             </div>
 
                             {/* Capital Calls table */}
@@ -317,6 +330,14 @@ export default async function PortalReportsPage() {
                                 </Card>
                             </div>
 
+                            {/* IRR + Waterfall Charts */}
+                            <FundPerformanceCharts
+                                waterfallData={null}
+                                grossIrr={fundPerformance.performance.grossIrr}
+                                netIrr={fundPerformance.performance.netIrr}
+                                theme="light"
+                            />
+
                             {/* Capital + Portfolio summaries */}
                             <div className="grid gap-4 md:grid-cols-2">
                                 <Card className="bg-white border-slate-200">
@@ -501,7 +522,20 @@ export default async function PortalReportsPage() {
                                 </Card>
                             </div>
 
-                            {/* Breakdowns */}
+                            {/* Charts: MOIC + Sector Allocation */}
+                            <PortfolioCharts
+                                moicData={portfolioSummary.companies.map(c => ({
+                                    name: c.name.length > 20 ? c.name.slice(0, 18) + '…' : c.name,
+                                    moic: parseFloat(c.moic.replace('x', '')) || 1,
+                                }))}
+                                sectorData={portfolioSummary.byIndustry.map(i => ({
+                                    name: i.industry,
+                                    value: parseFloat(i.invested.replace(/[$,]/g, '')) || 0,
+                                }))}
+                                theme="light"
+                            />
+
+                            {/* Text Breakdowns */}
                             <div className="grid gap-4 md:grid-cols-2">
                                 <Card className="bg-white border-slate-200">
                                     <CardHeader>

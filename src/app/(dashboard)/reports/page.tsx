@@ -26,7 +26,10 @@ import {
     getDealPipelineReport,
     getInvestorsForReports,
 } from '@/lib/actions/reports';
+import { getDashboardChartData, getWaterfallChartData } from '@/lib/actions/chart-data';
 import { LPStatementSelector } from '@/components/reports/lp-statement-selector';
+import { FundPerformanceCharts, PortfolioCharts } from '@/components/charts/reports-charts';
+import { ExportFundPerformance, ExportPortfolioSummary, ExportDealPipeline } from '@/components/reports/export-buttons';
 
 function formatDate(date: Date): string {
     return new Intl.DateTimeFormat('en-US', {
@@ -37,11 +40,13 @@ function formatDate(date: Date): string {
 }
 
 export default async function ReportsPage() {
-    const [fundPerformance, portfolioSummary, dealPipeline, investors] = await Promise.all([
+    const [fundPerformance, portfolioSummary, dealPipeline, investors, chartData, waterfallData] = await Promise.all([
         getFundPerformanceReport(),
         getPortfolioSummaryReport(),
         getDealPipelineReport(),
         getInvestorsForReports(),
+        getDashboardChartData(),
+        getWaterfallChartData(),
     ]);
 
     return (
@@ -75,7 +80,26 @@ export default async function ReportsPage() {
                                                 Vintage {fundPerformance.fund.vintage} | Target: {fundPerformance.fund.targetSize}
                                             </CardDescription>
                                         </div>
-                                        <Badge variant="outline">{fundPerformance.fund.status}</Badge>
+                                        <div className="flex items-center gap-2">
+                                            <ExportFundPerformance
+                                                data={[
+                                                    { metric: 'Fund Name', value: fundPerformance.fund.name },
+                                                    { metric: 'Vintage', value: String(fundPerformance.fund.vintage) },
+                                                    { metric: 'Target Size', value: fundPerformance.fund.targetSize },
+                                                    { metric: 'Gross MOIC', value: fundPerformance.performance.grossMoic },
+                                                    { metric: 'Net MOIC', value: fundPerformance.performance.netMoic },
+                                                    { metric: 'DPI', value: fundPerformance.performance.dpi },
+                                                    { metric: 'RVPI', value: fundPerformance.performance.rvpi },
+                                                    { metric: 'TVPI', value: fundPerformance.performance.tvpi },
+                                                    { metric: 'Gross IRR', value: fundPerformance.performance.grossIrr || 'N/A' },
+                                                    { metric: 'Net IRR', value: fundPerformance.performance.netIrr || 'N/A' },
+                                                    { metric: 'Total Commitments', value: fundPerformance.capital.totalCommitments },
+                                                    { metric: 'Capital Called', value: fundPerformance.capital.totalCalled },
+                                                    { metric: 'Total Distributed', value: fundPerformance.capital.totalDistributed },
+                                                ]}
+                                            />
+                                            <Badge variant="outline">{fundPerformance.fund.status}</Badge>
+                                        </div>
                                     </div>
                                 </CardHeader>
                             </Card>
@@ -127,6 +151,14 @@ export default async function ReportsPage() {
                                     </CardContent>
                                 </Card>
                             </div>
+
+                            {/* IRR + Waterfall Charts */}
+                            <FundPerformanceCharts
+                                waterfallData={waterfallData?.tiers ?? null}
+                                grossIrr={fundPerformance.performance.grossIrr}
+                                netIrr={fundPerformance.performance.netIrr}
+                                theme="dark"
+                            />
 
                             {/* Capital Summary */}
                             <div className="grid gap-4 md:grid-cols-2">
@@ -291,10 +323,36 @@ export default async function ReportsPage() {
                                 </Card>
                             </div>
 
+                            {/* Portfolio Charts */}
+                            {chartData && (
+                                <PortfolioCharts
+                                    moicData={chartData.moicByCompany}
+                                    sectorData={chartData.sectorAllocation}
+                                    theme="dark"
+                                />
+                            )}
+
                             {/* Companies Table */}
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>Portfolio Companies</CardTitle>
+                                    <div className="flex items-center justify-between">
+                                        <CardTitle>Portfolio Companies</CardTitle>
+                                        {portfolioSummary && (
+                                            <ExportPortfolioSummary
+                                                data={portfolioSummary.companies.map(c => ({
+                                                    name: c.name,
+                                                    industry: c.industry || '-',
+                                                    acquired: new Date(c.acquisitionDate).toLocaleDateString(),
+                                                    holdMonths: c.holdingPeriodMonths,
+                                                    invested: c.invested,
+                                                    value: c.currentValue,
+                                                    moic: c.moic,
+                                                    irr: c.irr || 'N/A',
+                                                    status: c.status,
+                                                }))}
+                                            />
+                                        )}
+                                    </div>
                                 </CardHeader>
                                 <CardContent className="p-0">
                                     <Table>
@@ -307,6 +365,7 @@ export default async function ReportsPage() {
                                                 <TableHead className="text-muted-foreground">Invested</TableHead>
                                                 <TableHead className="text-muted-foreground">Value</TableHead>
                                                 <TableHead className="text-muted-foreground">MOIC</TableHead>
+                                                <TableHead className="text-muted-foreground">IRR</TableHead>
                                                 <TableHead className="text-muted-foreground">Status</TableHead>
                                             </TableRow>
                                         </TableHeader>
@@ -327,6 +386,7 @@ export default async function ReportsPage() {
                                                     <TableCell>{company.invested}</TableCell>
                                                     <TableCell className="text-emerald-500">{company.currentValue}</TableCell>
                                                     <TableCell className="font-medium">{company.moic}</TableCell>
+                                                    <TableCell className="text-muted-foreground">{company.irr || '-'}</TableCell>
                                                     <TableCell>
                                                         <Badge variant="outline">{company.status}</Badge>
                                                     </TableCell>
@@ -460,7 +520,19 @@ export default async function ReportsPage() {
                             {/* Recent Activity */}
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>Recent Deal Activity</CardTitle>
+                                    <div className="flex items-center justify-between">
+                                        <CardTitle>Recent Deal Activity</CardTitle>
+                                        {dealPipeline && (
+                                            <ExportDealPipeline
+                                                data={dealPipeline.recentActivity.map(d => ({
+                                                    name: d.name,
+                                                    stage: d.stage,
+                                                    askingPrice: d.askingPrice || '-',
+                                                    lastUpdated: new Date(d.lastUpdated).toLocaleDateString(),
+                                                }))}
+                                            />
+                                        )}
+                                    </div>
                                 </CardHeader>
                                 <CardContent className="p-0">
                                     <Table>
