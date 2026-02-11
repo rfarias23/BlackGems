@@ -171,7 +171,7 @@ export async function getWaterfallChartData(
   )
 
   const portfolioCompanies = await prisma.portfolioCompany.findMany({
-    where: { fundId: fund.id },
+    where: { fundId: fund.id, ...notDeleted },
     select: { unrealizedValue: true },
   })
 

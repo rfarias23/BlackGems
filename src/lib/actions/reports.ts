@@ -272,7 +272,7 @@ export async function getFundPerformanceReport(fundId?: string): Promise<FundPer
             select: { distributionDate: true, totalAmount: true },
         }),
         prisma.deal.findMany({
-            where: { fundId: fund.id },
+            where: { fundId: fund.id, ...notDeleted },
         }),
     ])
 
