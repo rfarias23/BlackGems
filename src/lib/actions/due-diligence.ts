@@ -332,10 +332,12 @@ export async function updateDDItem(itemId: string, formData: FormData) {
         }
     }
 
-    const assignedTo = formData.get('assignedTo') as string | null
-    if (assignedTo !== undefined && assignedTo !== existing.assignedTo) {
-        updateData.assignedTo = assignedTo?.trim() || null
-        changes.assignedTo = { old: existing.assignedTo, new: assignedTo?.trim() || null }
+    if (formData.has('assignedTo')) {
+        const assignedTo = formData.get('assignedTo') as string | null
+        if ((assignedTo?.trim() || null) !== existing.assignedTo) {
+            updateData.assignedTo = assignedTo?.trim() || null
+            changes.assignedTo = { old: existing.assignedTo, new: assignedTo?.trim() || null }
+        }
     }
 
     const notes = formData.get('notes') as string | null
