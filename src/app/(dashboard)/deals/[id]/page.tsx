@@ -18,6 +18,9 @@ import { ContactList } from '@/components/deals/contact-list';
 import { LogActivityButton } from '@/components/deals/log-activity-button';
 import { ActivityTimeline } from '@/components/deals/activity-timeline';
 import { NoteList } from '@/components/deals/note-list';
+import { DDTracker } from '@/components/deals/dd-tracker';
+import { AddDDItemButton } from '@/components/deals/add-dd-item-button';
+import { getDealDueDiligence, getDDStats } from '@/lib/actions/due-diligence';
 import { auth } from '@/lib/auth';
 
 // Roles that can edit deals
@@ -26,9 +29,9 @@ const EDIT_ROLES = ['SUPER_ADMIN', 'FUND_ADMIN', 'INVESTMENT_MANAGER', 'ANALYST'
 export default async function DealDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
     const [deal, session] = await Promise.all([getDeal(id), auth()]);
-    const [documents, timeline, notes] = deal
-        ? await Promise.all([getDealDocuments(id), getDealTimeline(id), getDealNotes(id)])
-        : [[], [], []];
+    const [documents, timeline, notes, ddItems, ddStats] = deal
+        ? await Promise.all([getDealDocuments(id), getDealTimeline(id), getDealNotes(id), getDealDueDiligence(id), getDDStats(id)])
+        : [[], [], [], [], null];
 
     if (!deal) {
         notFound();
@@ -71,6 +74,14 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
                     <TabsTrigger value="overview">Overview</TabsTrigger>
                     <TabsTrigger value="documents">Documents</TabsTrigger>
                     <TabsTrigger value="contacts">Contacts</TabsTrigger>
+                    <TabsTrigger value="due-diligence">
+                        Due Diligence
+                        {ddStats && ddStats.totalItems > 0 && (
+                            <span className="ml-2 text-xs bg-muted px-1.5 py-0.5 rounded">
+                                {Math.round(ddStats.overallProgress)}%
+                            </span>
+                        )}
+                    </TabsTrigger>
                     <TabsTrigger value="activity">Activity</TabsTrigger>
                     <TabsTrigger value="notes">Notes</TabsTrigger>
                 </TabsList>
@@ -120,6 +131,19 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
                         {canEdit && <AddContactButton dealId={deal.id} />}
                     </div>
                     <ContactList contacts={deal.contacts} canManage={canEdit} />
+                </TabsContent>
+
+                <TabsContent value="due-diligence">
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-medium">Due Diligence Tracker</h3>
+                        {canEdit && <AddDDItemButton dealId={deal.id} />}
+                    </div>
+                    <DDTracker
+                        items={ddItems}
+                        stats={ddStats || { totalItems: 0, completedItems: 0, redFlagCount: 0, overallProgress: 0, byCategory: [] }}
+                        dealId={deal.id}
+                        canManage={canEdit}
+                    />
                 </TabsContent>
 
                 <TabsContent value="activity">
