@@ -2,7 +2,11 @@
 
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
+import { revalidatePath } from 'next/cache'
+import { z } from 'zod'
 import { Decimal } from '@prisma/client/runtime/library'
+import { logAudit } from '@/lib/shared/audit'
+import { computeChanges } from '@/lib/shared/audit'
 import {
     getLPCapitalStatement,
     getFundPerformanceReport,
@@ -188,7 +192,8 @@ export async function getPortalDocuments() {
     const session = await auth()
     if (!session?.user?.investorId) return []
 
-    const documents = await prisma.document.findMany({
+    // Get investor-specific documents
+    const investorDocs = await prisma.document.findMany({
         where: {
             investorId: session.user.investorId,
             deletedAt: null,
@@ -205,5 +210,158 @@ export async function getPortalDocuments() {
         },
     })
 
-    return documents
+    // Get fund-level documents (shared with all LPs in the fund)
+    const commitments = await prisma.commitment.findMany({
+        where: { investorId: session.user.investorId },
+        select: { fundId: true },
+    })
+    const fundIds = commitments.map(c => c.fundId)
+
+    const fundDocs = fundIds.length > 0 ? await prisma.document.findMany({
+        where: {
+            fundId: { in: fundIds },
+            investorId: null, // Fund-level, not investor-specific
+            deletedAt: null,
+            category: {
+                in: ['FUND_FORMATION', 'INVESTOR_COMMS', 'TAX', 'FINANCIAL_STATEMENTS', 'OPERATING_REPORTS', 'OTHER'],
+            },
+        },
+        orderBy: { createdAt: 'desc' },
+        select: {
+            id: true,
+            name: true,
+            fileName: true,
+            fileType: true,
+            fileSize: true,
+            category: true,
+            createdAt: true,
+        },
+    }) : []
+
+    // Merge and dedupe by id
+    const allDocs = [...investorDocs, ...fundDocs]
+    const seen = new Set<string>()
+    return allDocs.filter(doc => {
+        if (seen.has(doc.id)) return false
+        seen.add(doc.id)
+        return true
+    })
+}
+
+// ============================================================================
+// LP PROFILE UPDATE
+// ============================================================================
+
+const updateProfileSchema = z.object({
+    contactName: z.string().optional(),
+    contactEmail: z.string().email().optional().or(z.literal('')),
+    contactPhone: z.string().optional(),
+    contactTitle: z.string().optional(),
+})
+
+export async function updatePortalProfile(data: {
+    contactName?: string
+    contactEmail?: string
+    contactPhone?: string
+    contactTitle?: string
+}) {
+    const session = await auth()
+    if (!session?.user?.id || !session.user.investorId) {
+        return { error: 'Unauthorized' }
+    }
+
+    const parsed = updateProfileSchema.safeParse(data)
+    if (!parsed.success) {
+        return { error: parsed.error.issues[0].message }
+    }
+
+    try {
+        const existing = await prisma.investor.findUnique({
+            where: { id: session.user.investorId },
+            select: { contactName: true, contactEmail: true, contactPhone: true, contactTitle: true },
+        })
+
+        if (!existing) {
+            return { error: 'Investor not found' }
+        }
+
+        const updateData = {
+            contactName: parsed.data.contactName || null,
+            contactEmail: parsed.data.contactEmail || null,
+            contactPhone: parsed.data.contactPhone || null,
+            contactTitle: parsed.data.contactTitle || null,
+        }
+
+        await prisma.investor.update({
+            where: { id: session.user.investorId },
+            data: updateData,
+        })
+
+        const changes = computeChanges(existing, updateData)
+
+        await logAudit({
+            userId: session.user.id,
+            action: 'UPDATE',
+            entityType: 'Investor',
+            entityId: session.user.investorId,
+            changes,
+        })
+
+        revalidatePath('/portal/profile')
+        return { success: true }
+    } catch (error) {
+        console.error('Error updating profile:', error)
+        return { error: 'Failed to update profile' }
+    }
+}
+
+// ============================================================================
+// CAPITAL CALL ACKNOWLEDGMENT
+// ============================================================================
+
+export async function acknowledgeCapitalCall(itemId: string) {
+    const session = await auth()
+    if (!session?.user?.id || !session.user.investorId) {
+        return { error: 'Unauthorized' }
+    }
+
+    try {
+        const item = await prisma.capitalCallItem.findUnique({
+            where: { id: itemId },
+            include: { capitalCall: true },
+        })
+
+        if (!item) {
+            return { error: 'Capital call item not found' }
+        }
+
+        // Verify this item belongs to the logged-in investor
+        if (item.investorId !== session.user.investorId) {
+            return { error: 'Access denied' }
+        }
+
+        // Only allow acknowledging PENDING items
+        if (item.status !== 'PENDING') {
+            return { error: 'This capital call has already been acknowledged' }
+        }
+
+        await prisma.capitalCallItem.update({
+            where: { id: itemId },
+            data: { status: 'NOTIFIED' },
+        })
+
+        await logAudit({
+            userId: session.user.id,
+            action: 'UPDATE',
+            entityType: 'CapitalCallItem',
+            entityId: itemId,
+            changes: { status: { old: 'PENDING', new: 'NOTIFIED' } },
+        })
+
+        revalidatePath('/portal/capital')
+        return { success: true }
+    } catch (error) {
+        console.error('Error acknowledging capital call:', error)
+        return { error: 'Failed to acknowledge capital call' }
+    }
 }
