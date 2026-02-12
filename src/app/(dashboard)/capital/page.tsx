@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DataPagination } from '@/components/ui/data-pagination';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
 import { getCapitalCalls } from '@/lib/actions/capital-calls';
@@ -7,10 +8,17 @@ import { getDistributions } from '@/lib/actions/distributions';
 import { CapitalCallsTable } from '@/components/capital/capital-calls-table';
 import { DistributionsTable } from '@/components/capital/distributions-table';
 
-export default async function CapitalPage() {
-    const [calls, distributions] = await Promise.all([
-        getCapitalCalls(),
-        getDistributions(),
+interface CapitalPageProps {
+    searchParams: Promise<{ page?: string }>;
+}
+
+export default async function CapitalPage({ searchParams }: CapitalPageProps) {
+    const params = await searchParams;
+    const page = Number(params.page) || 1;
+
+    const [callsResult, distResult] = await Promise.all([
+        getCapitalCalls({ page }),
+        getDistributions({ page }),
     ]);
 
     return (
@@ -27,8 +35,8 @@ export default async function CapitalPage() {
             <Tabs defaultValue="calls" className="space-y-4">
                 <div className="flex items-center justify-between">
                     <TabsList>
-                        <TabsTrigger value="calls">Capital Calls ({calls.length})</TabsTrigger>
-                        <TabsTrigger value="distributions">Distributions ({distributions.length})</TabsTrigger>
+                        <TabsTrigger value="calls">Capital Calls ({callsResult.total})</TabsTrigger>
+                        <TabsTrigger value="distributions">Distributions ({distResult.total})</TabsTrigger>
                     </TabsList>
                 </div>
 
@@ -41,7 +49,13 @@ export default async function CapitalPage() {
                             </Link>
                         </Button>
                     </div>
-                    <CapitalCallsTable calls={calls} />
+                    <CapitalCallsTable calls={callsResult.data} />
+                    <DataPagination
+                        page={callsResult.page}
+                        totalPages={callsResult.totalPages}
+                        total={callsResult.total}
+                        pageSize={callsResult.pageSize}
+                    />
                 </TabsContent>
 
                 <TabsContent value="distributions" className="space-y-4">
@@ -53,7 +67,13 @@ export default async function CapitalPage() {
                             </Link>
                         </Button>
                     </div>
-                    <DistributionsTable distributions={distributions} />
+                    <DistributionsTable distributions={distResult.data} />
+                    <DataPagination
+                        page={distResult.page}
+                        totalPages={distResult.totalPages}
+                        total={distResult.total}
+                        pageSize={distResult.pageSize}
+                    />
                 </TabsContent>
             </Tabs>
         </div>

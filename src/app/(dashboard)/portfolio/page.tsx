@@ -1,13 +1,21 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { DataPagination } from '@/components/ui/data-pagination';
 import { Plus, Building2, TrendingUp, DollarSign, Target } from 'lucide-react';
 import Link from 'next/link';
 import { getPortfolioCompanies, getPortfolioSummary } from '@/lib/actions/portfolio';
 import { PortfolioTable } from '@/components/portfolio/portfolio-table';
 
-export default async function PortfolioPage() {
-    const [companies, summary] = await Promise.all([
-        getPortfolioCompanies(),
+interface PortfolioPageProps {
+    searchParams: Promise<{ page?: string; search?: string }>;
+}
+
+export default async function PortfolioPage({ searchParams }: PortfolioPageProps) {
+    const params = await searchParams;
+    const page = Number(params.page) || 1;
+
+    const [result, summary] = await Promise.all([
+        getPortfolioCompanies({ page, search: params.search }),
         getPortfolioSummary(),
     ]);
 
@@ -82,7 +90,13 @@ export default async function PortfolioPage() {
                 </div>
             )}
 
-            <PortfolioTable companies={companies} />
+            <PortfolioTable companies={result.data} />
+            <DataPagination
+                page={result.page}
+                totalPages={result.totalPages}
+                total={result.total}
+                pageSize={result.pageSize}
+            />
         </div>
     );
 }

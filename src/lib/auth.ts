@@ -4,6 +4,7 @@ import { authConfig } from "./auth.config"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 import bcrypt from "bcryptjs"
+import { rateLimit } from "@/lib/shared/rate-limit"
 
 const credentialsSchema = z.object({
     email: z.string().email(),
@@ -22,6 +23,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             authorize: async (credentials) => {
                 try {
                     const { email, password } = await credentialsSchema.parseAsync(credentials)
+
+                    // Rate limit: 10 attempts per email per minute
+                    const rl = rateLimit(`auth:${email}`, 10, 60_000)
+                    if (!rl.success) {
+                        return null
+                    }
 
                     const user = await prisma.user.findUnique({
                         where: { email },

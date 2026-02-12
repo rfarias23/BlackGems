@@ -12,6 +12,7 @@ import { logAudit } from '@/lib/shared/audit'
 import { requireFundAccess } from '@/lib/shared/fund-access'
 import { canTransitionDealStage } from '@/lib/shared/stage-transitions'
 import { notifyFundMembers } from '@/lib/actions/notifications'
+import { PaginationParams, PaginatedResult, parsePaginationParams, paginatedResult } from '@/lib/shared/pagination'
 
 // Stage mapping between DB enum and UI display values
 const STAGE_TO_DISPLAY: Record<DealStage, string> = {
@@ -125,34 +126,53 @@ export interface DealDetail {
     }[]
 }
 
-// Get all deals for a fund (or first available fund)
-export async function getDeals(): Promise<DealListItem[]> {
+// Get deals for a fund with pagination and search
+export async function getDeals(params?: PaginationParams): Promise<PaginatedResult<DealListItem>> {
     const session = await auth()
     if (!session?.user?.id) {
-        return []
+        return paginatedResult([], 0, 1, 25)
     }
 
     // Get the first fund (for MVP, we'll support single fund)
     const fund = await prisma.fund.findFirst()
     if (!fund) {
-        return []
+        return paginatedResult([], 0, 1, 25)
     }
 
-    const deals = await prisma.deal.findMany({
-        where: { fundId: fund.id, ...notDeleted },
-        orderBy: { createdAt: 'desc' },
-        select: {
-            id: true,
-            name: true,
-            companyName: true,
-            stage: true,
-            industry: true,
-            askingPrice: true,
-            createdAt: true,
-        },
-    })
+    const { page, pageSize, skip, search } = parsePaginationParams(params)
 
-    return deals.map((deal) => ({
+    const where = {
+        fundId: fund.id,
+        ...notDeleted,
+        ...(search ? {
+            OR: [
+                { name: { contains: search, mode: 'insensitive' as const } },
+                { companyName: { contains: search, mode: 'insensitive' as const } },
+                { industry: { contains: search, mode: 'insensitive' as const } },
+            ],
+        } : {}),
+    }
+
+    const [deals, total] = await Promise.all([
+        prisma.deal.findMany({
+            where,
+            orderBy: { createdAt: 'desc' },
+            skip,
+            take: pageSize,
+            select: {
+                id: true,
+                name: true,
+                companyName: true,
+                stage: true,
+                industry: true,
+                askingPrice: true,
+                createdAt: true,
+            },
+        }),
+        prisma.deal.count({ where }),
+    ])
+
+    const data = deals.map((deal) => ({
         id: deal.id,
         name: deal.name,
         companyName: deal.companyName,
@@ -161,6 +181,8 @@ export async function getDeals(): Promise<DealListItem[]> {
         askingPrice: formatCurrency(deal.askingPrice),
         createdAt: deal.createdAt,
     }))
+
+    return paginatedResult(data, total, page, pageSize)
 }
 
 // Get a single deal by ID

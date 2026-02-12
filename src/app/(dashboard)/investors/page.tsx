@@ -1,14 +1,21 @@
 import { Button } from '@/components/ui/button';
 import { InvestorTable, InvestorTableItem } from '@/components/investors/investor-table';
 import { InvestorStatus } from '@/components/investors/investor-status-badge';
+import { DataPagination } from '@/components/ui/data-pagination';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
 import { getInvestors } from '@/lib/actions/investors';
 
-export default async function InvestorsPage() {
-    const investors = await getInvestors();
+interface InvestorsPageProps {
+    searchParams: Promise<{ page?: string; search?: string }>;
+}
 
-    const tableInvestors: InvestorTableItem[] = investors.map((investor) => ({
+export default async function InvestorsPage({ searchParams }: InvestorsPageProps) {
+    const params = await searchParams;
+    const page = Number(params.page) || 1;
+    const result = await getInvestors({ page, search: params.search });
+
+    const tableInvestors: InvestorTableItem[] = result.data.map((investor) => ({
         id: investor.id,
         name: investor.name,
         type: investor.type,
@@ -37,6 +44,12 @@ export default async function InvestorsPage() {
             </div>
 
             <InvestorTable investors={tableInvestors} />
+            <DataPagination
+                page={result.page}
+                totalPages={result.totalPages}
+                total={result.total}
+                pageSize={result.pageSize}
+            />
         </div>
     );
 }

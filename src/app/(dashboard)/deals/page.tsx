@@ -1,15 +1,21 @@
 import { Button } from '@/components/ui/button';
 import { DealTable, DealTableItem } from '@/components/deals/deal-table';
 import { DealStage } from '@/components/deals/deal-stage-badge';
+import { DataPagination } from '@/components/ui/data-pagination';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
 import { getDeals } from '@/lib/actions/deals';
 
-export default async function DealsPage() {
-    const deals = await getDeals();
+interface DealsPageProps {
+    searchParams: Promise<{ page?: string; search?: string }>;
+}
 
-    // Transform server data to table format
-    const tableDeals: DealTableItem[] = deals.map((deal) => ({
+export default async function DealsPage({ searchParams }: DealsPageProps) {
+    const params = await searchParams;
+    const page = Number(params.page) || 1;
+    const result = await getDeals({ page, search: params.search });
+
+    const tableDeals: DealTableItem[] = result.data.map((deal) => ({
         id: deal.id,
         name: deal.name,
         stage: deal.stage as DealStage,
@@ -36,6 +42,12 @@ export default async function DealsPage() {
             </div>
 
             <DealTable deals={tableDeals} />
+            <DataPagination
+                page={result.page}
+                totalPages={result.totalPages}
+                total={result.total}
+                pageSize={result.pageSize}
+            />
         </div>
     );
 }
