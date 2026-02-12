@@ -1,6 +1,5 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
 import {
     Table,
     TableBody,
@@ -8,101 +7,118 @@ import {
     TableHead,
     TableHeader,
     TableRow,
-} from '@/components/ui/table';
-import { Input } from '@/components/ui/input';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { DealStageBadge, DealStage } from './deal-stage-badge';
-import Link from 'next/link';
-import { Search, Filter } from 'lucide-react';
+} from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
+import { DealStageBadge, DealStage } from './deal-stage-badge'
+import Link from 'next/link'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
+import { ArrowUp, ArrowDown } from 'lucide-react'
 
 export interface DealTableItem {
-    id: string;
-    name: string;
-    stage: DealStage;
-    sector: string | null;
-    askPrice: string | null;
-    date: string;
+    id: string
+    name: string
+    stage: DealStage
+    sector: string | null
+    askPrice: string | null
+    date: string
 }
 
 interface DealTableProps {
-    deals: DealTableItem[];
+    deals: DealTableItem[]
+    sortBy?: string
+    sortDir?: string
 }
 
-export function DealTable({ deals }: DealTableProps) {
-    const [searchTerm, setSearchTerm] = useState('');
-    const [stageFilter, setStageFilter] = useState<string>('all');
+type SortField = 'name' | 'createdAt' | 'askingPrice' | 'stage'
 
-    const filteredDeals = deals.filter((deal) => {
-        const matchesSearch = deal.name.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesStage = stageFilter === 'all' || deal.stage === stageFilter;
-        return matchesSearch && matchesStage;
-    });
+const SORTABLE_COLUMNS: { key: SortField; label: string }[] = [
+    { key: 'name', label: 'Company Name' },
+    { key: 'stage', label: 'Stage' },
+    { key: 'askingPrice', label: 'Ask Price' },
+    { key: 'createdAt', label: 'Date Added' },
+]
+
+function SortableHeader({
+    field,
+    label,
+    currentSort,
+    currentDir,
+}: {
+    field: SortField
+    label: string
+    currentSort: string
+    currentDir: string
+}) {
+    const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
+
+    const isActive = currentSort === field
+
+    function handleSort() {
+        const params = new URLSearchParams(searchParams.toString())
+        params.delete('page')
+
+        if (isActive && currentDir === 'asc') {
+            params.set('sortBy', field)
+            params.set('sortDir', 'desc')
+        } else if (isActive && currentDir === 'desc' && field === 'createdAt') {
+            // Default sort: remove params to go back to default
+            params.delete('sortBy')
+            params.delete('sortDir')
+        } else {
+            params.set('sortBy', field)
+            params.set('sortDir', 'asc')
+        }
+
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    }
 
     return (
-        <div className="space-y-4">
-            <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-2 flex-1 max-w-sm">
-                    <div className="relative flex-1">
-                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            placeholder="Search deals..."
-                            className="pl-8 bg-card"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                    </div>
-                </div>
-                <div className="flex items-center gap-2">
-                    <Filter className="h-4 w-4 text-muted-foreground mr-2 md:hidden" />
-                    <Select value={stageFilter} onValueChange={setStageFilter}>
-                        <SelectTrigger className="w-[180px] bg-card">
-                            <SelectValue placeholder="Filter by Stage" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Stages</SelectItem>
-                            <SelectItem value="Identified">Identified</SelectItem>
-                            <SelectItem value="Initial Review">Initial Review</SelectItem>
-                            <SelectItem value="NDA Signed">NDA Signed</SelectItem>
-                            <SelectItem value="IOI Submitted">IOI Submitted</SelectItem>
-                            <SelectItem value="LOI Negotiation">LOI Negotiation</SelectItem>
-                            <SelectItem value="Due Diligence">Due Diligence</SelectItem>
-                            <SelectItem value="Closing">Closing</SelectItem>
-                            <SelectItem value="Closed Won">Closed Won</SelectItem>
-                            <SelectItem value="Closed Lost">Closed Lost</SelectItem>
-                            <SelectItem value="On Hold">On Hold</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-            </div>
+        <button
+            onClick={handleSort}
+            className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
+        >
+            {label}
+            {isActive && (
+                currentDir === 'asc'
+                    ? <ArrowUp className="h-3 w-3" />
+                    : <ArrowDown className="h-3 w-3" />
+            )}
+        </button>
+    )
+}
 
+export function DealTable({ deals, sortBy = 'createdAt', sortDir = 'desc' }: DealTableProps) {
+    return (
+        <div className="space-y-4">
             <div className="rounded-md border border-border bg-card">
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Company Name</TableHead>
-                            <TableHead>Stage</TableHead>
+                            {SORTABLE_COLUMNS.map((col) => (
+                                <TableHead key={col.key}>
+                                    <SortableHeader
+                                        field={col.key}
+                                        label={col.label}
+                                        currentSort={sortBy}
+                                        currentDir={sortDir}
+                                    />
+                                </TableHead>
+                            ))}
                             <TableHead>Sector</TableHead>
-                            <TableHead>Ask Price</TableHead>
-                            <TableHead>Date Added</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {filteredDeals.length === 0 ? (
+                        {deals.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="h-24 text-center">
+                                <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                                     No deals found.
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            filteredDeals.map((deal) => (
+                            deals.map((deal) => (
                                 <TableRow key={deal.id}>
                                     <TableCell className="font-medium text-foreground">
                                         <Link href={`/deals/${deal.id}`} className="hover:underline hover:text-primary">
@@ -112,9 +128,13 @@ export function DealTable({ deals }: DealTableProps) {
                                     <TableCell>
                                         <DealStageBadge stage={deal.stage} />
                                     </TableCell>
+                                    <TableCell className="font-mono tabular-nums">
+                                        {deal.askPrice}
+                                    </TableCell>
+                                    <TableCell className="font-mono tabular-nums">
+                                        {deal.date}
+                                    </TableCell>
                                     <TableCell>{deal.sector}</TableCell>
-                                    <TableCell>{deal.askPrice}</TableCell>
-                                    <TableCell>{deal.date}</TableCell>
                                     <TableCell className="text-right">
                                         <Button variant="ghost" size="sm" asChild>
                                             <Link href={`/deals/${deal.id}`}>View</Link>
@@ -126,9 +146,6 @@ export function DealTable({ deals }: DealTableProps) {
                     </TableBody>
                 </Table>
             </div>
-            <div className="text-xs text-muted-foreground">
-                Showing {filteredDeals.length} of {deals.length} deals
-            </div>
         </div>
-    );
+    )
 }

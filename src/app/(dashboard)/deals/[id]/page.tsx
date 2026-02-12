@@ -5,10 +5,11 @@ import { DealStageBadge, DealStage } from '@/components/deals/deal-stage-badge';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getDeal, getDealPortfolioLink, getDealRawData } from '@/lib/actions/deals';
+import { getDeal, getDealPortfolioLink, getDealRawData, getDealAnalytics } from '@/lib/actions/deals';
 import { getDealDocuments } from '@/lib/actions/documents';
 import { getDealTimeline } from '@/lib/actions/activities';
 import { getDealNotes } from '@/lib/actions/notes';
+import { getDealTasks, getFundMembers } from '@/lib/actions/tasks';
 import { DeleteDealButton } from '@/components/deals/delete-deal-button';
 import { DealOverview } from '@/components/deals/deal-overview';
 import { DocumentUploadButton } from '@/components/documents/document-upload-button';
@@ -21,6 +22,9 @@ import { NoteList } from '@/components/deals/note-list';
 import { DDTracker } from '@/components/deals/dd-tracker';
 import { AddDDItemButton } from '@/components/deals/add-dd-item-button';
 import { getDealDueDiligence, getDDStats } from '@/lib/actions/due-diligence';
+import { DealAnalyticsTab } from '@/components/deals/deal-analytics';
+import { DealTasks } from '@/components/deals/deal-tasks';
+import { AddTaskButton } from '@/components/deals/add-task-button';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { auth } from '@/lib/auth';
 
@@ -30,9 +34,9 @@ const EDIT_ROLES = ['SUPER_ADMIN', 'FUND_ADMIN', 'INVESTMENT_MANAGER', 'ANALYST'
 export default async function DealDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
     const [deal, session] = await Promise.all([getDeal(id), auth()]);
-    const [documents, timeline, notes, ddItems, ddStats, portfolioLink, rawDeal] = deal
-        ? await Promise.all([getDealDocuments(id), getDealTimeline(id), getDealNotes(id), getDealDueDiligence(id), getDDStats(id), getDealPortfolioLink(id), getDealRawData(id)])
-        : [[], [], [], [], null, null, null];
+    const [documents, timeline, notes, ddItems, ddStats, portfolioLink, rawDeal, analytics, tasks, members] = deal
+        ? await Promise.all([getDealDocuments(id), getDealTimeline(id), getDealNotes(id), getDealDueDiligence(id), getDDStats(id), getDealPortfolioLink(id), getDealRawData(id), getDealAnalytics(id), getDealTasks(id), getFundMembers(id)])
+        : [[], [], [], [], null, null, null, null, [], []];
 
     if (!deal) {
         notFound();
@@ -74,6 +78,15 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
             <Tabs defaultValue="overview" className="space-y-4">
                 <TabsList>
                     <TabsTrigger value="overview">Overview</TabsTrigger>
+                    <TabsTrigger value="analytics">Analytics</TabsTrigger>
+                    <TabsTrigger value="tasks">
+                        Tasks
+                        {tasks.length > 0 && (
+                            <span className="ml-2 text-xs bg-muted px-1.5 py-0.5 rounded">
+                                {tasks.filter(t => t.status !== 'COMPLETED').length}
+                            </span>
+                        )}
+                    </TabsTrigger>
                     <TabsTrigger value="documents">Documents</TabsTrigger>
                     <TabsTrigger value="contacts">Contacts</TabsTrigger>
                     <TabsTrigger value="due-diligence">
@@ -119,6 +132,22 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
                         portfolioLink={portfolioLink}
                         rawDeal={rawDeal}
                     />
+                </TabsContent>
+
+                <TabsContent value="analytics" className="space-y-4">
+                    {analytics ? (
+                        <DealAnalyticsTab analytics={analytics} />
+                    ) : (
+                        <p className="text-sm text-muted-foreground">Analytics data unavailable.</p>
+                    )}
+                </TabsContent>
+
+                <TabsContent value="tasks">
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-medium">Tasks</h3>
+                        {canEdit && <AddTaskButton dealId={deal.id} members={members} />}
+                    </div>
+                    <DealTasks tasks={tasks} canManage={canEdit} />
                 </TabsContent>
 
                 <TabsContent value="documents" className="space-y-4">
