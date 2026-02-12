@@ -9,6 +9,7 @@ import { logAudit } from '@/lib/shared/audit'
 import { softDelete, notDeleted } from '@/lib/shared/soft-delete'
 import { requireFundAccess } from '@/lib/shared/fund-access'
 import { notifyFundMembers } from '@/lib/actions/notifications'
+import { PaginationParams, PaginatedResult, parsePaginationParams, paginatedResult } from '@/lib/shared/pagination'
 
 // Display mappings
 const CALL_STATUS_DISPLAY: Record<string, string> = {
@@ -106,29 +107,46 @@ function parseMoney(value: string): number {
     return parseFloat(value.replace(/[$,]/g, '')) || 0
 }
 
-// Get all capital calls
-export async function getCapitalCalls(): Promise<CapitalCallListItem[]> {
+// Get capital calls with pagination and search
+export async function getCapitalCalls(params?: PaginationParams): Promise<PaginatedResult<CapitalCallListItem>> {
     const session = await auth()
     if (!session?.user?.id) {
-        return []
+        return paginatedResult([], 0, 1, 25)
     }
 
-    const calls = await prisma.capitalCall.findMany({
-        where: { ...notDeleted },
-        orderBy: { callDate: 'desc' },
-        include: {
-            fund: {
-                select: { name: true },
-            },
-            items: {
-                select: {
-                    paidAmount: true,
+    const { page, pageSize, skip, search } = parsePaginationParams(params)
+
+    const where = {
+        ...notDeleted,
+        ...(search ? {
+            OR: [
+                { fund: { name: { contains: search, mode: 'insensitive' as const } } },
+                { purpose: { contains: search, mode: 'insensitive' as const } },
+            ],
+        } : {}),
+    }
+
+    const [calls, total] = await Promise.all([
+        prisma.capitalCall.findMany({
+            where,
+            orderBy: { callDate: 'desc' },
+            skip,
+            take: pageSize,
+            include: {
+                fund: {
+                    select: { name: true },
+                },
+                items: {
+                    select: {
+                        paidAmount: true,
+                    },
                 },
             },
-        },
-    })
+        }),
+        prisma.capitalCall.count({ where }),
+    ])
 
-    return calls.map((call) => {
+    const data = calls.map((call) => {
         const totalPaid = call.items.reduce(
             (sum, item) => sum + Number(item.paidAmount),
             0
@@ -145,6 +163,8 @@ export async function getCapitalCalls(): Promise<CapitalCallListItem[]> {
             itemCount: call.items.length,
         }
     })
+
+    return paginatedResult(data, total, page, pageSize)
 }
 
 // Get single capital call

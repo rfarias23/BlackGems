@@ -581,6 +581,8 @@ model AuditLog {
   createdAt   DateTime @default(now())
 
   @@index([entityType, entityId])
+  @@index([userId])
+  @@index([createdAt])
 }
 
 enum AuditAction {

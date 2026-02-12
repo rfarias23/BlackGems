@@ -16,6 +16,7 @@ import {
 import { softDelete, notDeleted } from '@/lib/shared/soft-delete'
 import { logAudit } from '@/lib/shared/audit'
 import { requireFundAccess } from '@/lib/shared/fund-access'
+import { PaginationParams, PaginatedResult, parsePaginationParams, paginatedResult } from '@/lib/shared/pagination'
 
 // Display mappings
 const STATUS_DISPLAY: Record<string, string> = {
@@ -152,31 +153,48 @@ function calculateHoldingPeriod(acquisitionDate: Date, exitDate?: Date | null): 
     return Math.max(1, months)
 }
 
-// Get all portfolio companies
-export async function getPortfolioCompanies(): Promise<PortfolioCompanyListItem[]> {
+// Get portfolio companies with pagination and search
+export async function getPortfolioCompanies(params?: PaginationParams): Promise<PaginatedResult<PortfolioCompanyListItem>> {
     const session = await auth()
     if (!session?.user?.id) {
-        return []
+        return paginatedResult([], 0, 1, 25)
     }
 
-    const companies = await prisma.portfolioCompany.findMany({
-        where: { ...notDeleted },
-        orderBy: { acquisitionDate: 'desc' },
-        include: {
-            fund: {
-                select: { name: true },
-            },
-            metrics: {
-                orderBy: { periodDate: 'desc' },
-                take: 1,
-                select: {
-                    currentValuation: true,
+    const { page, pageSize, skip, search } = parsePaginationParams(params)
+
+    const where = {
+        ...notDeleted,
+        ...(search ? {
+            OR: [
+                { name: { contains: search, mode: 'insensitive' as const } },
+                { industry: { contains: search, mode: 'insensitive' as const } },
+            ],
+        } : {}),
+    }
+
+    const [companies, total] = await Promise.all([
+        prisma.portfolioCompany.findMany({
+            where,
+            orderBy: { acquisitionDate: 'desc' },
+            skip,
+            take: pageSize,
+            include: {
+                fund: {
+                    select: { name: true },
+                },
+                metrics: {
+                    orderBy: { periodDate: 'desc' },
+                    take: 1,
+                    select: {
+                        currentValuation: true,
+                    },
                 },
             },
-        },
-    })
+        }),
+        prisma.portfolioCompany.count({ where }),
+    ])
 
-    return companies.map((company) => ({
+    const data = companies.map((company) => ({
         id: company.id,
         name: company.name,
         industry: company.industry,
@@ -194,6 +212,8 @@ export async function getPortfolioCompanies(): Promise<PortfolioCompanyListItem[
         irr: company.irr ? formatPercent(company.irr) : null,
         status: STATUS_DISPLAY[company.status] || company.status,
     }))
+
+    return paginatedResult(data, total, page, pageSize)
 }
 
 // Get single portfolio company

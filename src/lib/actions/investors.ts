@@ -9,6 +9,7 @@ import { InvestorType, InvestorStatus } from '@prisma/client'
 import { formatMoney as sharedFormatMoney } from '@/lib/shared/formatters'
 import { softDelete, notDeleted } from '@/lib/shared/soft-delete'
 import { logAudit } from '@/lib/shared/audit'
+import { PaginationParams, PaginatedResult, parsePaginationParams, paginatedResult } from '@/lib/shared/pagination'
 
 // Display mappings
 const INVESTOR_TYPE_DISPLAY: Record<string, string> = {
@@ -135,26 +136,44 @@ export interface InvestorDetail {
 
 const formatMoney = sharedFormatMoney
 
-// Get all investors
-export async function getInvestors(): Promise<InvestorListItem[]> {
+// Get investors with pagination and search
+export async function getInvestors(params?: PaginationParams): Promise<PaginatedResult<InvestorListItem>> {
     const session = await auth()
     if (!session?.user?.id) {
-        return []
+        return paginatedResult([], 0, 1, 25)
     }
 
-    const investors = await prisma.investor.findMany({
-        where: { ...notDeleted },
-        orderBy: { createdAt: 'desc' },
-        include: {
-            commitments: {
-                select: {
-                    committedAmount: true,
+    const { page, pageSize, skip, search } = parsePaginationParams(params)
+
+    const where = {
+        ...notDeleted,
+        ...(search ? {
+            OR: [
+                { name: { contains: search, mode: 'insensitive' as const } },
+                { contactName: { contains: search, mode: 'insensitive' as const } },
+                { email: { contains: search, mode: 'insensitive' as const } },
+            ],
+        } : {}),
+    }
+
+    const [investors, total] = await Promise.all([
+        prisma.investor.findMany({
+            where,
+            orderBy: { createdAt: 'desc' },
+            skip,
+            take: pageSize,
+            include: {
+                commitments: {
+                    select: {
+                        committedAmount: true,
+                    },
                 },
             },
-        },
-    })
+        }),
+        prisma.investor.count({ where }),
+    ])
 
-    return investors.map((investor) => {
+    const data = investors.map((investor) => {
         const totalCommitted = investor.commitments.reduce(
             (sum, c) => sum + Number(c.committedAmount),
             0
@@ -170,6 +189,8 @@ export async function getInvestors(): Promise<InvestorListItem[]> {
             createdAt: investor.createdAt,
         }
     })
+
+    return paginatedResult(data, total, page, pageSize)
 }
 
 // Get single investor

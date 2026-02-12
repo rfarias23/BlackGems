@@ -10,6 +10,7 @@ import { logAudit } from '@/lib/shared/audit'
 import { softDelete, notDeleted } from '@/lib/shared/soft-delete'
 import { requireFundAccess } from '@/lib/shared/fund-access'
 import { notifyFundMembers } from '@/lib/actions/notifications'
+import { PaginationParams, PaginatedResult, parsePaginationParams, paginatedResult } from '@/lib/shared/pagination'
 
 // Display mappings
 const DIST_STATUS_DISPLAY: Record<string, string> = {
@@ -122,30 +123,47 @@ function parseMoney(value: string): number {
     return parseFloat(value.replace(/[$,]/g, '')) || 0
 }
 
-// Get all distributions
-export async function getDistributions(): Promise<DistributionListItem[]> {
+// Get distributions with pagination and search
+export async function getDistributions(params?: PaginationParams): Promise<PaginatedResult<DistributionListItem>> {
     const session = await auth()
     if (!session?.user?.id) {
-        return []
+        return paginatedResult([], 0, 1, 25)
     }
 
-    const distributions = await prisma.distribution.findMany({
-        where: { ...notDeleted },
-        orderBy: { distributionDate: 'desc' },
-        include: {
-            fund: {
-                select: { name: true },
-            },
-            items: {
-                select: {
-                    netAmount: true,
-                    status: true,
+    const { page, pageSize, skip, search } = parsePaginationParams(params)
+
+    const where = {
+        ...notDeleted,
+        ...(search ? {
+            OR: [
+                { fund: { name: { contains: search, mode: 'insensitive' as const } } },
+                { notes: { contains: search, mode: 'insensitive' as const } },
+            ],
+        } : {}),
+    }
+
+    const [distributions, total] = await Promise.all([
+        prisma.distribution.findMany({
+            where,
+            orderBy: { distributionDate: 'desc' },
+            skip,
+            take: pageSize,
+            include: {
+                fund: {
+                    select: { name: true },
+                },
+                items: {
+                    select: {
+                        netAmount: true,
+                        status: true,
+                    },
                 },
             },
-        },
-    })
+        }),
+        prisma.distribution.count({ where }),
+    ])
 
-    return distributions.map((dist) => {
+    const data = distributions.map((dist) => {
         const totalPaid = dist.items
             .filter((item) => item.status === 'PAID')
             .reduce((sum, item) => sum + Number(item.netAmount), 0)
@@ -161,6 +179,8 @@ export async function getDistributions(): Promise<DistributionListItem[]> {
             itemCount: dist.items.length,
         }
     })
+
+    return paginatedResult(data, total, page, pageSize)
 }
 
 // Get single distribution
