@@ -6,11 +6,12 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { DealStage, DealStatus } from '@prisma/client'
-import { formatCurrency, formatPercentage } from '@/lib/shared/formatters'
+import { formatCurrency, formatPercentage, parseMoney, parsePercent } from '@/lib/shared/formatters'
 import { softDelete, notDeleted } from '@/lib/shared/soft-delete'
 import { logAudit } from '@/lib/shared/audit'
 import { requireFundAccess } from '@/lib/shared/fund-access'
 import { canTransitionDealStage } from '@/lib/shared/stage-transitions'
+import { notifyFundMembers } from '@/lib/actions/notifications'
 
 // Stage mapping between DB enum and UI display values
 const STAGE_TO_DISPLAY: Record<DealStage, string> = {
@@ -565,7 +566,7 @@ export async function updateDealStage(id: string, stage: string) {
     // Load current deal to validate transition
     const deal = await prisma.deal.findFirst({
         where: { id, ...notDeleted },
-        select: { stage: true, fundId: true },
+        select: { stage: true, fundId: true, companyName: true },
     })
     if (!deal) {
         return { error: 'Deal not found' }
@@ -598,12 +599,184 @@ export async function updateDealStage(id: string, stage: string) {
             changes: { stage: { old: deal.stage, new: dbStage } },
         })
 
+        // Notify fund members of stage change
+        await notifyFundMembers({
+            fundId: deal.fundId,
+            type: 'DEAL_STAGE_CHANGE',
+            title: `Deal moved to ${stage}`,
+            message: `${deal.companyName} has been moved to ${stage}`,
+            link: `/deals/${id}`,
+            excludeUserId: session.user.id!,
+        })
+
         revalidatePath('/deals')
         revalidatePath(`/deals/${id}`)
-        return { success: true }
+        return { success: true, newStage: STAGE_TO_DISPLAY[dbStage] || stage }
     } catch (error) {
         console.error('Error updating deal stage:', error)
         return { error: 'Failed to update stage' }
+    }
+}
+
+// ============================================================================
+// DEAL-TO-PORTFOLIO CONVERSION
+// ============================================================================
+
+/** Check if a deal already has a linked portfolio company */
+export async function getDealPortfolioLink(dealId: string): Promise<{ portfolioId: string } | null> {
+    const link = await prisma.portfolioCompany.findUnique({
+        where: { dealId },
+        select: { id: true },
+    })
+    return link ? { portfolioId: link.id } : null
+}
+
+/** Get raw deal data for conversion (unformatted numbers) */
+export async function getDealRawData(dealId: string) {
+    const session = await auth()
+    if (!session?.user) return null
+
+    const deal = await prisma.deal.findFirst({
+        where: { id: dealId, ...notDeleted },
+    })
+    if (!deal) return null
+
+    try {
+        await requireFundAccess(session.user.id!, deal.fundId)
+    } catch {
+        return null
+    }
+
+    return {
+        id: deal.id,
+        fundId: deal.fundId,
+        companyName: deal.companyName,
+        description: deal.description,
+        industry: deal.industry,
+        subIndustry: deal.subIndustry,
+        website: deal.website,
+        city: deal.city,
+        state: deal.state,
+        country: deal.country,
+        askingPrice: deal.askingPrice ? Number(deal.askingPrice) : null,
+        revenue: deal.revenue ? Number(deal.revenue) : null,
+        ebitda: deal.ebitda ? Number(deal.ebitda) : null,
+        investmentThesis: deal.investmentThesis,
+        actualCloseDate: deal.actualCloseDate,
+        stage: deal.stage,
+    }
+}
+
+const convertDealSchema = z.object({
+    equityInvested: z.string().min(1, 'Equity invested is required'),
+    ownershipPct: z.string().min(1, 'Ownership percentage is required'),
+    debtFinancing: z.string().optional(),
+    entryValuation: z.string().min(1, 'Entry valuation is required'),
+    acquisitionDate: z.string().min(1, 'Acquisition date is required'),
+})
+
+/** Convert a CLOSED_WON deal to a portfolio company */
+export async function convertDealToPortfolio(dealId: string, formData: FormData) {
+    const session = await auth()
+    if (!session?.user) {
+        return { error: 'Unauthorized' }
+    }
+
+    // Load the deal with full data
+    const deal = await prisma.deal.findFirst({
+        where: { id: dealId, ...notDeleted },
+    })
+    if (!deal) {
+        return { error: 'Deal not found' }
+    }
+
+    // Verify stage is CLOSED_WON
+    if (deal.stage !== DealStage.CLOSED_WON && deal.stage !== DealStage.CLOSED) {
+        return { error: 'Only Closed Won deals can be converted to portfolio companies' }
+    }
+
+    // Verify no existing portfolio company
+    const existing = await prisma.portfolioCompany.findUnique({
+        where: { dealId },
+    })
+    if (existing) {
+        return { error: 'This deal already has a linked portfolio company' }
+    }
+
+    try {
+        await requireFundAccess(session.user.id!, deal.fundId)
+    } catch {
+        return { error: 'Access denied' }
+    }
+
+    const rawData = {
+        equityInvested: formData.get('equityInvested') as string,
+        ownershipPct: formData.get('ownershipPct') as string,
+        debtFinancing: formData.get('debtFinancing') as string || undefined,
+        entryValuation: formData.get('entryValuation') as string,
+        acquisitionDate: formData.get('acquisitionDate') as string,
+    }
+
+    const validated = convertDealSchema.safeParse(rawData)
+    if (!validated.success) {
+        return { error: validated.error.issues[0].message }
+    }
+
+    const data = validated.data
+
+    try {
+        const equityInvested = parseMoney(data.equityInvested)
+        const debtFinancing = data.debtFinancing ? parseMoney(data.debtFinancing) : 0
+        const totalInvestment = equityInvested + debtFinancing
+        const entryValuation = parseMoney(data.entryValuation)
+        const ownershipPct = parsePercent(data.ownershipPct)
+        const entryEbitda = deal.ebitda ? Number(deal.ebitda) : null
+        const entryMultiple = entryEbitda && entryEbitda > 0 ? entryValuation / entryEbitda : null
+
+        const company = await prisma.portfolioCompany.create({
+            data: {
+                fundId: deal.fundId,
+                dealId: deal.id,
+                name: deal.companyName,
+                description: deal.description || null,
+                industry: deal.industry || null,
+                subIndustry: deal.subIndustry || null,
+                website: deal.website || null,
+                city: deal.city || null,
+                state: deal.state || null,
+                country: deal.country || 'USA',
+                acquisitionDate: new Date(data.acquisitionDate),
+                entryValuation,
+                entryRevenue: deal.revenue ? Number(deal.revenue) : null,
+                entryEbitda,
+                entryMultiple,
+                equityInvested,
+                debtFinancing: debtFinancing || null,
+                totalInvestment,
+                ownershipPct,
+                investmentThesis: deal.investmentThesis || null,
+                status: 'HOLDING',
+                unrealizedValue: entryValuation * ownershipPct,
+                totalValue: entryValuation * ownershipPct,
+                moic: 1.0,
+            },
+        })
+
+        await logAudit({
+            userId: session.user.id!,
+            action: 'CREATE',
+            entityType: 'PortfolioCompany',
+            entityId: company.id,
+            changes: { convertedFromDeal: { old: null, new: dealId } },
+        })
+
+        revalidatePath('/deals')
+        revalidatePath(`/deals/${dealId}`)
+        revalidatePath('/portfolio')
+        return { success: true, portfolioId: company.id }
+    } catch (error) {
+        console.error('Error converting deal to portfolio:', error)
+        return { error: 'Failed to convert deal to portfolio company' }
     }
 }
 

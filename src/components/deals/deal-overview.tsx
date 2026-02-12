@@ -25,6 +25,9 @@ import {
     Edit,
 } from 'lucide-react';
 import { updateDeal } from '@/lib/actions/deals';
+import { ConvertDealDialog } from '@/components/deals/convert-deal-dialog';
+import { ArrowRightLeft, ExternalLink } from 'lucide-react';
+import Link from 'next/link';
 
 // Roles that can edit deals
 const EDIT_ROLES = ['SUPER_ADMIN', 'FUND_ADMIN', 'INVESTMENT_MANAGER', 'ANALYST'];
@@ -56,6 +59,17 @@ interface DealOverviewProps {
         expectedCloseDate: Date | null;
     };
     userRole: string;
+    portfolioLink?: { portfolioId: string } | null;
+    rawDeal?: {
+        id: string;
+        fundId: string;
+        companyName: string;
+        industry: string | null;
+        askingPrice: number | null;
+        revenue: number | null;
+        ebitda: number | null;
+        actualCloseDate: Date | null;
+    } | null;
 }
 
 function formatDate(date: Date | null): string {
@@ -125,12 +139,16 @@ function InlineField({
     );
 }
 
-export function DealOverview({ deal, userRole }: DealOverviewProps) {
+export function DealOverview({ deal, userRole, portfolioLink, rawDeal }: DealOverviewProps) {
     const canEdit = EDIT_ROLES.includes(userRole);
     const [isEditing, setIsEditing] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
+    const [showConvert, setShowConvert] = useState(false);
     const [isPending, startTransition] = useTransition();
     const [error, setError] = useState<string | null>(null);
+
+    const isClosedWon = deal.stage === 'Closed Won';
+    const canConvert = isClosedWon && !portfolioLink && canEdit;
 
     // Editable state
     const [editName, setEditName] = useState(deal.name);
@@ -570,6 +588,58 @@ export function DealOverview({ deal, userRole }: DealOverviewProps) {
                     )}
                 </CardContent>
             </Card>
+
+            {/* Portfolio Conversion Banner */}
+            {isClosedWon && (
+                <Card className={portfolioLink ? 'border-emerald-500/30' : 'border-[#3E5CFF]/30'}>
+                    <CardContent className="pt-4 pb-4">
+                        {portfolioLink ? (
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <ArrowRightLeft className="h-4 w-4 text-emerald-500" />
+                                    <span className="text-sm font-medium">Portfolio company created from this deal</span>
+                                </div>
+                                <Button variant="outline" size="sm" asChild>
+                                    <Link href={`/portfolio/${portfolioLink.portfolioId}`}>
+                                        View Portfolio Company
+                                        <ExternalLink className="ml-2 h-3 w-3" />
+                                    </Link>
+                                </Button>
+                            </div>
+                        ) : canConvert && rawDeal ? (
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <ArrowRightLeft className="h-4 w-4 text-[#3E5CFF]" />
+                                    <span className="text-sm font-medium">This deal is closed — ready to convert to a portfolio company</span>
+                                </div>
+                                <Button
+                                    size="sm"
+                                    onClick={() => setShowConvert(true)}
+                                    className="bg-[#3E5CFF] text-white hover:bg-[#3E5CFF]/90"
+                                >
+                                    <ArrowRightLeft className="mr-2 h-3.5 w-3.5" />
+                                    Convert to Portfolio
+                                </Button>
+                            </div>
+                        ) : null}
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Convert Deal Dialog */}
+            {canConvert && rawDeal && (
+                <ConvertDealDialog
+                    dealId={rawDeal.id}
+                    companyName={rawDeal.companyName}
+                    askingPrice={rawDeal.askingPrice}
+                    revenue={rawDeal.revenue}
+                    ebitda={rawDeal.ebitda}
+                    industry={rawDeal.industry}
+                    actualCloseDate={rawDeal.actualCloseDate}
+                    open={showConvert}
+                    onOpenChange={setShowConvert}
+                />
+            )}
 
             {/* Confirmation Dialog */}
             <Dialog open={showConfirm} onOpenChange={setShowConfirm}>

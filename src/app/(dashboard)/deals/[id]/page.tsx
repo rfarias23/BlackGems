@@ -5,7 +5,7 @@ import { DealStageBadge, DealStage } from '@/components/deals/deal-stage-badge';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getDeal } from '@/lib/actions/deals';
+import { getDeal, getDealPortfolioLink, getDealRawData } from '@/lib/actions/deals';
 import { getDealDocuments } from '@/lib/actions/documents';
 import { getDealTimeline } from '@/lib/actions/activities';
 import { getDealNotes } from '@/lib/actions/notes';
@@ -30,9 +30,9 @@ const EDIT_ROLES = ['SUPER_ADMIN', 'FUND_ADMIN', 'INVESTMENT_MANAGER', 'ANALYST'
 export default async function DealDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
     const [deal, session] = await Promise.all([getDeal(id), auth()]);
-    const [documents, timeline, notes, ddItems, ddStats] = deal
-        ? await Promise.all([getDealDocuments(id), getDealTimeline(id), getDealNotes(id), getDealDueDiligence(id), getDDStats(id)])
-        : [[], [], [], [], null];
+    const [documents, timeline, notes, ddItems, ddStats, portfolioLink, rawDeal] = deal
+        ? await Promise.all([getDealDocuments(id), getDealTimeline(id), getDealNotes(id), getDealDueDiligence(id), getDDStats(id), getDealPortfolioLink(id), getDealRawData(id)])
+        : [[], [], [], [], null, null, null];
 
     if (!deal) {
         notFound();
@@ -116,6 +116,8 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
                             expectedCloseDate: deal.expectedCloseDate,
                         }}
                         userRole={userRole}
+                        portfolioLink={portfolioLink}
+                        rawDeal={rawDeal}
                     />
                 </TabsContent>
 

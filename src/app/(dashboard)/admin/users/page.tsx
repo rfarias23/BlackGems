@@ -1,8 +1,9 @@
 import { Button } from '@/components/ui/button';
 import { UserTable } from '@/components/admin/user-table';
+import { InviteLPDialog } from '@/components/admin/invite-lp-dialog';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
-import { getUsers } from '@/lib/actions/users';
+import { getUsers, getInvestorsForLinking } from '@/lib/actions/users';
 import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 
@@ -13,7 +14,10 @@ export default async function AdminUsersPage() {
         redirect('/dashboard');
     }
 
-    const users = await getUsers();
+    const [users, investors] = await Promise.all([
+        getUsers(),
+        getInvestorsForLinking(),
+    ]);
 
     const tableUsers = users.map((user) => ({
         id: user.id,
@@ -33,12 +37,15 @@ export default async function AdminUsersPage() {
                         Manage users, roles, and access permissions.
                     </p>
                 </div>
-                <Button asChild variant="outline" className="text-white border-[#334155] hover:bg-[#334155]">
-                    <Link href="/admin/users/new">
-                        <Plus className="mr-2 h-4 w-4" />
-                        Invite User
-                    </Link>
-                </Button>
+                <div className="flex items-center gap-3">
+                    <InviteLPDialog investors={investors} />
+                    <Button asChild variant="outline" className="text-white border-[#334155] hover:bg-[#334155]">
+                        <Link href="/admin/users/new">
+                            <Plus className="mr-2 h-4 w-4" />
+                            Add User
+                        </Link>
+                    </Button>
+                </div>
             </div>
             <UserTable users={tableUsers} />
         </div>

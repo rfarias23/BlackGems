@@ -592,7 +592,7 @@ export default async function ReportsPage() {
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <LPStatementSelector investors={investors} />
+                            <LPStatementSelector investors={investors} fundName={fundPerformance?.fund.name} />
                         </CardContent>
                     </Card>
                 </TabsContent>
