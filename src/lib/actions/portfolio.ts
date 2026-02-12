@@ -139,6 +139,8 @@ export interface PortfolioCompanyDetail {
     } | null
 }
 
+export type MetricItem = Awaited<ReturnType<typeof getPortfolioMetrics>>[number]
+
 const formatMoney = sharedFormatMoney
 const formatPercent = sharedFormatPercent
 const formatMultiple = sharedFormatMultiple
@@ -548,10 +550,21 @@ export async function recordPortfolioMetrics(formData: FormData) {
                 periodDate: new Date(periodDate),
                 periodType: periodType as MetricPeriodType,
                 revenue: formData.get('revenue') ? parseMoney(formData.get('revenue') as string) : null,
+                revenueGrowth: formData.get('revenueGrowth') ? parsePercent(formData.get('revenueGrowth') as string) : null,
+                grossProfit: formData.get('grossProfit') ? parseMoney(formData.get('grossProfit') as string) : null,
+                grossMargin: formData.get('grossMargin') ? parsePercent(formData.get('grossMargin') as string) : null,
                 ebitda: formData.get('ebitda') ? parseMoney(formData.get('ebitda') as string) : null,
+                ebitdaMargin: formData.get('ebitdaMargin') ? parsePercent(formData.get('ebitdaMargin') as string) : null,
                 netIncome: formData.get('netIncome') ? parseMoney(formData.get('netIncome') as string) : null,
+                operatingCashFlow: formData.get('operatingCashFlow') ? parseMoney(formData.get('operatingCashFlow') as string) : null,
+                freeCashFlow: formData.get('freeCashFlow') ? parseMoney(formData.get('freeCashFlow') as string) : null,
+                cashBalance: formData.get('cashBalance') ? parseMoney(formData.get('cashBalance') as string) : null,
+                totalDebt: formData.get('totalDebt') ? parseMoney(formData.get('totalDebt') as string) : null,
+                netDebt: formData.get('netDebt') ? parseMoney(formData.get('netDebt') as string) : null,
                 employeeCount: formData.get('employeeCount') ? parseInt(formData.get('employeeCount') as string) : null,
+                customerCount: formData.get('customerCount') ? parseInt(formData.get('customerCount') as string) : null,
                 currentValuation: formData.get('currentValuation') ? parseMoney(formData.get('currentValuation') as string) : null,
+                evEbitda: formData.get('evEbitda') ? parseFloat(formData.get('evEbitda') as string) : null,
                 highlights: formData.get('highlights') as string || null,
                 concerns: formData.get('concerns') as string || null,
                 notes: formData.get('notes') as string || null,
@@ -598,10 +611,20 @@ export async function getPortfolioMetrics(companyId: string) {
         periodType: m.periodType,
         revenue: m.revenue ? formatMoney(m.revenue) : null,
         revenueGrowth: m.revenueGrowth ? formatPercent(m.revenueGrowth) : null,
+        grossProfit: m.grossProfit ? formatMoney(m.grossProfit) : null,
+        grossMargin: m.grossMargin ? formatPercent(m.grossMargin) : null,
         ebitda: m.ebitda ? formatMoney(m.ebitda) : null,
         ebitdaMargin: m.ebitdaMargin ? formatPercent(m.ebitdaMargin) : null,
+        netIncome: m.netIncome ? formatMoney(m.netIncome) : null,
+        operatingCashFlow: m.operatingCashFlow ? formatMoney(m.operatingCashFlow) : null,
+        freeCashFlow: m.freeCashFlow ? formatMoney(m.freeCashFlow) : null,
+        cashBalance: m.cashBalance ? formatMoney(m.cashBalance) : null,
+        totalDebt: m.totalDebt ? formatMoney(m.totalDebt) : null,
+        netDebt: m.netDebt ? formatMoney(m.netDebt) : null,
         employeeCount: m.employeeCount,
+        customerCount: m.customerCount,
         currentValuation: m.currentValuation ? formatMoney(m.currentValuation) : null,
+        evEbitda: m.evEbitda ? formatMultiple(m.evEbitda) : null,
         highlights: m.highlights,
         concerns: m.concerns,
         notes: m.notes,
