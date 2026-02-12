@@ -9,6 +9,51 @@
 
 ---
 
+## 0. The BlackGem Ethos — Invisible Quality. Visible Excellence.
+
+> We are the Loro Piana of Product & Engineering. Our quality is structural, invisible, and uncompromising. What users see is excellence that feels inevitable.
+
+### Decision Framework — The Three Gates
+
+Before writing any code, every initiative must answer three questions:
+
+1. **Why does it exist?** — Articulate the reason in one sentence.
+2. **What value does it create for users?** — Features are capital allocation decisions. Every one must make fund managers or LPs measurably more effective.
+3. **Does it fortify the institution?** — Code must strengthen the foundation, never weaken it.
+
+### Engineering as Institutional Craftsmanship
+
+- Clarity over cleverness
+- Scalability over shortcuts
+- Testability is non-negotiable
+- Security is foundational, never retrofitted
+
+### Product as Strategic Value Creation
+
+Every feature demands a user-value rationale. We do not build because we can; we build because the institution and its users require it. Every workflow must minimize friction in decision-making.
+
+### UX Feels Inevitable
+
+Frictionless. Minimal. Consistent. Precise. Performant. The user should never notice the interface — only the data and decisions it enables.
+
+### The Invisible First Principle
+
+Build in this order:
+1. Architecture before UI
+2. Data integrity before dashboards
+3. Security before convenience
+4. API correctness before visual polish
+
+### Discipline with Speed
+
+- Importance over urgency
+- Design before building
+- No "temporary" solutions — if it ships, it is institutional infrastructure
+
+> **Mantra:** "We think like investors. We design like architects. We build like craftsmen. We ship like an institution."
+
+---
+
 ## 1. Project Context
 
 You are building **BlackGem** - a fund management platform for Search Funds and Micro-PE. The platform must project **Institutional Excellence** from day one, making a $5M fund look as professional as a $500M fund.
@@ -1388,3 +1433,15 @@ Before implementing any feature:
 4. What validation is needed? (Check validation schemas)
 5. What happens on error? (Always handle gracefully)
 6. What's the mobile experience? (Always test responsive)
+
+### Ethos-Level Questions (ask before the technical questions above)
+
+7. **Does this feature justify its existence?** If I were allocating fund capital, would I invest in building this?
+8. **Am I building the invisible foundation first?** Data model and security before UI. Architecture before polish.
+9. **Would an institutional engineer be proud of this code?** Clarity, precision, structural quality.
+10. **Does this UX feel inevitable?** Could any reasonable person look at this and think "of course, that is how it should work"?
+11. **Am I choosing importance over urgency?** Am I building what matters most, or what feels most pressing?
+12. **Does this fortify or weaken the institution?** Technical debt is institutional risk. Shortcuts compound like bad interest.
+13. **Is this tested?** Untested business logic is unshipped business logic.
+14. **Is this audited?** Every mutation must leave a trail. No silent changes.
+15. **Have I checked the Pre-Ship Checklist in CLAUDE.md?** Every item must be satisfied before commit.
