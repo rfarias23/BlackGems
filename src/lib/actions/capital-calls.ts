@@ -438,11 +438,27 @@ export async function recordCallItemPayment(
         })
 
         if (commitment) {
+            const oldCalledAmount = Number(commitment.calledAmount)
+            const oldPaidAmount = Number(commitment.paidAmount)
+            const newCalledAmount = oldCalledAmount + (newStatus === 'PAID' ? Number(item.callAmount) : 0)
+            const newCommitPaidAmount = oldPaidAmount + amount
+
             await prisma.commitment.update({
                 where: { id: commitment.id },
                 data: {
-                    calledAmount: Number(commitment.calledAmount) + (newStatus === 'PAID' ? Number(item.callAmount) : 0),
-                    paidAmount: Number(commitment.paidAmount) + amount,
+                    calledAmount: newCalledAmount,
+                    paidAmount: newCommitPaidAmount,
+                },
+            })
+
+            await logAudit({
+                userId: session.user.id!,
+                action: 'UPDATE',
+                entityType: 'Commitment',
+                entityId: commitment.id,
+                changes: {
+                    calledAmount: { old: oldCalledAmount, new: newCalledAmount },
+                    paidAmount: { old: oldPaidAmount, new: newCommitPaidAmount },
                 },
             })
         }
@@ -454,6 +470,7 @@ export async function recordCallItemPayment(
 
         const allPaid = allItems.every((i) => i.status === 'PAID')
         const somePaid = allItems.some((i) => i.status === 'PAID' || i.status === 'PARTIAL')
+        const oldCallStatus = item.capitalCall.status
 
         if (allPaid) {
             await prisma.capitalCall.update({
@@ -463,11 +480,29 @@ export async function recordCallItemPayment(
                     completedDate: new Date(),
                 },
             })
+            if (oldCallStatus !== 'FULLY_FUNDED') {
+                await logAudit({
+                    userId: session.user.id!,
+                    action: 'UPDATE',
+                    entityType: 'CapitalCall',
+                    entityId: item.capitalCallId,
+                    changes: { status: { old: oldCallStatus, new: 'FULLY_FUNDED' } },
+                })
+            }
         } else if (somePaid) {
             await prisma.capitalCall.update({
                 where: { id: item.capitalCallId },
                 data: { status: 'PARTIALLY_FUNDED' },
             })
+            if (oldCallStatus !== 'PARTIALLY_FUNDED') {
+                await logAudit({
+                    userId: session.user.id!,
+                    action: 'UPDATE',
+                    entityType: 'CapitalCall',
+                    entityId: item.capitalCallId,
+                    changes: { status: { old: oldCallStatus, new: 'PARTIALLY_FUNDED' } },
+                })
+            }
         }
 
         revalidatePath('/capital')

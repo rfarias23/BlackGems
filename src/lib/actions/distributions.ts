@@ -441,10 +441,23 @@ export async function processDistributionItem(itemId: string) {
         })
 
         if (commitment) {
+            const oldDistributedAmount = Number(commitment.distributedAmount)
+            const newDistributedAmount = oldDistributedAmount + Number(item.netAmount)
+
             await prisma.commitment.update({
                 where: { id: commitment.id },
                 data: {
-                    distributedAmount: Number(commitment.distributedAmount) + Number(item.netAmount),
+                    distributedAmount: newDistributedAmount,
+                },
+            })
+
+            await logAudit({
+                userId: session.user.id!,
+                action: 'UPDATE',
+                entityType: 'Commitment',
+                entityId: commitment.id,
+                changes: {
+                    distributedAmount: { old: oldDistributedAmount, new: newDistributedAmount },
                 },
             })
         }
@@ -455,6 +468,7 @@ export async function processDistributionItem(itemId: string) {
         })
 
         const allPaid = allItems.every((i) => i.status === 'PAID')
+        const oldDistStatus = item.distribution.status
 
         if (allPaid) {
             await prisma.distribution.update({
@@ -464,12 +478,30 @@ export async function processDistributionItem(itemId: string) {
                     paidDate: new Date(),
                 },
             })
+            if (oldDistStatus !== 'COMPLETED') {
+                await logAudit({
+                    userId: session.user.id!,
+                    action: 'UPDATE',
+                    entityType: 'Distribution',
+                    entityId: item.distributionId,
+                    changes: { status: { old: oldDistStatus, new: 'COMPLETED' } },
+                })
+            }
         } else {
             // Mark as processing if any payment has been made
             await prisma.distribution.update({
                 where: { id: item.distributionId },
                 data: { status: 'PROCESSING' },
             })
+            if (oldDistStatus !== 'PROCESSING') {
+                await logAudit({
+                    userId: session.user.id!,
+                    action: 'UPDATE',
+                    entityType: 'Distribution',
+                    entityId: item.distributionId,
+                    changes: { status: { old: oldDistStatus, new: 'PROCESSING' } },
+                })
+            }
         }
 
         revalidatePath('/capital')

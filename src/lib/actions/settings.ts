@@ -6,7 +6,8 @@ import { revalidatePath } from 'next/cache'
 import bcrypt from 'bcryptjs'
 import { z } from 'zod'
 import { FundStatus } from '@prisma/client'
-import { logAudit } from '@/lib/shared/audit'
+import { logAudit, computeChanges } from '@/lib/shared/audit'
+import { requireFundAccess } from '@/lib/shared/fund-access'
 
 // ============================================================================
 // USER PROFILE
@@ -284,9 +285,15 @@ export async function updateFundConfig(formData: FormData) {
     }
 
     try {
-        const currentUser = await prisma.user.findUnique({
-            where: { email: session.user?.email || '' },
-            select: { id: true },
+        await requireFundAccess(session.user.id!, fundId)
+    } catch {
+        return { error: 'Access denied' }
+    }
+
+    try {
+        const currentFund = await prisma.fund.findUnique({
+            where: { id: fundId },
+            select: { name: true, targetSize: true, managementFee: true, carriedInterest: true, hurdleRate: true },
         })
 
         await prisma.fund.update({
@@ -304,14 +311,30 @@ export async function updateFundConfig(formData: FormData) {
             },
         })
 
-        if (currentUser) {
-            await logAudit({
-                userId: currentUser.id,
-                action: 'UPDATE',
-                entityType: 'Fund',
-                entityId: fundId,
-            })
-        }
+        const changes = computeChanges(
+            {
+                name: currentFund?.name,
+                targetSize: Number(currentFund?.targetSize),
+                managementFee: Number(currentFund?.managementFee),
+                carriedInterest: Number(currentFund?.carriedInterest),
+                hurdleRate: currentFund?.hurdleRate ? Number(currentFund.hurdleRate) : null,
+            },
+            {
+                name: rawData.name,
+                targetSize: parseMoney(rawData.targetSize),
+                managementFee: parsePercent(rawData.managementFee),
+                carriedInterest: parsePercent(rawData.carriedInterest),
+                hurdleRate: rawData.hurdleRate ? parsePercent(rawData.hurdleRate) : null,
+            }
+        )
+
+        await logAudit({
+            userId: session.user.id!,
+            action: 'UPDATE',
+            entityType: 'Fund',
+            entityId: fundId,
+            changes,
+        })
 
         revalidatePath('/settings')
         return { success: true }
@@ -343,13 +366,15 @@ export async function updateFundStatus(fundId: string, status: string) {
         return { error: 'Unauthorized' }
     }
 
+    try {
+        await requireFundAccess(session.user.id!, fundId)
+    } catch {
+        return { error: 'Access denied' }
+    }
+
     const dbStatus = DISPLAY_TO_STATUS[status] || status
 
     try {
-        const currentUser = await prisma.user.findUnique({
-            where: { email: session.user?.email || '' },
-            select: { id: true },
-        })
         const existingFund = await prisma.fund.findUnique({
             where: { id: fundId },
             select: { status: true },
@@ -360,15 +385,13 @@ export async function updateFundStatus(fundId: string, status: string) {
             data: { status: dbStatus as FundStatus },
         })
 
-        if (currentUser) {
-            await logAudit({
-                userId: currentUser.id,
-                action: 'UPDATE',
-                entityType: 'Fund',
-                entityId: fundId,
-                changes: { status: { old: existingFund?.status, new: dbStatus } },
-            })
-        }
+        await logAudit({
+            userId: session.user.id!,
+            action: 'UPDATE',
+            entityType: 'Fund',
+            entityId: fundId,
+            changes: { status: { old: existingFund?.status, new: dbStatus } },
+        })
 
         revalidatePath('/settings')
         return { success: true }

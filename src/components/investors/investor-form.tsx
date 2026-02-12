@@ -212,7 +212,7 @@ export function InvestorForm() {
                 <Button type="button" variant="outline" asChild>
                     <Link href="/investors">Cancel</Link>
                 </Button>
-                <Button type="submit" disabled={isPending}>
+                <Button type="submit" disabled={isPending} variant="outline" className="text-white border-[#334155] hover:bg-[#334155]">
                     {isPending ? 'Creating...' : 'Create Investor'}
                 </Button>
             </div>

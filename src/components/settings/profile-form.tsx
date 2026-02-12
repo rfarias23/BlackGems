@@ -113,7 +113,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
                     )}
 
                     <div className="flex justify-end">
-                        <Button type="submit" disabled={isPending}>
+                        <Button type="submit" disabled={isPending} variant="outline" className="text-white border-[#334155] hover:bg-[#334155]">
                             {isPending ? 'Saving...' : 'Save Changes'}
                         </Button>
                     </div>
