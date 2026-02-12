@@ -13,10 +13,11 @@ import {
 import { ArrowLeft, Calendar, DollarSign, Users, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getCapitalCall } from '@/lib/actions/capital-calls';
+import { getCapitalCall, getCapitalCallPDFData } from '@/lib/actions/capital-calls';
 import { CapitalCallStatusActions } from '@/components/capital/capital-call-status-actions';
 import { RecordPaymentButton } from '@/components/capital/record-payment-button';
 import { DeleteCapitalCallButton } from '@/components/capital/delete-capital-call-button';
+import { DownloadCallNoticeButton } from '@/components/capital/download-call-notice-button';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 
 function formatDate(date: Date | null): string {
@@ -68,7 +69,10 @@ function getItemStatusColor(status: string) {
 
 export default async function CapitalCallDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
-    const call = await getCapitalCall(id);
+    const [call, pdfData] = await Promise.all([
+        getCapitalCall(id),
+        getCapitalCallPDFData(id),
+    ]);
 
     if (!call) {
         notFound();
@@ -109,6 +113,7 @@ export default async function CapitalCallDetailPage({ params }: { params: Promis
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
+                    {pdfData && <DownloadCallNoticeButton data={pdfData} />}
                     <CapitalCallStatusActions callId={call.id} currentStatus={call.status} />
                     {call.status === 'Draft' && (
                         <DeleteCapitalCallButton callId={call.id} callNumber={call.callNumber} />
