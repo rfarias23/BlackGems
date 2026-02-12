@@ -1,19 +1,38 @@
-import { Button } from '@/components/ui/button';
-import { DealTable, DealTableItem } from '@/components/deals/deal-table';
-import { DealStage } from '@/components/deals/deal-stage-badge';
-import { DataPagination } from '@/components/ui/data-pagination';
-import { Plus } from 'lucide-react';
-import Link from 'next/link';
-import { getDeals } from '@/lib/actions/deals';
+import { Button } from '@/components/ui/button'
+import { DealTable, DealTableItem } from '@/components/deals/deal-table'
+import { DealFilters } from '@/components/deals/deal-filters'
+import { DealStage } from '@/components/deals/deal-stage-badge'
+import { DataPagination } from '@/components/ui/data-pagination'
+import { Plus } from 'lucide-react'
+import Link from 'next/link'
+import { getDeals } from '@/lib/actions/deals'
 
 interface DealsPageProps {
-    searchParams: Promise<{ page?: string; search?: string }>;
+    searchParams: Promise<{
+        page?: string
+        search?: string
+        stages?: string
+        status?: string
+        sortBy?: string
+        sortDir?: string
+    }>
 }
 
 export default async function DealsPage({ searchParams }: DealsPageProps) {
-    const params = await searchParams;
-    const page = Number(params.page) || 1;
-    const result = await getDeals({ page, search: params.search });
+    const params = await searchParams
+    const page = Number(params.page) || 1
+    const stages = params.stages?.split(',').filter(Boolean)
+    const sortBy = (params.sortBy || 'createdAt') as 'name' | 'createdAt' | 'askingPrice' | 'stage'
+    const sortDir = (params.sortDir || 'desc') as 'asc' | 'desc'
+
+    const result = await getDeals({
+        page,
+        search: params.search,
+        stages,
+        status: params.status,
+        sortBy,
+        sortDir,
+    })
 
     const tableDeals: DealTableItem[] = result.data.map((deal) => ({
         id: deal.id,
@@ -22,13 +41,13 @@ export default async function DealsPage({ searchParams }: DealsPageProps) {
         sector: deal.industry,
         askPrice: deal.askingPrice || 'TBD',
         date: deal.createdAt.toISOString().split('T')[0],
-    }));
+    }))
 
     return (
         <div className="space-y-8">
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-foreground">Deal Pipeline</h2>
+                    <h2 className="text-3xl font-bold tracking-tight text-foreground font-serif">Deal Pipeline</h2>
                     <p className="text-muted-foreground">
                         Manage your acquisition targets and track deal flow.
                     </p>
@@ -41,7 +60,8 @@ export default async function DealsPage({ searchParams }: DealsPageProps) {
                 </Button>
             </div>
 
-            <DealTable deals={tableDeals} />
+            <DealFilters />
+            <DealTable deals={tableDeals} sortBy={sortBy} sortDir={sortDir} />
             <DataPagination
                 page={result.page}
                 totalPages={result.totalPages}
@@ -49,5 +69,5 @@ export default async function DealsPage({ searchParams }: DealsPageProps) {
                 pageSize={result.pageSize}
             />
         </div>
-    );
+    )
 }

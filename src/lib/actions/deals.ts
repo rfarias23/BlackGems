@@ -126,8 +126,24 @@ export interface DealDetail {
     }[]
 }
 
-// Get deals for a fund with pagination and search
-export async function getDeals(params?: PaginationParams): Promise<PaginatedResult<DealListItem>> {
+// Reverse mapping: UI display stage -> all DB enum values that map to it
+const DISPLAY_TO_ALL_STAGES: Record<string, DealStage[]> = {}
+for (const [dbStage, displayName] of Object.entries(STAGE_TO_DISPLAY)) {
+    if (!DISPLAY_TO_ALL_STAGES[displayName]) {
+        DISPLAY_TO_ALL_STAGES[displayName] = []
+    }
+    DISPLAY_TO_ALL_STAGES[displayName].push(dbStage as DealStage)
+}
+
+export interface DealFilterParams extends PaginationParams {
+    stages?: string[]
+    status?: string
+    sortBy?: 'name' | 'createdAt' | 'askingPrice' | 'stage'
+    sortDir?: 'asc' | 'desc'
+}
+
+// Get deals for a fund with pagination, search, filters, and sort
+export async function getDeals(params?: DealFilterParams): Promise<PaginatedResult<DealListItem>> {
     const session = await auth()
     if (!session?.user?.id) {
         return paginatedResult([], 0, 1, 25)
@@ -141,6 +157,23 @@ export async function getDeals(params?: PaginationParams): Promise<PaginatedResu
 
     const { page, pageSize, skip, search } = parsePaginationParams(params)
 
+    // Build stage filter: map UI display names to all corresponding DB enums
+    const stageFilter: DealStage[] = []
+    if (params?.stages && params.stages.length > 0) {
+        for (const displayName of params.stages) {
+            const dbStages = DISPLAY_TO_ALL_STAGES[displayName]
+            if (dbStages) {
+                stageFilter.push(...dbStages)
+            }
+        }
+    }
+
+    // Build status filter
+    const statusValues: DealStatus[] = ['ACTIVE', 'ON_HOLD', 'PASSED', 'LOST', 'WON']
+    const statusFilter = params?.status && statusValues.includes(params.status as DealStatus)
+        ? (params.status as DealStatus)
+        : undefined
+
     const where = {
         fundId: fund.id,
         ...notDeleted,
@@ -151,12 +184,34 @@ export async function getDeals(params?: PaginationParams): Promise<PaginatedResu
                 { industry: { contains: search, mode: 'insensitive' as const } },
             ],
         } : {}),
+        ...(stageFilter.length > 0 ? { stage: { in: stageFilter } } : {}),
+        ...(statusFilter ? { status: statusFilter } : {}),
+    }
+
+    // Build orderBy
+    const sortBy = params?.sortBy || 'createdAt'
+    const sortDir = params?.sortDir || 'desc'
+    let orderBy: Record<string, 'asc' | 'desc'>
+    switch (sortBy) {
+        case 'name':
+            orderBy = { companyName: sortDir }
+            break
+        case 'askingPrice':
+            orderBy = { askingPrice: sortDir }
+            break
+        case 'stage':
+            orderBy = { stage: sortDir }
+            break
+        case 'createdAt':
+        default:
+            orderBy = { createdAt: sortDir }
+            break
     }
 
     const [deals, total] = await Promise.all([
         prisma.deal.findMany({
             where,
-            orderBy: { createdAt: 'desc' },
+            orderBy,
             skip,
             take: pageSize,
             select: {
@@ -914,5 +969,151 @@ export async function deleteDealContact(contactId: string) {
     } catch (error) {
         console.error('Error deleting deal contact:', error)
         return { error: 'Failed to delete contact' }
+    }
+}
+
+// ============================================================================
+// DEAL ANALYTICS
+// ============================================================================
+
+/** Pipeline stages in order for progress calculation */
+const PIPELINE_STAGES: DealStage[] = [
+    DealStage.IDENTIFIED,
+    DealStage.INITIAL_REVIEW,
+    DealStage.PRELIMINARY_ANALYSIS,
+    DealStage.MANAGEMENT_MEETING,
+    DealStage.NDA_SIGNED,
+    DealStage.NDA_CIM,
+    DealStage.IOI_SUBMITTED,
+    DealStage.SITE_VISIT,
+    DealStage.LOI_PREPARATION,
+    DealStage.LOI_NEGOTIATION,
+    DealStage.DUE_DILIGENCE,
+    DealStage.FINAL_NEGOTIATION,
+    DealStage.CLOSING,
+    DealStage.CLOSED_WON,
+]
+
+export interface DealAnalytics {
+    // Financial Metrics
+    askingPrice: string | null
+    revenue: string | null
+    ebitda: string | null
+    grossProfit: string | null
+    netIncome: string | null
+    revenueMultiple: string | null
+    ebitdaMultiple: string | null
+    ebitdaMargin: string | null
+    grossMargin: string | null
+    netMargin: string | null
+
+    // Timeline Metrics (days between milestones)
+    daysInPipeline: number | null
+    daysToNDA: number | null
+    daysToLOI: number | null
+    daysToClose: number | null
+    expectedDaysRemaining: number | null
+
+    // Pipeline Position
+    stage: string
+    stageIndex: number
+    totalStages: number
+}
+
+/** Calculate the number of days between two dates, returning null if either is missing */
+function daysBetween(start: Date | null, end: Date | null): number | null {
+    if (!start || !end) return null
+    const diffMs = end.getTime() - start.getTime()
+    return Math.max(0, Math.round(diffMs / (1000 * 60 * 60 * 24)))
+}
+
+/** Get analytics data for a single deal */
+export async function getDealAnalytics(dealId: string): Promise<DealAnalytics | null> {
+    const session = await auth()
+    if (!session?.user?.id) return null
+
+    const deal = await prisma.deal.findFirst({
+        where: { id: dealId, ...notDeleted },
+        select: {
+            fundId: true,
+            stage: true,
+            askingPrice: true,
+            revenue: true,
+            ebitda: true,
+            grossProfit: true,
+            netIncome: true,
+            revenueMultiple: true,
+            ebitdaMultiple: true,
+            ebitdaMargin: true,
+            grossMargin: true,
+            createdAt: true,
+            firstContactDate: true,
+            ndaSignedDate: true,
+            cimReceivedDate: true,
+            managementMeetingDate: true,
+            loiSubmittedDate: true,
+            loiAcceptedDate: true,
+            expectedCloseDate: true,
+            actualCloseDate: true,
+        },
+    })
+
+    if (!deal) return null
+
+    try {
+        await requireFundAccess(session.user.id, deal.fundId)
+    } catch {
+        return null
+    }
+
+    // Calculate margins from raw values if not already stored
+    const revenueNum = deal.revenue ? Number(deal.revenue) : null
+    const ebitdaNum = deal.ebitda ? Number(deal.ebitda) : null
+    const grossProfitNum = deal.grossProfit ? Number(deal.grossProfit) : null
+    const netIncomeNum = deal.netIncome ? Number(deal.netIncome) : null
+
+    const computedGrossMargin = grossProfitNum && revenueNum && revenueNum > 0
+        ? grossProfitNum / revenueNum
+        : deal.grossMargin ? Number(deal.grossMargin) : null
+
+    const computedNetMargin = netIncomeNum && revenueNum && revenueNum > 0
+        ? netIncomeNum / revenueNum
+        : null
+
+    // Timeline calculations
+    const now = new Date()
+    const endDate = deal.actualCloseDate ?? now
+
+    const daysInPipeline = daysBetween(deal.createdAt, endDate)
+    const daysToNDA = daysBetween(deal.firstContactDate, deal.ndaSignedDate)
+    const daysToLOI = daysBetween(deal.ndaSignedDate, deal.loiSubmittedDate)
+    const daysToClose = daysBetween(deal.loiAcceptedDate, deal.actualCloseDate ?? deal.expectedCloseDate)
+    const expectedDaysRemaining = deal.expectedCloseDate && !deal.actualCloseDate
+        ? daysBetween(now, deal.expectedCloseDate)
+        : null
+
+    // Pipeline position
+    const stageIndex = PIPELINE_STAGES.indexOf(deal.stage)
+    const displayStage = STAGE_TO_DISPLAY[deal.stage] || deal.stage
+
+    return {
+        askingPrice: formatCurrency(deal.askingPrice),
+        revenue: formatCurrency(deal.revenue),
+        ebitda: formatCurrency(deal.ebitda),
+        grossProfit: formatCurrency(deal.grossProfit),
+        netIncome: formatCurrency(deal.netIncome),
+        revenueMultiple: deal.revenueMultiple ? `${Number(deal.revenueMultiple).toFixed(2)}x` : null,
+        ebitdaMultiple: deal.ebitdaMultiple ? `${Number(deal.ebitdaMultiple).toFixed(2)}x` : null,
+        ebitdaMargin: formatPercentage(deal.ebitdaMargin ?? (ebitdaNum && revenueNum && revenueNum > 0 ? ebitdaNum / revenueNum : null)),
+        grossMargin: formatPercentage(computedGrossMargin),
+        netMargin: formatPercentage(computedNetMargin),
+        daysInPipeline,
+        daysToNDA,
+        daysToLOI,
+        daysToClose,
+        expectedDaysRemaining,
+        stage: displayStage,
+        stageIndex: stageIndex >= 0 ? stageIndex : 0,
+        totalStages: PIPELINE_STAGES.length,
     }
 }
