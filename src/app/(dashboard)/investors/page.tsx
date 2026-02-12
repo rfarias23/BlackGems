@@ -2,9 +2,10 @@ import { Button } from '@/components/ui/button';
 import { InvestorTable, InvestorTableItem } from '@/components/investors/investor-table';
 import { InvestorStatus } from '@/components/investors/investor-status-badge';
 import { DataPagination } from '@/components/ui/data-pagination';
+import { ExportInvestorsButton } from '@/components/investors/export-investors-button';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
-import { getInvestors } from '@/lib/actions/investors';
+import { getInvestors, getInvestorsForExport } from '@/lib/actions/investors';
 
 interface InvestorsPageProps {
     searchParams: Promise<{ page?: string; search?: string }>;
@@ -13,7 +14,10 @@ interface InvestorsPageProps {
 export default async function InvestorsPage({ searchParams }: InvestorsPageProps) {
     const params = await searchParams;
     const page = Number(params.page) || 1;
-    const result = await getInvestors({ page, search: params.search });
+    const [result, exportData] = await Promise.all([
+        getInvestors({ page, search: params.search }),
+        getInvestorsForExport(),
+    ]);
 
     const tableInvestors: InvestorTableItem[] = result.data.map((investor) => ({
         id: investor.id,
@@ -35,12 +39,15 @@ export default async function InvestorsPage({ searchParams }: InvestorsPageProps
                         Manage your Limited Partners and track commitments.
                     </p>
                 </div>
-                <Button asChild variant="outline" className="text-white border-[#334155] hover:bg-[#334155]">
-                    <Link href="/investors/new">
-                        <Plus className="mr-2 h-4 w-4" />
-                        New Investor
-                    </Link>
-                </Button>
+                <div className="flex items-center gap-2">
+                    <ExportInvestorsButton data={exportData} />
+                    <Button asChild variant="outline" className="text-white border-[#334155] hover:bg-[#334155]">
+                        <Link href="/investors/new">
+                            <Plus className="mr-2 h-4 w-4" />
+                            New Investor
+                        </Link>
+                    </Button>
+                </div>
             </div>
 
             <InvestorTable investors={tableInvestors} />

@@ -429,6 +429,166 @@ export async function updateInvestor(id: string, formData: FormData) {
     }
 }
 
+// ============================================================================
+// INVESTOR COMMUNICATIONS
+// ============================================================================
+
+const sendCommunicationSchema = z.object({
+    subject: z.string().min(1, 'Subject is required'),
+    message: z.string().min(1, 'Message is required'),
+})
+
+export async function sendInvestorCommunication(investorId: string, data: {
+    subject: string
+    message: string
+}) {
+    const session = await auth()
+    if (!session?.user?.id) {
+        return { error: 'Unauthorized' }
+    }
+
+    const parsed = sendCommunicationSchema.safeParse(data)
+    if (!parsed.success) {
+        return { error: parsed.error.issues[0].message }
+    }
+
+    const investor = await prisma.investor.findFirst({
+        where: { id: investorId, ...notDeleted },
+        select: { id: true, name: true, contactEmail: true, email: true },
+    })
+
+    if (!investor) {
+        return { error: 'Investor not found' }
+    }
+
+    const recipientEmail = investor.contactEmail || investor.email
+    if (!recipientEmail) {
+        return { error: 'Investor has no email address on file' }
+    }
+
+    try {
+        // Send email via Resend
+        const { sendInvestorEmail } = await import('@/lib/email')
+        const emailResult = await sendInvestorEmail({
+            to: recipientEmail,
+            subject: parsed.data.subject,
+            investorName: investor.name,
+            message: parsed.data.message,
+        })
+
+        if (!emailResult.success) {
+            return { error: emailResult.error || 'Failed to send email' }
+        }
+
+        // Log the communication in audit trail
+        await logAudit({
+            userId: session.user.id!,
+            action: 'CREATE',
+            entityType: 'InvestorCommunication',
+            entityId: investorId,
+            changes: {
+                subject: { old: '', new: parsed.data.subject },
+                recipient: { old: '', new: recipientEmail },
+                type: { old: '', new: 'EMAIL' },
+            },
+        })
+
+        revalidatePath(`/investors/${investorId}`)
+        return { success: true }
+    } catch (error) {
+        console.error('Error sending communication:', error)
+        return { error: 'Failed to send communication' }
+    }
+}
+
+export interface CommunicationLogEntry {
+    id: string
+    action: string
+    subject: string | null
+    recipient: string | null
+    type: string | null
+    userName: string | null
+    createdAt: Date
+}
+
+export async function getInvestorCommunications(investorId: string): Promise<CommunicationLogEntry[]> {
+    const session = await auth()
+    if (!session?.user?.id) {
+        return []
+    }
+
+    const logs = await prisma.auditLog.findMany({
+        where: {
+            entityType: 'InvestorCommunication',
+            entityId: investorId,
+        },
+        include: {
+            user: { select: { name: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 50,
+    })
+
+    return logs.map(log => {
+        const changes = log.changes as Record<string, { old: string; new: string }> | null
+        return {
+            id: log.id,
+            action: log.action,
+            subject: changes?.subject?.new || null,
+            recipient: changes?.recipient?.new || null,
+            type: changes?.type?.new || null,
+            userName: log.user?.name || null,
+            createdAt: log.createdAt,
+        }
+    })
+}
+
+// Get all investors with email addresses for CSV export
+export async function getInvestorsForExport(): Promise<{
+    name: string
+    type: string
+    status: string
+    email: string
+    contactName: string
+    contactEmail: string
+    totalCommitted: string
+    totalCalled: string
+    totalPaid: string
+    createdAt: string
+}[]> {
+    const session = await auth()
+    if (!session?.user?.id) {
+        return []
+    }
+
+    const investors = await prisma.investor.findMany({
+        where: { ...notDeleted },
+        include: {
+            commitments: true,
+        },
+        orderBy: { name: 'asc' },
+    })
+
+    return investors.map(inv => {
+        const totalCommitted = inv.commitments.reduce((sum, c) => sum + Number(c.committedAmount), 0)
+        const totalCalled = inv.commitments.reduce((sum, c) => sum + Number(c.calledAmount), 0)
+        const totalPaid = inv.commitments.reduce((sum, c) => sum + Number(c.paidAmount), 0)
+
+        return {
+            name: inv.name,
+            type: INVESTOR_TYPE_DISPLAY[inv.type] || inv.type,
+            status: INVESTOR_STATUS_DISPLAY[inv.status] || inv.status,
+            email: inv.email || '',
+            contactName: inv.contactName || '',
+            contactEmail: inv.contactEmail || '',
+            totalCommitted: sharedFormatMoney(totalCommitted),
+            totalCalled: sharedFormatMoney(totalCalled),
+            totalPaid: sharedFormatMoney(totalPaid),
+            createdAt: inv.createdAt.toISOString().split('T')[0],
+        }
+    })
+}
+
 // Soft-delete investor
 export async function deleteInvestor(id: string) {
     const session = await auth()
