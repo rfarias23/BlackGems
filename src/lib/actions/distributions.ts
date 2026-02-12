@@ -9,6 +9,7 @@ import { DistributionType } from '@prisma/client'
 import { logAudit } from '@/lib/shared/audit'
 import { softDelete, notDeleted } from '@/lib/shared/soft-delete'
 import { requireFundAccess } from '@/lib/shared/fund-access'
+import { VALID_DIST_TRANSITIONS } from '@/lib/shared/workflow-transitions'
 import { notifyFundMembers } from '@/lib/actions/notifications'
 import { PaginationParams, PaginatedResult, parsePaginationParams, paginatedResult } from '@/lib/shared/pagination'
 
@@ -364,15 +365,6 @@ export async function createDistribution(formData: FormData) {
         console.error('Error creating distribution:', error)
         return { error: 'Failed to create distribution' }
     }
-}
-
-// Valid status transitions for distributions
-const VALID_DIST_TRANSITIONS: Record<string, string[]> = {
-    DRAFT: ['APPROVED', 'CANCELLED'],
-    APPROVED: ['PROCESSING', 'CANCELLED'],
-    PROCESSING: ['COMPLETED'],
-    COMPLETED: [],
-    CANCELLED: [],
 }
 
 // Update distribution status
