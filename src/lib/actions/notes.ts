@@ -11,7 +11,7 @@ const MANAGE_ROLES = ['SUPER_ADMIN', 'FUND_ADMIN', 'INVESTMENT_MANAGER', 'ANALYS
 
 export async function getDealNotes(dealId: string) {
   const session = await auth()
-  if (!session?.user) return []
+  if (!session?.user?.id) return []
 
   const deal = await prisma.deal.findFirst({
     where: { id: dealId, ...notDeleted },
@@ -43,7 +43,7 @@ export async function getDealNotes(dealId: string) {
 
 export async function createDealNote(dealId: string, formData: FormData) {
   const session = await auth()
-  if (!session?.user) {
+  if (!session?.user?.id) {
     return { error: 'Unauthorized' }
   }
 
@@ -97,7 +97,7 @@ export async function createDealNote(dealId: string, formData: FormData) {
 
 export async function deleteDealNote(noteId: string, dealId: string) {
   const session = await auth()
-  if (!session?.user) {
+  if (!session?.user?.id) {
     return { error: 'Unauthorized' }
   }
 

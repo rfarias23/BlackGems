@@ -19,7 +19,7 @@ export interface DashboardChartData {
 
 export async function getDashboardChartData(): Promise<DashboardChartData | null> {
   const session = await auth()
-  if (!session?.user) return null
+  if (!session?.user?.id) return null
 
   const fund = await prisma.fund.findFirst()
   if (!fund) return null
@@ -118,7 +118,7 @@ export async function getLPChartData(
   investorId: string
 ): Promise<LPChartData | null> {
   const session = await auth()
-  if (!session?.user) return null
+  if (!session?.user?.id) return null
 
   const commitments = await prisma.commitment.findMany({
     where: { investorId },
@@ -149,7 +149,7 @@ export async function getWaterfallChartData(
   fundId?: string
 ): Promise<WaterfallChartData | null> {
   const session = await auth()
-  if (!session?.user) return null
+  if (!session?.user?.id) return null
 
   const fund = fundId
     ? await prisma.fund.findUnique({ where: { id: fundId } })

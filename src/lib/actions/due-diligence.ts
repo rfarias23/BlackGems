@@ -89,7 +89,7 @@ export interface DDStats {
 /** Fetch all due diligence items for a deal */
 export async function getDealDueDiligence(dealId: string): Promise<DDItemData[]> {
     const session = await auth()
-    if (!session?.user) return []
+    if (!session?.user?.id) return []
 
     const deal = await prisma.deal.findFirst({
         where: { id: dealId, ...notDeleted },
@@ -126,7 +126,7 @@ export async function getDealDueDiligence(dealId: string): Promise<DDItemData[]>
 /** Get aggregated stats for DD progress */
 export async function getDDStats(dealId: string): Promise<DDStats | null> {
     const session = await auth()
-    if (!session?.user) return null
+    if (!session?.user?.id) return null
 
     const deal = await prisma.deal.findFirst({
         where: { id: dealId, ...notDeleted },
@@ -197,7 +197,7 @@ export async function getDDStats(dealId: string): Promise<DDStats | null> {
 /** Create a new due diligence item */
 export async function createDDItem(dealId: string, formData: FormData) {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return { error: 'Unauthorized' }
     }
 
@@ -277,7 +277,7 @@ export async function createDDItem(dealId: string, formData: FormData) {
 /** Update an existing due diligence item */
 export async function updateDDItem(itemId: string, formData: FormData) {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return { error: 'Unauthorized' }
     }
 
@@ -394,7 +394,7 @@ export async function updateDDItem(itemId: string, formData: FormData) {
 /** Delete a due diligence item */
 export async function deleteDDItem(itemId: string) {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return { error: 'Unauthorized' }
     }
 

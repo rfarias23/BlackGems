@@ -125,7 +125,7 @@ function parseMoney(value: string): number {
 // Get all distributions
 export async function getDistributions(): Promise<DistributionListItem[]> {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return []
     }
 
@@ -166,7 +166,7 @@ export async function getDistributions(): Promise<DistributionListItem[]> {
 // Get single distribution
 export async function getDistribution(id: string): Promise<DistributionDetail | null> {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return null
     }
 
@@ -225,7 +225,7 @@ export async function getDistribution(id: string): Promise<DistributionDetail | 
 // Create distribution
 export async function createDistribution(formData: FormData) {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return { error: 'Unauthorized' }
     }
 
@@ -349,7 +349,7 @@ export async function createDistribution(formData: FormData) {
 // Update distribution status
 export async function updateDistributionStatus(id: string, status: string) {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return { error: 'Unauthorized' }
     }
 
@@ -403,7 +403,7 @@ export async function updateDistributionStatus(id: string, status: string) {
 // Process payment for a distribution item
 export async function processDistributionItem(itemId: string) {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return { error: 'Unauthorized' }
     }
 
@@ -528,7 +528,7 @@ export async function processDistributionItem(itemId: string) {
 // Delete distribution
 export async function deleteDistribution(id: string) {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return { error: 'Unauthorized' }
     }
 
@@ -572,7 +572,7 @@ export async function deleteDistribution(id: string) {
 // Get available funds for distributions
 export async function getFundsForDistribution(): Promise<{ id: string; name: string }[]> {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return []
     }
 

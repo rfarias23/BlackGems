@@ -14,7 +14,7 @@ const MANAGE_ROLES = ['SUPER_ADMIN', 'FUND_ADMIN', 'INVESTMENT_MANAGER', 'ANALYS
 /** Log a manual activity (call, meeting, note, etc.) for a deal */
 export async function createDealActivity(dealId: string, formData: FormData) {
   const session = await auth()
-  if (!session?.user) {
+  if (!session?.user?.id) {
     return { error: 'Unauthorized' }
   }
 
@@ -78,7 +78,7 @@ export async function createDealActivity(dealId: string, formData: FormData) {
 /** Get combined timeline: manual activities + system audit events for a deal */
 export async function getDealTimeline(dealId: string): Promise<TimelineEvent[]> {
   const session = await auth()
-  if (!session?.user) return []
+  if (!session?.user?.id) return []
 
   const deal = await prisma.deal.findFirst({
     where: { id: dealId, ...notDeleted },

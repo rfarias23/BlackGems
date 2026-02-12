@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { getPortalReports } from '@/lib/actions/portal';
 import { PortalReportsTabs, TabsContent } from '@/components/portal/portal-reports-tabs';
+import { PortalPDFExport } from '@/components/portal/portal-pdf-export';
 import { FundPerformanceCharts, PortfolioCharts } from '@/components/charts/reports-charts';
 
 function formatDate(date: Date): string {
@@ -65,9 +66,17 @@ export default async function PortalReportsPage() {
                                         {capitalStatement.investor.type.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (c: string) => c.toUpperCase())}
                                     </p>
                                 </div>
-                                <Badge className="bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-100">
-                                    Ownership: {capitalStatement.commitment.ownershipPct}
-                                </Badge>
+                                <div className="flex items-center gap-3">
+                                    {fundPerformance && (
+                                        <PortalPDFExport
+                                            statement={capitalStatement}
+                                            fundName={fundPerformance.fund.name}
+                                        />
+                                    )}
+                                    <Badge className="bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-100">
+                                        Ownership: {capitalStatement.commitment.ownershipPct}
+                                    </Badge>
+                                </div>
                             </div>
 
                             {/* Summary cards */}

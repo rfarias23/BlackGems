@@ -138,7 +138,7 @@ const formatMoney = sharedFormatMoney
 // Get all investors
 export async function getInvestors(): Promise<InvestorListItem[]> {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return []
     }
 
@@ -175,7 +175,7 @@ export async function getInvestors(): Promise<InvestorListItem[]> {
 // Get single investor
 export async function getInvestor(id: string): Promise<InvestorDetail | null> {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return null
     }
 
@@ -239,7 +239,7 @@ export async function getInvestor(id: string): Promise<InvestorDetail | null> {
 // Create investor
 export async function createInvestor(formData: FormData) {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return { error: 'Unauthorized' }
     }
 
@@ -304,7 +304,7 @@ export async function createInvestor(formData: FormData) {
 // Update investor
 export async function updateInvestor(id: string, formData: FormData) {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return { error: 'Unauthorized' }
     }
 
@@ -411,7 +411,7 @@ export async function updateInvestor(id: string, formData: FormData) {
 // Soft-delete investor
 export async function deleteInvestor(id: string) {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return { error: 'Unauthorized' }
     }
 

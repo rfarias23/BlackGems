@@ -8,7 +8,7 @@ import { notDeleted } from '@/lib/shared/soft-delete'
 
 export async function getFundsForCommitment(): Promise<{ id: string; name: string }[]> {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return []
     }
 
