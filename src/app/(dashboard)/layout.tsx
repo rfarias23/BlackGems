@@ -13,7 +13,7 @@ export default async function DashboardLayout({
 
     return (
         <div
-            className="dark min-h-screen bg-[#11141D] text-[#F9FAFB] font-sans antialiased"
+            className="min-h-screen bg-[#11141D] text-[#F9FAFB] font-sans antialiased"
             style={
                 {
                     '--background': '#11141D',
