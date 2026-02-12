@@ -366,6 +366,15 @@ export async function createDistribution(formData: FormData) {
     }
 }
 
+// Valid status transitions for distributions
+const VALID_DIST_TRANSITIONS: Record<string, string[]> = {
+    DRAFT: ['APPROVED', 'CANCELLED'],
+    APPROVED: ['PROCESSING', 'CANCELLED'],
+    PROCESSING: ['COMPLETED'],
+    COMPLETED: [],
+    CANCELLED: [],
+}
+
 // Update distribution status
 export async function updateDistributionStatus(id: string, status: string) {
     const session = await auth()
@@ -385,6 +394,12 @@ export async function updateDistributionStatus(id: string, status: string) {
             await requireFundAccess(session.user.id!, existingDist.fundId)
         } catch {
             return { error: 'Access denied' }
+        }
+
+        // Validate status transition
+        const allowed = VALID_DIST_TRANSITIONS[existingDist.status] || []
+        if (!allowed.includes(dbStatus)) {
+            return { error: `Cannot transition from ${DIST_STATUS_DISPLAY[existingDist.status]} to ${DIST_STATUS_DISPLAY[dbStatus] || dbStatus}` }
         }
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -586,6 +601,152 @@ export async function deleteDistribution(id: string) {
     } catch (error) {
         console.error('Error deleting distribution:', error)
         return { error: 'Failed to delete distribution' }
+    }
+}
+
+// PDF data for distribution notice
+export interface DistributionPDFData {
+    fundName: string
+    distributionNumber: number
+    distributionDate: string
+    totalAmount: string
+    returnOfCapital: string
+    realizedGains: string
+    dividends: string
+    interest: string
+    items: Array<{
+        investorName: string
+        grossAmount: string
+        netAmount: string
+        ownershipPct: string
+        status: string
+    }>
+}
+
+function fmtDate(d: Date): string {
+    return new Date(d).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+    })
+}
+
+export async function getDistributionPDFData(id: string): Promise<DistributionPDFData | null> {
+    const session = await auth()
+    if (!session?.user?.id) return null
+
+    const dist = await prisma.distribution.findFirst({
+        where: { id, ...notDeleted },
+        include: {
+            fund: { select: { name: true } },
+            items: {
+                include: {
+                    investor: {
+                        include: {
+                            commitments: {
+                                where: { status: { in: ['ACTIVE', 'FUNDED'] } },
+                                select: { committedAmount: true, fundId: true },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    })
+
+    if (!dist) return null
+
+    const totalCommitted = dist.items.reduce((sum, item) => {
+        const commitment = item.investor.commitments.find(c => c.fundId === dist.fundId)
+        return sum + (commitment ? Number(commitment.committedAmount) : 0)
+    }, 0)
+
+    return {
+        fundName: dist.fund.name,
+        distributionNumber: dist.distributionNumber,
+        distributionDate: fmtDate(dist.distributionDate),
+        totalAmount: formatMoney(dist.totalAmount),
+        returnOfCapital: dist.returnOfCapital ? formatMoney(dist.returnOfCapital) : '$0',
+        realizedGains: dist.realizedGains ? formatMoney(dist.realizedGains) : '$0',
+        dividends: dist.dividends ? formatMoney(dist.dividends) : '$0',
+        interest: dist.interest ? formatMoney(dist.interest) : '$0',
+        items: dist.items.map((item) => {
+            const commitment = item.investor.commitments.find(c => c.fundId === dist.fundId)
+            const committed = commitment ? Number(commitment.committedAmount) : 0
+            const pct = totalCommitted > 0 ? (committed / totalCommitted * 100).toFixed(1) : '0.0'
+            return {
+                investorName: item.investor.name,
+                grossAmount: formatMoney(item.grossAmount),
+                netAmount: formatMoney(item.netAmount),
+                ownershipPct: `${pct}%`,
+                status: ITEM_STATUS_DISPLAY[item.status] || item.status,
+            }
+        }),
+    }
+}
+
+// Summary stats for distributions dashboard
+export interface DistributionSummary {
+    totalDistributed: number
+    totalPaid: number
+    totalPending: number
+    draftCount: number
+    processingCount: number
+    completedCount: number
+}
+
+export async function getDistributionSummary(): Promise<DistributionSummary> {
+    const session = await auth()
+    if (!session?.user?.id) {
+        return { totalDistributed: 0, totalPaid: 0, totalPending: 0, draftCount: 0, processingCount: 0, completedCount: 0 }
+    }
+
+    const distributions = await prisma.distribution.findMany({
+        where: notDeleted,
+        select: {
+            status: true,
+            totalAmount: true,
+            items: {
+                select: { netAmount: true, status: true },
+            },
+        },
+    })
+
+    let totalDistributed = 0
+    let totalPaid = 0
+    let draftCount = 0
+    let processingCount = 0
+    let completedCount = 0
+
+    for (const dist of distributions) {
+        const amount = Number(dist.totalAmount)
+        const paid = dist.items
+            .filter((item) => item.status === 'PAID')
+            .reduce((sum, item) => sum + Number(item.netAmount), 0)
+        totalDistributed += amount
+        totalPaid += paid
+
+        switch (dist.status) {
+            case 'DRAFT':
+                draftCount++
+                break
+            case 'APPROVED':
+            case 'PROCESSING':
+                processingCount++
+                break
+            case 'COMPLETED':
+                completedCount++
+                break
+        }
+    }
+
+    return {
+        totalDistributed,
+        totalPaid,
+        totalPending: totalDistributed - totalPaid,
+        draftCount,
+        processingCount,
+        completedCount,
     }
 }
 

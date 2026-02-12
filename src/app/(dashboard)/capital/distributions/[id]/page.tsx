@@ -13,10 +13,11 @@ import {
 import { ArrowLeft, Calendar, DollarSign, Users, Banknote } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getDistribution } from '@/lib/actions/distributions';
+import { getDistribution, getDistributionPDFData } from '@/lib/actions/distributions';
 import { DistributionStatusActions } from '@/components/capital/distribution-status-actions';
 import { ProcessDistributionButton } from '@/components/capital/process-distribution-button';
 import { DeleteDistributionButton } from '@/components/capital/delete-distribution-button';
+import { DownloadDistributionNoticeButton } from '@/components/capital/download-distribution-notice-button';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 
 function formatDate(date: Date | null): string {
@@ -79,7 +80,10 @@ function getItemStatusColor(status: string) {
 
 export default async function DistributionDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
-    const distribution = await getDistribution(id);
+    const [distribution, pdfData] = await Promise.all([
+        getDistribution(id),
+        getDistributionPDFData(id),
+    ]);
 
     if (!distribution) {
         notFound();
@@ -122,6 +126,7 @@ export default async function DistributionDetailPage({ params }: { params: Promi
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
+                    {pdfData && <DownloadDistributionNoticeButton data={pdfData} />}
                     <DistributionStatusActions
                         distributionId={distribution.id}
                         currentStatus={distribution.status}

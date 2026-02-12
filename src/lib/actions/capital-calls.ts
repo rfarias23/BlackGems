@@ -341,6 +341,16 @@ export async function createCapitalCall(formData: FormData) {
     }
 }
 
+// Valid status transitions for capital calls
+const VALID_CALL_TRANSITIONS: Record<string, string[]> = {
+    DRAFT: ['APPROVED', 'CANCELLED'],
+    APPROVED: ['SENT', 'CANCELLED'],
+    SENT: ['PARTIALLY_FUNDED', 'FULLY_FUNDED'],
+    PARTIALLY_FUNDED: ['FULLY_FUNDED'],
+    FULLY_FUNDED: [],
+    CANCELLED: [],
+}
+
 // Update capital call status
 export async function updateCapitalCallStatus(id: string, status: string) {
     const session = await auth()
@@ -360,6 +370,12 @@ export async function updateCapitalCallStatus(id: string, status: string) {
             await requireFundAccess(session.user.id!, existingCall.fundId)
         } catch {
             return { error: 'Access denied' }
+        }
+
+        // Validate status transition
+        const allowed = VALID_CALL_TRANSITIONS[existingCall.status] || []
+        if (!allowed.includes(dbStatus)) {
+            return { error: `Cannot transition from ${CALL_STATUS_DISPLAY[existingCall.status]} to ${CALL_STATUS_DISPLAY[dbStatus] || dbStatus}` }
         }
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -587,6 +603,147 @@ export async function deleteCapitalCall(id: string) {
     } catch (error) {
         console.error('Error deleting capital call:', error)
         return { error: 'Failed to delete capital call' }
+    }
+}
+
+// PDF data for capital call notice
+export interface CapitalCallPDFData {
+    fundName: string
+    callNumber: number
+    callDate: string
+    dueDate: string
+    purpose: string
+    totalAmount: string
+    items: Array<{
+        investorName: string
+        committedAmount: string
+        callAmount: string
+        ownershipPct: string
+        status: string
+    }>
+}
+
+function fmtDate(d: Date): string {
+    return new Date(d).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+    })
+}
+
+export async function getCapitalCallPDFData(id: string): Promise<CapitalCallPDFData | null> {
+    const session = await auth()
+    if (!session?.user?.id) return null
+
+    const call = await prisma.capitalCall.findFirst({
+        where: { id, ...notDeleted },
+        include: {
+            fund: { select: { name: true } },
+            items: {
+                include: {
+                    investor: {
+                        include: {
+                            commitments: {
+                                where: { status: { in: ['ACTIVE', 'FUNDED', 'SIGNED'] } },
+                                select: { committedAmount: true, fundId: true },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    })
+
+    if (!call) return null
+
+    const totalCommitted = call.items.reduce((sum, item) => {
+        const commitment = item.investor.commitments.find(c => c.fundId === call.fundId)
+        return sum + (commitment ? Number(commitment.committedAmount) : 0)
+    }, 0)
+
+    return {
+        fundName: call.fund.name,
+        callNumber: call.callNumber,
+        callDate: fmtDate(call.callDate),
+        dueDate: fmtDate(call.dueDate),
+        purpose: call.purpose || 'Investment & Operations',
+        totalAmount: formatMoney(call.totalAmount),
+        items: call.items.map((item) => {
+            const commitment = item.investor.commitments.find(c => c.fundId === call.fundId)
+            const committed = commitment ? Number(commitment.committedAmount) : 0
+            const pct = totalCommitted > 0 ? (committed / totalCommitted * 100).toFixed(1) : '0.0'
+            return {
+                investorName: item.investor.name,
+                committedAmount: formatMoney(committed),
+                callAmount: formatMoney(item.callAmount),
+                ownershipPct: `${pct}%`,
+                status: ITEM_STATUS_DISPLAY[item.status] || item.status,
+            }
+        }),
+    }
+}
+
+// Summary stats for capital calls dashboard
+export interface CapitalCallSummary {
+    totalCalled: number
+    totalPaid: number
+    totalOutstanding: number
+    draftCount: number
+    activeCount: number
+    fullyFundedCount: number
+}
+
+export async function getCapitalCallSummary(): Promise<CapitalCallSummary> {
+    const session = await auth()
+    if (!session?.user?.id) {
+        return { totalCalled: 0, totalPaid: 0, totalOutstanding: 0, draftCount: 0, activeCount: 0, fullyFundedCount: 0 }
+    }
+
+    const calls = await prisma.capitalCall.findMany({
+        where: notDeleted,
+        select: {
+            status: true,
+            totalAmount: true,
+            items: {
+                select: { paidAmount: true },
+            },
+        },
+    })
+
+    let totalCalled = 0
+    let totalPaid = 0
+    let draftCount = 0
+    let activeCount = 0
+    let fullyFundedCount = 0
+
+    for (const call of calls) {
+        const amount = Number(call.totalAmount)
+        const paid = call.items.reduce((sum, item) => sum + Number(item.paidAmount), 0)
+        totalCalled += amount
+        totalPaid += paid
+
+        switch (call.status) {
+            case 'DRAFT':
+                draftCount++
+                break
+            case 'APPROVED':
+            case 'SENT':
+            case 'PARTIALLY_FUNDED':
+                activeCount++
+                break
+            case 'FULLY_FUNDED':
+                fullyFundedCount++
+                break
+        }
+    }
+
+    return {
+        totalCalled,
+        totalPaid,
+        totalOutstanding: totalCalled - totalPaid,
+        draftCount,
+        activeCount,
+        fullyFundedCount,
     }
 }
 
