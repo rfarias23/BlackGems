@@ -17,7 +17,7 @@ const MANAGE_ROLES = ['SUPER_ADMIN', 'FUND_ADMIN', 'INVESTMENT_MANAGER', 'ANALYS
 /** List documents for a deal */
 export async function getDealDocuments(dealId: string): Promise<DocumentItem[]> {
   const session = await auth()
-  if (!session?.user) return []
+  if (!session?.user?.id) return []
 
   // Verify deal exists and user has access
   const deal = await prisma.deal.findFirst({
@@ -62,7 +62,7 @@ export async function getDealDocuments(dealId: string): Promise<DocumentItem[]> 
 /** Delete a document (soft delete + remove file from disk) */
 export async function deleteDocument(documentId: string) {
   const session = await auth()
-  if (!session?.user) {
+  if (!session?.user?.id) {
     return { error: 'Unauthorized' }
   }
 
@@ -121,7 +121,7 @@ export async function deleteDocument(documentId: string) {
 /** List documents for an investor */
 export async function getInvestorDocuments(investorId: string): Promise<DocumentItem[]> {
   const session = await auth()
-  if (!session?.user) return []
+  if (!session?.user?.id) return []
 
   const investor = await prisma.investor.findFirst({
     where: { id: investorId, ...notDeleted },

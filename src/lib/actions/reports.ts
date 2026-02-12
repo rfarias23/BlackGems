@@ -63,7 +63,7 @@ export interface DashboardData {
 
 export async function getDashboardData(): Promise<DashboardData | null> {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return null
     }
 
@@ -217,7 +217,7 @@ export interface FundPerformanceReport {
 
 export async function getFundPerformanceReport(fundId?: string): Promise<FundPerformanceReport | null> {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return null
     }
 
@@ -413,7 +413,7 @@ export interface LPCapitalStatement {
 
 export async function getLPCapitalStatement(investorId: string, fundId?: string): Promise<LPCapitalStatement | null> {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return null
     }
 
@@ -591,7 +591,7 @@ export interface PortfolioSummaryReport {
 
 export async function getPortfolioSummaryReport(fundId?: string): Promise<PortfolioSummaryReport | null> {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return null
     }
 
@@ -733,7 +733,7 @@ export interface DealPipelineReport {
 
 export async function getDealPipelineReport(fundId?: string): Promise<DealPipelineReport | null> {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return null
     }
 
@@ -812,7 +812,7 @@ export async function getDealPipelineReport(fundId?: string): Promise<DealPipeli
 
 export async function getInvestorsForReports(): Promise<{ id: string; name: string; type: string }[]> {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return []
     }
 
@@ -839,7 +839,7 @@ export async function getInvestorsForReports(): Promise<{ id: string; name: stri
 
 export async function getFundsForReports(): Promise<{ id: string; name: string }[]> {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return []
     }
 

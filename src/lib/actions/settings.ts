@@ -219,7 +219,7 @@ function parsePercent(value: string): number {
 
 export async function getFundConfig(): Promise<FundConfig | null> {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return null
     }
 
@@ -261,7 +261,7 @@ const updateFundSchema = z.object({
 
 export async function updateFundConfig(formData: FormData) {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return { error: 'Unauthorized' }
     }
 
@@ -362,7 +362,7 @@ const DISPLAY_TO_STATUS: Record<string, string> = Object.fromEntries(
 
 export async function updateFundStatus(fundId: string, status: string) {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return { error: 'Unauthorized' }
     }
 

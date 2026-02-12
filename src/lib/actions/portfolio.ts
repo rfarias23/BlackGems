@@ -155,7 +155,7 @@ function calculateHoldingPeriod(acquisitionDate: Date, exitDate?: Date | null): 
 // Get all portfolio companies
 export async function getPortfolioCompanies(): Promise<PortfolioCompanyListItem[]> {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return []
     }
 
@@ -199,7 +199,7 @@ export async function getPortfolioCompanies(): Promise<PortfolioCompanyListItem[
 // Get single portfolio company
 export async function getPortfolioCompany(id: string): Promise<PortfolioCompanyDetail | null> {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return null
     }
 
@@ -284,7 +284,7 @@ export async function getPortfolioCompany(id: string): Promise<PortfolioCompanyD
 // Create portfolio company
 export async function createPortfolioCompany(formData: FormData) {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return { error: 'Unauthorized' }
     }
 
@@ -376,7 +376,7 @@ export async function createPortfolioCompany(formData: FormData) {
 // Update portfolio company status
 export async function updatePortfolioCompanyStatus(id: string, status: string) {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return { error: 'Unauthorized' }
     }
 
@@ -426,7 +426,7 @@ export async function updatePortfolioValuation(
     notes?: string
 ) {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return { error: 'Unauthorized' }
     }
 
@@ -500,7 +500,7 @@ export async function updatePortfolioValuation(
 // Record metrics for a portfolio company
 export async function recordPortfolioMetrics(formData: FormData) {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return { error: 'Unauthorized' }
     }
 
@@ -563,7 +563,7 @@ export async function recordPortfolioMetrics(formData: FormData) {
 // Get metrics history for a company
 export async function getPortfolioMetrics(companyId: string) {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return []
     }
 
@@ -591,7 +591,7 @@ export async function getPortfolioMetrics(companyId: string) {
 // Soft-delete portfolio company
 export async function deletePortfolioCompany(id: string) {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return { error: 'Unauthorized' }
     }
 
@@ -632,7 +632,7 @@ export async function deletePortfolioCompany(id: string) {
 // Get available funds for portfolio companies
 export async function getFundsForPortfolio(): Promise<{ id: string; name: string }[]> {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return []
     }
 
@@ -650,7 +650,7 @@ export async function getFundsForPortfolio(): Promise<{ id: string; name: string
 // Get portfolio summary stats
 export async function getPortfolioSummary() {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return null
     }
 

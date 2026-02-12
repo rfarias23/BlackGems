@@ -109,7 +109,7 @@ function parseMoney(value: string): number {
 // Get all capital calls
 export async function getCapitalCalls(): Promise<CapitalCallListItem[]> {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return []
     }
 
@@ -150,7 +150,7 @@ export async function getCapitalCalls(): Promise<CapitalCallListItem[]> {
 // Get single capital call
 export async function getCapitalCall(id: string): Promise<CapitalCallDetail | null> {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return null
     }
 
@@ -207,7 +207,7 @@ export async function getCapitalCall(id: string): Promise<CapitalCallDetail | nu
 // Create capital call
 export async function createCapitalCall(formData: FormData) {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return { error: 'Unauthorized' }
     }
 
@@ -324,7 +324,7 @@ export async function createCapitalCall(formData: FormData) {
 // Update capital call status
 export async function updateCapitalCallStatus(id: string, status: string) {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return { error: 'Unauthorized' }
     }
 
@@ -382,7 +382,7 @@ export async function recordCallItemPayment(
     markAsPaid: boolean = false
 ) {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return { error: 'Unauthorized' }
     }
 
@@ -529,7 +529,7 @@ export async function recordCallItemPayment(
 // Delete capital call
 export async function deleteCapitalCall(id: string) {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return { error: 'Unauthorized' }
     }
 
@@ -573,7 +573,7 @@ export async function deleteCapitalCall(id: string) {
 // Get available funds for capital calls
 export async function getFundsForCapitalCall(): Promise<{ id: string; name: string }[]> {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return []
     }
 

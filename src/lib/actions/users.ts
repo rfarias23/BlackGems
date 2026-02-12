@@ -95,7 +95,7 @@ export interface UserDetail {
 // Get all users
 export async function getUsers(): Promise<UserListItem[]> {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return []
     }
 
@@ -124,7 +124,7 @@ export async function getUsers(): Promise<UserListItem[]> {
 // Get single user
 export async function getUserById(id: string): Promise<UserDetail | null> {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return null
     }
 
@@ -433,7 +433,7 @@ export async function deleteUser(id: string) {
 // Get investors not linked to any user (for LP user creation)
 export async function getInvestorsForLinking(): Promise<{ id: string; name: string }[]> {
     const session = await auth()
-    if (!session?.user) return []
+    if (!session?.user?.id) return []
 
     const investors = await prisma.investor.findMany({
         where: { userId: null, deletedAt: null },

@@ -128,7 +128,7 @@ export interface DealDetail {
 // Get all deals for a fund (or first available fund)
 export async function getDeals(): Promise<DealListItem[]> {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return []
     }
 
@@ -166,7 +166,7 @@ export async function getDeals(): Promise<DealListItem[]> {
 // Get a single deal by ID
 export async function getDeal(id: string): Promise<DealDetail | null> {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return null
     }
 
@@ -205,7 +205,7 @@ export async function getDeal(id: string): Promise<DealDetail | null> {
 
     // Verify fund access
     try {
-        await requireFundAccess(session.user.id!, deal.fundId)
+        await requireFundAccess(session.user.id, deal.fundId)
     } catch {
         return null
     }
@@ -266,7 +266,7 @@ export async function getDefaultFundId(): Promise<string | null> {
 // Create a new deal
 export async function createDeal(formData: FormData) {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return { error: 'Unauthorized' }
     }
 
@@ -349,7 +349,7 @@ export async function createDeal(formData: FormData) {
 // Update a deal
 export async function updateDeal(id: string, formData: FormData) {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return { error: 'Unauthorized' }
     }
 
@@ -511,7 +511,7 @@ export async function updateDeal(id: string, formData: FormData) {
 // Soft-delete a deal
 export async function deleteDeal(id: string) {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return { error: 'Unauthorized' }
     }
 
@@ -554,7 +554,7 @@ export async function deleteDeal(id: string) {
 // Update deal stage with transition validation
 export async function updateDealStage(id: string, stage: string) {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return { error: 'Unauthorized' }
     }
 
@@ -634,7 +634,7 @@ export async function getDealPortfolioLink(dealId: string): Promise<{ portfolioI
 /** Get raw deal data for conversion (unformatted numbers) */
 export async function getDealRawData(dealId: string) {
     const session = await auth()
-    if (!session?.user) return null
+    if (!session?.user?.id) return null
 
     const deal = await prisma.deal.findFirst({
         where: { id: dealId, ...notDeleted },
@@ -678,7 +678,7 @@ const convertDealSchema = z.object({
 /** Convert a CLOSED_WON deal to a portfolio company */
 export async function convertDealToPortfolio(dealId: string, formData: FormData) {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return { error: 'Unauthorized' }
     }
 
@@ -789,7 +789,7 @@ const CONTACT_MANAGE_ROLES = ['SUPER_ADMIN', 'FUND_ADMIN', 'INVESTMENT_MANAGER',
 /** Create a new contact for a deal */
 export async function createDealContact(dealId: string, formData: FormData) {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return { error: 'Unauthorized' }
     }
 
@@ -854,7 +854,7 @@ export async function createDealContact(dealId: string, formData: FormData) {
 /** Delete a deal contact */
 export async function deleteDealContact(contactId: string) {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return { error: 'Unauthorized' }
     }
 
