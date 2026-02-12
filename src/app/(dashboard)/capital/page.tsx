@@ -34,7 +34,7 @@ export default async function CapitalPage() {
 
                 <TabsContent value="calls" className="space-y-4">
                     <div className="flex justify-end">
-                        <Button asChild>
+                        <Button asChild variant="outline" className="text-white border-[#334155] hover:bg-[#334155]">
                             <Link href="/capital/calls/new">
                                 <Plus className="mr-2 h-4 w-4" />
                                 New Capital Call
@@ -46,7 +46,7 @@ export default async function CapitalPage() {
 
                 <TabsContent value="distributions" className="space-y-4">
                     <div className="flex justify-end">
-                        <Button asChild>
+                        <Button asChild variant="outline" className="text-white border-[#334155] hover:bg-[#334155]">
                             <Link href="/capital/distributions/new">
                                 <Plus className="mr-2 h-4 w-4" />
                                 New Distribution
