@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { User } from 'lucide-react';
+import { ProfileEditForm } from '@/components/portal/profile-edit-form';
 
 export default async function PortalProfilePage() {
     const session = await auth();
@@ -94,41 +95,14 @@ export default async function PortalProfilePage() {
                 </Card>
             )}
 
-            {/* Contact info */}
-            {investor && (investor.contactName || investor.contactEmail) && (
-                <Card className="bg-white border-slate-200">
-                    <CardHeader>
-                        <CardTitle className="text-base text-slate-900">Primary Contact</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-sm">
-                            {investor.contactName && (
-                                <div>
-                                    <dt className="text-slate-500">Name</dt>
-                                    <dd className="font-medium text-slate-900 mt-0.5">{investor.contactName}</dd>
-                                </div>
-                            )}
-                            {investor.contactTitle && (
-                                <div>
-                                    <dt className="text-slate-500">Title</dt>
-                                    <dd className="font-medium text-slate-900 mt-0.5">{investor.contactTitle}</dd>
-                                </div>
-                            )}
-                            {investor.contactEmail && (
-                                <div>
-                                    <dt className="text-slate-500">Email</dt>
-                                    <dd className="font-medium text-slate-900 mt-0.5">{investor.contactEmail}</dd>
-                                </div>
-                            )}
-                            {investor.contactPhone && (
-                                <div>
-                                    <dt className="text-slate-500">Phone</dt>
-                                    <dd className="font-medium text-slate-900 mt-0.5">{investor.contactPhone}</dd>
-                                </div>
-                            )}
-                        </dl>
-                    </CardContent>
-                </Card>
+            {/* Editable contact info */}
+            {investor && (
+                <ProfileEditForm
+                    contactName={investor.contactName}
+                    contactEmail={investor.contactEmail}
+                    contactPhone={investor.contactPhone}
+                    contactTitle={investor.contactTitle}
+                />
             )}
         </div>
     );

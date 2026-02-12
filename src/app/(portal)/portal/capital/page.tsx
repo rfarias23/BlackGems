@@ -5,6 +5,7 @@ import {
     ArrowUpRight,
     Landmark,
 } from 'lucide-react';
+import { AcknowledgeCallButton } from '@/components/portal/acknowledge-call-button';
 
 function formatCurrency(amount: number): string {
     return new Intl.NumberFormat('en-US', {
@@ -106,6 +107,7 @@ export default async function CapitalAccountPage() {
                                         <th className="text-left py-3 px-6 font-medium text-slate-500">Fund</th>
                                         <th className="text-right py-3 px-6 font-medium text-slate-500">Amount</th>
                                         <th className="text-right py-3 px-6 font-medium text-slate-500">Status</th>
+                                        <th className="text-right py-3 px-6 font-medium text-slate-500">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
@@ -133,6 +135,11 @@ export default async function CapitalAccountPage() {
                                             </td>
                                             <td className="py-3 px-6 text-right text-slate-500 capitalize">
                                                 {tx.status.replace(/_/g, ' ').toLowerCase()}
+                                            </td>
+                                            <td className="py-3 px-6 text-right">
+                                                {tx.type === 'CAPITAL_CALL' && tx.status === 'PENDING' ? (
+                                                    <AcknowledgeCallButton itemId={tx.id} />
+                                                ) : null}
                                             </td>
                                         </tr>
                                     ))}

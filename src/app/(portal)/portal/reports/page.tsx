@@ -341,7 +341,7 @@ export default async function PortalReportsPage() {
 
                             {/* IRR + Waterfall Charts */}
                             <FundPerformanceCharts
-                                waterfallData={null}
+                                waterfallData={fundPerformance.waterfall?.tiers ?? null}
                                 grossIrr={fundPerformance.performance.grossIrr}
                                 netIrr={fundPerformance.performance.netIrr}
                                 theme="light"
