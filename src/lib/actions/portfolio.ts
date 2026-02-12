@@ -460,7 +460,7 @@ export async function updatePortfolioValuation(
         })
 
         // Create a metric entry for this valuation update
-        await prisma.portfolioMetric.create({
+        const metric = await prisma.portfolioMetric.create({
             data: {
                 companyId: id,
                 periodDate: new Date(),
@@ -479,6 +479,13 @@ export async function updatePortfolioValuation(
                 unrealizedValue: { old: Number(company.unrealizedValue || 0), new: equityValue },
                 moic: { old: Number(company.moic || 0), new: moic },
             },
+        })
+
+        await logAudit({
+            userId: session.user.id!,
+            action: 'CREATE',
+            entityType: 'PortfolioMetric',
+            entityId: metric.id,
         })
 
         revalidatePath('/portfolio')

@@ -211,7 +211,7 @@ export function DistributionForm({ funds }: DistributionFormProps) {
                 <Button type="button" variant="outline" asChild>
                     <Link href="/capital">Cancel</Link>
                 </Button>
-                <Button type="submit" disabled={isPending}>
+                <Button type="submit" disabled={isPending} variant="outline" className="text-white border-[#334155] hover:bg-[#334155]">
                     {isPending ? 'Creating...' : 'Create Distribution'}
                 </Button>
             </div>
