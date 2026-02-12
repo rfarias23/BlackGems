@@ -9,6 +9,7 @@ import { DistributionType } from '@prisma/client'
 import { logAudit } from '@/lib/shared/audit'
 import { softDelete, notDeleted } from '@/lib/shared/soft-delete'
 import { requireFundAccess } from '@/lib/shared/fund-access'
+import { notifyFundMembers } from '@/lib/actions/notifications'
 
 // Display mappings
 const DIST_STATUS_DISPLAY: Record<string, string> = {
@@ -324,6 +325,17 @@ export async function createDistribution(formData: FormData) {
             action: 'CREATE',
             entityType: 'Distribution',
             entityId: distribution.id,
+        })
+
+        // Notify fund members of new distribution
+        const formattedAmount = `$${parseMoney(data.totalAmount).toLocaleString()}`
+        await notifyFundMembers({
+            fundId: data.fundId,
+            type: 'DISTRIBUTION_MADE',
+            title: `Distribution #${distributionNumber} Created`,
+            message: `A new distribution of ${formattedAmount} has been created`,
+            link: `/capital/distributions/${distribution.id}`,
+            excludeUserId: session.user.id!,
         })
 
         revalidatePath('/capital')

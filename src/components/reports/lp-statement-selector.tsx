@@ -19,11 +19,13 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { FileText, Users } from 'lucide-react';
+import { Download, FileText, Users } from 'lucide-react';
 import { getLPCapitalStatement, LPCapitalStatement } from '@/lib/actions/reports';
+import { generateCapitalStatementPDF, CapitalStatementData } from '@/lib/pdf/capital-statement';
 
 interface LPStatementSelectorProps {
     investors: { id: string; name: string; type: string }[];
+    fundName?: string;
 }
 
 function formatDate(date: Date): string {
@@ -48,7 +50,7 @@ const typeDisplay: Record<string, string> = {
     OTHER: 'Other',
 };
 
-export function LPStatementSelector({ investors }: LPStatementSelectorProps) {
+export function LPStatementSelector({ investors, fundName = 'BlackGem Fund I' }: LPStatementSelectorProps) {
     const [selectedInvestor, setSelectedInvestor] = useState<string>('');
     const [statement, setStatement] = useState<LPCapitalStatement | null>(null);
     const [isPending, startTransition] = useTransition();
@@ -108,9 +110,30 @@ export function LPStatementSelector({ investors }: LPStatementSelectorProps) {
                                 {typeDisplay[statement.investor.type] || statement.investor.type}
                             </p>
                         </div>
-                        <Badge variant="outline">
-                            Ownership: {statement.commitment.ownershipPct}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                    const pdfData: CapitalStatementData = {
+                                        fundName,
+                                        investor: statement.investor,
+                                        commitment: statement.commitment,
+                                        performance: statement.performance,
+                                        capitalCalls: statement.capitalCalls,
+                                        distributions: statement.distributions,
+                                    };
+                                    generateCapitalStatementPDF(pdfData);
+                                }}
+                                className="text-white border-[#334155] hover:bg-[#334155]"
+                            >
+                                <Download className="mr-2 h-3.5 w-3.5" />
+                                Export PDF
+                            </Button>
+                            <Badge variant="outline">
+                                Ownership: {statement.commitment.ownershipPct}
+                            </Badge>
+                        </div>
                     </div>
 
                     {/* Capital Account Summary */}

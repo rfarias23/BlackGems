@@ -1,13 +1,20 @@
 # BlackGem CTO Technical Review — Status Report
-**Date:** February 6, 2026
-**Branch:** `claude/review-blackgem-docs-J2pUm`
-**Commits:** 12 commits implementing CTO review recommendations
+**Date:** February 11, 2026
+**Branch:** `claude/modest-maxwell` (Sprint 4) / `origin/main` (Sprint 3 merged)
+**Sprint 4 focus:** Critical path features following PE fund workflow
 
 ---
 
 ## Executive Summary
 
-Starting from the original CTO review (estimated 82% MVP completion), we have implemented the critical infrastructure fixes: soft deletes, authentication session propagation, fund-level authorization, audit logging, deal stage transition validation, error boundaries, unit tests, and the Edit Deal modal. The platform is now estimated at **~89% MVP completion**. The remaining gaps are audit logging coverage in capital-calls, distributions, and settings modules, plus the LP portal which remains a stub.
+After Sprint 3 closed most CTO review infrastructure gaps (~93% MVP), Sprint 4 follows the **PE fund critical path**: Source Deals → Raise Capital → Close & Convert → Manage Portfolio → Report to LPs → Distribute Returns. Sprint 4 adds the missing links:
+
+1. **Deal-to-Portfolio Conversion** — When a deal reaches Closed Won, one-click conversion to portfolio company with data mapping
+2. **PDF Generation for LP Documents** — Capital call notices, distribution notices, capital account statements
+3. **LP Portal Polish + Email Invites** — Verified all 5 portal pages, added email invitation flow via Resend
+4. **Notification System** — Bell icon dropdown with unread badge, triggered by deal stage changes, capital calls, distributions
+
+**Estimated MVP completion: ~97%**. Remaining: email provider setup (RESEND_API_KEY), LP portal PDF exports, and production deployment.
 
 ---
 
@@ -100,59 +107,80 @@ Starting from the original CTO review (estimated 82% MVP completion), we have im
 
 ---
 
-## 2. PENDING / INCOMPLETE ITEMS
+## 2. SPRINT 4 — NEW FEATURES
 
-### 2.1 Audit Logging Gaps (CRITICAL)
-These modules have **zero audit logging** on financial operations:
+### 2.1 Deal-to-Portfolio Conversion (CRITICAL PATH — Done)
+When a deal reaches Closed Won, a "Convert to Portfolio Company" banner appears on the deal detail page.
 
-**`src/lib/actions/capital-calls.ts`** — 0/5 mutations audited
-- `createCapitalCall()` — no audit
-- `updateCapitalCallStatus()` — no audit
-- `recordCallItemPayment()` — no audit
-- `deleteCapitalCall()` — no audit, uses hard delete
+**Files created:**
+- `src/components/deals/convert-deal-dialog.tsx` — Dialog with pre-populated form, dark theme
 
-**`src/lib/actions/distributions.ts`** — 0/4 mutations audited
-- `createDistribution()` — no audit
-- `updateDistributionStatus()` — no audit
-- `processDistributionItem()` — no audit
-- `deleteDistribution()` — no audit, uses hard delete
+**Files modified:**
+- `src/lib/actions/deals.ts` — Added `convertDealToPortfolio()`, `getDealPortfolioLink()`, `getDealRawData()`; modified `updateDealStage()` return to include `newStage`
+- `src/app/(dashboard)/deals/[id]/page.tsx` — Fetches portfolio link + raw deal data
+- `src/components/deals/deal-overview.tsx` — Shows conversion banner + dialog
 
-**`src/lib/actions/settings.ts`** — 0/4 mutations audited
-- `updateProfile()` — no audit (security-relevant: email changes)
-- `changePassword()` — no audit (security-critical)
-- `updateFundConfig()` — no audit (financial parameters)
-- `updateFundStatus()` — no audit (fund lifecycle)
+**Field mapping:** Deal → PortfolioCompany (companyName, industry, revenue, ebitda, askingPrice→entryValuation, etc.)
+**User-provided fields:** equityInvested (required), ownershipPct (required), debtFinancing (optional)
+**Calculated:** totalInvestment, entryMultiple, unrealizedValue, totalValue, moic=1.0
 
-**`src/lib/actions/portfolio.ts`** — 3 mutations missing audit:
-- `updatePortfolioCompanyStatus()` — no audit
-- `updatePortfolioValuation()` — no audit
-- `recordPortfolioMetrics()` — no audit
+### 2.2 PDF Generation for LP Documents (Done)
+Three new PDF generators following the `dashboard-report.ts` pattern with BlackGem branding.
 
-### 2.2 Soft Delete Gaps (HIGH)
-- **`capital-calls.ts`:** Uses `prisma.capitalCall.delete()` — hard delete
-- **`distributions.ts`:** Uses `prisma.distribution.delete()` — hard delete
-- Neither `CapitalCall` nor `Distribution` models have `deletedAt` in the schema
-- **Fix required:** Add `deletedAt` to schema + migrate + update actions
+**Files created:**
+- `src/lib/pdf/capital-call-notice.ts` — Capital call notice with call details + investor allocations
+- `src/lib/pdf/distribution-notice.ts` — Distribution notice with breakdown + investor allocations
+- `src/lib/pdf/capital-statement.ts` — Full LP capital account statement (multi-page)
 
-### 2.3 Fund Access Check Gaps (MEDIUM)
-- **`portfolio.ts`:** No `requireFundAccess()` checks (portfolio companies are fund-scoped via `fundId`)
-- **`capital-calls.ts`:** No `requireFundAccess()` checks (calls are fund-scoped)
-- **`distributions.ts`:** No `requireFundAccess()` checks (distributions are fund-scoped)
+**Files modified:**
+- `src/components/reports/lp-statement-selector.tsx` — Added "Export PDF" button
+- `src/app/(dashboard)/reports/page.tsx` — Passes fundName to LP statement selector
 
-### 2.4 LP Portal (LOW — Future Phase)
-- Only stub exists: `src/app/(portal)/portal/page.tsx`
-- No investor-facing views implemented
-- Uses light mode palette (`:root` CSS variables)
-- **Recommendation:** Defer to Phase 2 post-MVP launch
+### 2.3 LP Portal Polish + Email Invites (Done)
+**Portal verification:** All 5 portal pages reviewed and working (dashboard, capital, documents, reports, profile). Light theme, proper data isolation via `session.user.investorId`.
 
-### 2.5 Error Boundary Integration (LOW)
-- Component exists but is not yet wrapped around any page sections
-- **Recommendation:** Wrap each tab content in the deal detail page, and critical sections in other pages
+**Email invitation flow:**
+- `src/lib/email.ts` — Resend client (lazy-initialized) + branded HTML email template
+- `src/lib/actions/users.ts` — Added `createLPInvitation()` and `acceptInvitation()` server actions
+- `src/components/admin/invite-lp-dialog.tsx` — "Email Invite LP" dialog for admin users page
+- `src/components/auth/accept-invite-form.tsx` — LP sets name + password
+- `src/app/accept-invite/page.tsx` — Landing page for invitation links
 
-### 2.6 Test Coverage Expansion (LOW)
-- Current: Only shared utilities tested (formatters, stage-transitions)
-- Missing: Server action tests, component tests, integration tests
-- **Recommendation:** Add tests for `soft-delete.ts`, `fund-access.ts`, `audit.ts` as next priority
+**Flow:** Admin selects investor → sends email → LP clicks link → sets password → user created with LP_PRIMARY role + investor linked. Uses VerificationToken table with `identifier = 'invite:{email}:{investorId}:{role}'`.
+
+### 2.4 Notification System (Done)
+Replaces static Bell button in header with functional notification dropdown.
+
+**Files created:**
+- `src/lib/actions/notifications.ts` — CRUD: `getNotifications()`, `getUnreadCount()`, `markAsRead()`, `markAllAsRead()`, `createNotification()`, `notifyFundMembers()`
+- `src/components/layout/notification-dropdown.tsx` — Dropdown with unread badge, mark-as-read, 60s polling
+
+**Files modified:**
+- `src/components/layout/header.tsx` — Replaced static Bell with NotificationDropdown
+- `src/app/(dashboard)/layout.tsx` — Fetches unread count at layout level
+- `src/lib/actions/deals.ts` — Triggers DEAL_STAGE_CHANGE notification
+- `src/lib/actions/capital-calls.ts` — Triggers CAPITAL_CALL_DUE notification
+- `src/lib/actions/distributions.ts` — Triggers DISTRIBUTION_MADE notification
+
+---
+
+## 3. REMAINING GAPS (Post-Sprint 4)
+
+### 3.1 Audit Logging Gaps (LOW — from Sprint 3)
+Settings module mutations have no audit logging:
+- `updateProfile()`, `changePassword()`, `updateFundConfig()`, `updateFundStatus()`
+
+### 3.2 LP Portal PDF Exports (LOW)
+Portal capital and reports pages don't have PDF download buttons yet (dashboard reports page does).
+
+### 3.3 Email Provider Configuration (REQUIRED for production)
+- `RESEND_API_KEY` must be set in production environment
+- `RESEND_FROM_EMAIL` should be configured with a verified domain
+- Without these, invitation emails won't send (graceful failure, user sees error)
+
+### 3.4 Test Coverage (LOW)
+- 90 tests passing across 6 test files (1 pre-existing failure in audit.test.ts due to missing DATABASE_URL in test env)
+- Missing: server action tests, component tests, integration tests
 
 ---
 
@@ -210,61 +238,99 @@ src/components/ui/
 
 ---
 
-## 4. RECOMMENDED NEXT SESSION PRIORITIES
+## 5. RECOMMENDED NEXT PRIORITIES
 
-### Priority 1 — Complete Audit Logging (2-3 hours)
-Add `logAudit()` calls to all mutations in:
-1. `capital-calls.ts` (5 functions)
-2. `distributions.ts` (4 functions)
-3. `settings.ts` (4 functions: updateProfile, changePassword, updateFundConfig, updateFundStatus)
-4. `portfolio.ts` (3 missing functions: updateStatus, updateValuation, recordMetrics)
+### Priority 1 — Production Deployment
+- Set up Resend API key + verified domain
+- Configure NEXTAUTH_URL for production
+- Verify invitation email flow end-to-end
 
-### Priority 2 — Soft Deletes for Capital & Distributions (1-2 hours)
-1. Add `deletedAt DateTime?` + `@@index([deletedAt])` to `CapitalCall` and `Distribution` models in schema
-2. Run `npx prisma db push` to migrate
-3. Update `capital-calls.ts` and `distributions.ts` to use `softDelete()` and `notDeleted` filter
-4. Update queries to include `...notDeleted` in `where` clauses
+### Priority 2 — Settings Audit Logging
+Add `logAudit()` to `settings.ts` mutations (updateProfile, changePassword, updateFundConfig, updateFundStatus)
 
-### Priority 3 — Fund Access for Portfolio/Capital/Distributions (1 hour)
-Add `requireFundAccess()` checks to fund-scoped operations in:
-- `portfolio.ts` (all mutations)
-- `capital-calls.ts` (all mutations)
-- `distributions.ts` (all mutations)
+### Priority 3 — LP Portal PDF Downloads
+Add "Export PDF" buttons to portal capital and portal reports pages
 
-### Priority 4 — Error Boundary Integration (30 min)
-Wrap critical page sections with `<ErrorBoundary module="deals">` etc.
-
-### Priority 5 — Additional Tests (1-2 hours)
-- `soft-delete.test.ts`
-- `fund-access.test.ts` (mock Prisma)
-- `audit.test.ts`
+### Priority 4 — Additional Notification Triggers
+Wire document sharing and task assignment events to notification system
 
 ---
 
-## 5. KNOWN ISSUES
+## 6. KNOWN ISSUES
 
 | Issue | Severity | Details |
 |-------|----------|---------|
-| `npm install` hangs | Low | User's network causes npm to hang >10 min. vitest is the only new dependency. App runs fine without it — tests just can't execute. |
 | Neon DB connection drops | Low | Free tier idle timeout causes `P1017: Server has closed the connection`. Auto-reconnects on next request. |
 | Dialog portal dark mode | Known | All portal-rendered components (Dialog, Select dropdown in dialogs) need hardcoded hex colors. Semantic classes won't work. |
-| Seed command hangs | Low | `npx prisma db seed` hangs (same network/Neon issue). Workaround: FUND_ADMIN role bypass in `requireFundAccess` makes FundMember seed unnecessary. |
+| audit.test.ts fails | Low | Pre-existing: requires DATABASE_URL in test environment. Other 90 tests pass. |
+| `.env` not in worktree | Known | Git worktrees don't copy `.gitignore`d files. Symlink `.env` from main repo to worktree for builds. |
+| RESEND_API_KEY needed | Required | Email invitations won't send without Resend API key in environment. Graceful failure — user sees error message. |
 
 ---
 
-## 6. GIT HISTORY (Branch: claude/review-blackgem-docs-J2pUm)
+## 7. VERIFICATION RESULTS (Sprint 4)
+
+| Check | Result |
+|-------|--------|
+| TypeScript (`tsc --noEmit`) | PASS — 0 errors |
+| Tests (`npm run test`) | 90/90 passed (6 files), 1 pre-existing failure (audit.test.ts) |
+| Build (`npm run build`) | PASS — all 30+ routes compile |
+| New routes | `/accept-invite` (LP invitation acceptance) |
+| New components | ConvertDealDialog, InviteLPDialog, AcceptInviteForm, NotificationDropdown |
+
+---
+
+## 8. KEY FILE MAP (Updated Sprint 4)
 
 ```
-07193b8 feat: add Company Details fields to Edit Deal modal
-39e8a52 fix: remove strict stage transition validation from updateDeal
-75c7ba5 fix: use React state for stage select in Edit Deal modal
-d0c4c73 fix: skip stage transition validation when stage hasn't changed
-6772a5e fix: apply dark palette to Edit/Delete Deal modals
-88fcd66 feat: add Edit Deal modal and enrich seed data with margins/dates
-4cbc74c fix: pass user ID through NextAuth JWT/session chain and fix fund access
-d99afc5 fix: restore dialog.tsx with corrected forwardRef generics and dark mode styling
-c2d00b5 fix: rewrite dialog.tsx with React 19 patterns and dark mode styling
-b38f2a5 feat: implement critical CTO review fixes — soft deletes, authorization, audit logging, stage validation
-fc85ee4 fix: add missing UI components and fix Prisma queries
-bb4d28e Merge blackgem-fund-platform branch with all modules
+src/lib/shared/
+  fund-access.ts        — Authorization (requireAuth, requireFundAccess, getAuthorizedFundId)
+  audit.ts              — Audit logging (logAudit, computeChanges)
+  soft-delete.ts        — Soft deletion (softDelete, notDeleted)
+  stage-transitions.ts  — Deal pipeline validation
+  formatters.ts         — Currency/percent formatting utilities
+
+src/lib/actions/
+  deals.ts              — ✅ Full: soft deletes, audit, fund access, stage validation, conversion, notifications
+  investors.ts          — ✅ Full: soft deletes, audit
+  portfolio.ts          — ⚠️ Partial: soft deletes, partial audit
+  capital-calls.ts      — ✅ Sprint 3: audit, soft deletes, fund access + Sprint 4: notifications
+  distributions.ts      — ✅ Sprint 3: audit, soft deletes, fund access + Sprint 4: notifications
+  users.ts              — ✅ Full: CRUD + LP invitation flow (createLPInvitation, acceptInvitation)
+  notifications.ts      — ✅ New: CRUD + createNotification, notifyFundMembers helpers
+  portal.ts             — ✅ Read-only portal data
+  reports.ts            — ✅ Read-only reports
+  settings.ts           — ⚠️ No audit logging
+
+src/lib/pdf/
+  dashboard-report.ts   — Dashboard summary PDF
+  capital-call-notice.ts — Capital call notice PDF (new)
+  distribution-notice.ts — Distribution notice PDF (new)
+  capital-statement.ts  — LP capital account statement PDF (new)
+
+src/lib/email.ts        — Resend email client + invitation email template (new)
+
+src/components/deals/
+  convert-deal-dialog.tsx — Deal-to-portfolio conversion dialog (new)
+  deal-overview.tsx       — Updated: conversion banner + portfolio link
+
+src/components/admin/
+  invite-lp-dialog.tsx    — Email LP invitation dialog (new)
+
+src/components/auth/
+  accept-invite-form.tsx  — LP invitation acceptance form (new)
+
+src/components/layout/
+  notification-dropdown.tsx — Notification bell dropdown with unread badge (new)
+  header.tsx               — Updated: NotificationDropdown replaces static Bell
+
+src/app/accept-invite/
+  page.tsx                — LP invitation acceptance page (new)
+
+src/app/(portal)/portal/
+  page.tsx               — ✅ LP Dashboard (verified working)
+  capital/page.tsx       — ✅ LP Capital Account (verified working)
+  documents/page.tsx     — ✅ LP Documents (verified working)
+  reports/page.tsx       — ✅ LP Reports with 3 tabs (verified working)
+  profile/page.tsx       — ✅ LP Profile (verified working)
 ```

@@ -8,6 +8,7 @@ import { z } from 'zod'
 import { logAudit } from '@/lib/shared/audit'
 import { softDelete, notDeleted } from '@/lib/shared/soft-delete'
 import { requireFundAccess } from '@/lib/shared/fund-access'
+import { notifyFundMembers } from '@/lib/actions/notifications'
 
 // Display mappings
 const CALL_STATUS_DISPLAY: Record<string, string> = {
@@ -299,6 +300,17 @@ export async function createCapitalCall(formData: FormData) {
             action: 'CREATE',
             entityType: 'CapitalCall',
             entityId: capitalCall.id,
+        })
+
+        // Notify fund members of new capital call
+        const formattedAmount = `$${parseMoney(data.totalAmount).toLocaleString()}`
+        await notifyFundMembers({
+            fundId: data.fundId,
+            type: 'CAPITAL_CALL_DUE',
+            title: `Capital Call #${callNumber} Created`,
+            message: `A new capital call for ${formattedAmount} is due ${new Date(data.dueDate).toLocaleDateString()}`,
+            link: `/capital/calls/${capitalCall.id}`,
+            excludeUserId: session.user.id!,
         })
 
         revalidatePath('/capital')

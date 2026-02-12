@@ -1,6 +1,7 @@
 import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
 import { auth } from '@/lib/auth';
+import { getUnreadCount } from '@/lib/actions/notifications';
 
 export default async function DashboardLayout({
     children,
@@ -8,10 +9,11 @@ export default async function DashboardLayout({
     children: React.ReactNode;
 }) {
     const session = await auth();
+    const unreadCount = await getUnreadCount();
 
     return (
         <div
-            className="dark min-h-screen bg-[#11141D] text-[#F9FAFB] font-sans antialiased"
+            className="min-h-screen bg-[#11141D] text-[#F9FAFB] font-sans antialiased"
             style={
                 {
                     '--background': '#11141D',
@@ -44,7 +46,7 @@ export default async function DashboardLayout({
 
             {/* Main content area */}
             <div className="md:pl-64 flex flex-col min-h-screen">
-                <Header user={session?.user} />
+                <Header user={session?.user} unreadCount={unreadCount} />
                 <main className="flex-1 p-8">
                     {children}
                 </main>

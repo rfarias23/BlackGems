@@ -10,9 +10,10 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Bell, Settings, LogOut, User } from 'lucide-react';
+import { Settings, LogOut, User } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import Link from 'next/link';
+import { NotificationDropdown } from './notification-dropdown';
 
 interface HeaderProps {
     user?: {
@@ -20,6 +21,7 @@ interface HeaderProps {
         email?: string | null;
         image?: string | null;
     };
+    unreadCount?: number;
 }
 
 function getInitials(name: string | null | undefined): string {
@@ -31,7 +33,7 @@ function getInitials(name: string | null | undefined): string {
     return name.substring(0, 2).toUpperCase();
 }
 
-export function Header({ user }: HeaderProps) {
+export function Header({ user, unreadCount = 0 }: HeaderProps) {
 
     return (
         <header className="flex h-16 items-center justify-between border-b border-border bg-card px-6 text-card-foreground">
@@ -39,10 +41,7 @@ export function Header({ user }: HeaderProps) {
                 {/* Placeholder for future breadcrumbs or page title */}
             </div>
             <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" className="text-muted-foreground">
-                    <Bell className="h-5 w-5" />
-                    <span className="sr-only">Notifications</span>
-                </Button>
+                <NotificationDropdown initialCount={unreadCount} />
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="relative h-8 w-8 rounded-full hover:bg-[#334155]">
