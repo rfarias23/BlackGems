@@ -30,6 +30,7 @@ import { getDashboardChartData, getWaterfallChartData } from '@/lib/actions/char
 import { LPStatementSelector } from '@/components/reports/lp-statement-selector';
 import { FundPerformanceCharts, PortfolioCharts } from '@/components/charts/reports-charts';
 import { ExportFundPerformance, ExportPortfolioSummary, ExportDealPipeline } from '@/components/reports/export-buttons';
+import { DownloadFundReportButton } from '@/components/reports/download-fund-report-button';
 
 function formatDate(date: Date): string {
     return new Intl.DateTimeFormat('en-US', {
@@ -81,6 +82,15 @@ export default async function ReportsPage() {
                                             </CardDescription>
                                         </div>
                                         <div className="flex items-center gap-2">
+                                            <DownloadFundReportButton
+                                                data={{
+                                                    fund: fundPerformance.fund,
+                                                    capital: fundPerformance.capital,
+                                                    portfolio: fundPerformance.portfolio,
+                                                    performance: fundPerformance.performance,
+                                                    dealPipeline: fundPerformance.dealPipeline,
+                                                }}
+                                            />
                                             <ExportFundPerformance
                                                 data={[
                                                     { metric: 'Fund Name', value: fundPerformance.fund.name },

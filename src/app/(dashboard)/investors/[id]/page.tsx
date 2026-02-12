@@ -12,17 +12,19 @@ import { DocumentList } from '@/components/documents/document-list';
 import { ArrowLeft, DollarSign, Building2 } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getInvestor } from '@/lib/actions/investors';
+import { getInvestor, getInvestorCommunications } from '@/lib/actions/investors';
 import { getInvestorDocuments } from '@/lib/actions/documents';
 import { DeleteInvestorButton } from '@/components/investors/delete-investor-button';
+import { InvestorCommunications } from '@/components/investors/investor-communications';
 import { auth } from '@/lib/auth';
 
 export default async function InvestorDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
-    const [investor, session, documents] = await Promise.all([
+    const [investor, session, documents, communications] = await Promise.all([
         getInvestor(id),
         auth(),
         getInvestorDocuments(id),
+        getInvestorCommunications(id),
     ]);
 
     if (!investor) {
@@ -77,6 +79,7 @@ export default async function InvestorDetailPage({ params }: { params: Promise<{
                     <TabsTrigger value="overview">Overview</TabsTrigger>
                     <TabsTrigger value="commitments">Commitments</TabsTrigger>
                     <TabsTrigger value="compliance">Compliance</TabsTrigger>
+                    <TabsTrigger value="communications">Communications</TabsTrigger>
                     <TabsTrigger value="documents">Documents</TabsTrigger>
                 </TabsList>
 
@@ -151,6 +154,15 @@ export default async function InvestorDetailPage({ params }: { params: Promise<{
 
                 <TabsContent value="compliance" className="space-y-4">
                     <InvestorCompliance investor={investor} userRole={userRole} />
+                </TabsContent>
+
+                <TabsContent value="communications" className="space-y-4">
+                    <InvestorCommunications
+                        investorId={investor.id}
+                        investorName={investor.name}
+                        investorEmail={investor.contactEmail || investor.email}
+                        communications={communications}
+                    />
                 </TabsContent>
 
                 <TabsContent value="documents" className="space-y-4">
