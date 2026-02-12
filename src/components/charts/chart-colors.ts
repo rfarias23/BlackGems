@@ -21,7 +21,7 @@ export const DARK_PALETTE = {
 
   // Chart backgrounds
   background: '#11141D',
-  cardBackground: '#1a1f2e',
+  cardBackground: '#11141D',
   gridLine: 'rgba(148, 163, 184, 0.1)',  // slate-400/10
   axisText: '#94a3b8',   // slate-400
   tooltipBg: '#1e293b',  // slate-800

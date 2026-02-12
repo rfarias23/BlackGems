@@ -74,12 +74,15 @@ export function CapitalAccountChart({
           width={75}
         />
         <Tooltip
+          cursor={false}
           contentStyle={{
             backgroundColor: palette.tooltipBg,
             border: `1px solid ${palette.tooltipBorder}`,
             borderRadius: 8,
             color: palette.tooltipText,
           }}
+          labelStyle={{ color: palette.tooltipText }}
+          itemStyle={{ color: palette.tooltipText }}
           formatter={(value, name) => {
             const labels: Record<string, string> = {
               committed: 'Committed',

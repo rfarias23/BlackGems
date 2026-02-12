@@ -27,6 +27,7 @@ export function ExportFundPerformance({
     <Button
       variant="outline"
       size="sm"
+      className="text-white border-[#334155] hover:bg-[#334155]"
       onClick={() =>
         exportToCSV(
           `fund-performance-${new Date().toISOString().slice(0, 10)}`,
@@ -78,6 +79,7 @@ export function ExportPortfolioSummary({
     <Button
       variant="outline"
       size="sm"
+      className="text-white border-[#334155] hover:bg-[#334155]"
       onClick={() =>
         exportToCSV(
           `portfolio-summary-${new Date().toISOString().slice(0, 10)}`,
@@ -119,6 +121,7 @@ export function ExportDealPipeline({
     <Button
       variant="outline"
       size="sm"
+      className="text-white border-[#334155] hover:bg-[#334155]"
       onClick={() =>
         exportToCSV(
           `deal-pipeline-${new Date().toISOString().slice(0, 10)}`,

@@ -45,10 +45,10 @@ export function Header({ user }: HeaderProps) {
                 </Button>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                        <Button variant="ghost" className="relative h-8 w-8 rounded-full hover:bg-[#334155]">
                             <Avatar className="h-8 w-8">
                                 <AvatarImage src={user?.image || ''} alt={user?.name || 'User'} />
-                                <AvatarFallback className="bg-primary text-primary-foreground">
+                                <AvatarFallback className="bg-transparent border border-[#334155] text-white">
                                     {getInitials(user?.name)}
                                 </AvatarFallback>
                             </Avatar>

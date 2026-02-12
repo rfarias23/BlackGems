@@ -67,12 +67,15 @@ export function MoicBarChart({
           width={75}
         />
         <Tooltip
+          cursor={false}
           contentStyle={{
             backgroundColor: palette.tooltipBg,
             border: `1px solid ${palette.tooltipBorder}`,
             borderRadius: 8,
             color: palette.tooltipText,
           }}
+          labelStyle={{ color: palette.tooltipText }}
+          itemStyle={{ color: palette.tooltipText }}
           formatter={(value) => [`${Number(value).toFixed(2)}x`, 'MOIC']}
         />
         <ReferenceLine

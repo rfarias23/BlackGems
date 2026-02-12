@@ -20,7 +20,7 @@ export default async function PortfolioPage() {
                         Track and manage your portfolio companies.
                     </p>
                 </div>
-                <Button asChild>
+                <Button asChild variant="outline" className="text-white border-[#334155] hover:bg-[#334155]">
                     <Link href="/portfolio/new">
                         <Plus className="mr-2 h-4 w-4" />
                         Add Company
