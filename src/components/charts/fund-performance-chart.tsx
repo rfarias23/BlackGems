@@ -59,12 +59,15 @@ export function FundPerformanceChart({
           tickFormatter={(v) => `${v.toFixed(1)}x`}
         />
         <Tooltip
+          cursor={false}
           contentStyle={{
             backgroundColor: palette.tooltipBg,
             border: `1px solid ${palette.tooltipBorder}`,
             borderRadius: 8,
             color: palette.tooltipText,
           }}
+          labelStyle={{ color: palette.tooltipText }}
+          itemStyle={{ color: palette.tooltipText }}
           formatter={(value, name) => [
             `${Number(value).toFixed(2)}x`,
             String(name || '').toUpperCase(),

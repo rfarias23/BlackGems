@@ -11,12 +11,12 @@ export default async function DashboardLayout({
 
     return (
         <div
-            className="min-h-screen bg-[#11141D] text-[#F9FAFB] font-sans antialiased"
+            className="dark min-h-screen bg-[#11141D] text-[#F9FAFB] font-sans antialiased"
             style={
                 {
                     '--background': '#11141D',
                     '--foreground': '#F8FAFC',
-                    '--card': '#1E293B',
+                    '--card': '#11141D',
                     '--card-foreground': '#F8FAFC',
                     '--popover': '#1E293B',
                     '--popover-foreground': '#F8FAFC',

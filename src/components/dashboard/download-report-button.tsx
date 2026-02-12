@@ -26,7 +26,7 @@ export function DownloadReportButton({ metrics }: DownloadReportButtonProps) {
     };
 
     return (
-        <Button onClick={handleDownload} disabled={isGenerating}>
+        <Button onClick={handleDownload} disabled={isGenerating} variant="outline" className="text-white border-[#334155] hover:bg-[#334155]">
             {isGenerating ? (
                 <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />

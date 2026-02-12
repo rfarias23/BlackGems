@@ -64,12 +64,15 @@ export function SectorAllocationChart({
           ))}
         </Pie>
         <Tooltip
+          cursor={false}
           contentStyle={{
             backgroundColor: palette.tooltipBg,
             border: `1px solid ${palette.tooltipBorder}`,
             borderRadius: 8,
             color: palette.tooltipText,
           }}
+          labelStyle={{ color: palette.tooltipText }}
+          itemStyle={{ color: palette.tooltipText }}
           formatter={(value, name) => [
             `${formatCurrency(Number(value))} (${((Number(value) / total) * 100).toFixed(1)}%)`,
             String(name || ''),
