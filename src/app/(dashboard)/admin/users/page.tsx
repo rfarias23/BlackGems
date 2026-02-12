@@ -33,7 +33,7 @@ export default async function AdminUsersPage() {
                         Manage users, roles, and access permissions.
                     </p>
                 </div>
-                <Button asChild>
+                <Button asChild variant="outline" className="text-white border-[#334155] hover:bg-[#334155]">
                     <Link href="/admin/users/new">
                         <Plus className="mr-2 h-4 w-4" />
                         Invite User
