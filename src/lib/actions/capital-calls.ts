@@ -8,6 +8,7 @@ import { z } from 'zod'
 import { logAudit } from '@/lib/shared/audit'
 import { softDelete, notDeleted } from '@/lib/shared/soft-delete'
 import { requireFundAccess } from '@/lib/shared/fund-access'
+import { VALID_CALL_TRANSITIONS } from '@/lib/shared/workflow-transitions'
 import { notifyFundMembers } from '@/lib/actions/notifications'
 import { PaginationParams, PaginatedResult, parsePaginationParams, paginatedResult } from '@/lib/shared/pagination'
 
@@ -339,16 +340,6 @@ export async function createCapitalCall(formData: FormData) {
         console.error('Error creating capital call:', error)
         return { error: 'Failed to create capital call' }
     }
-}
-
-// Valid status transitions for capital calls
-const VALID_CALL_TRANSITIONS: Record<string, string[]> = {
-    DRAFT: ['APPROVED', 'CANCELLED'],
-    APPROVED: ['SENT', 'CANCELLED'],
-    SENT: ['PARTIALLY_FUNDED', 'FULLY_FUNDED'],
-    PARTIALLY_FUNDED: ['FULLY_FUNDED'],
-    FULLY_FUNDED: [],
-    CANCELLED: [],
 }
 
 // Update capital call status
