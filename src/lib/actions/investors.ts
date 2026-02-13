@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { InvestorType, InvestorStatus } from '@prisma/client'
-import { formatMoney as sharedFormatMoney } from '@/lib/shared/formatters'
+import { formatMoney } from '@/lib/shared/formatters'
 import { softDelete, notDeleted } from '@/lib/shared/soft-delete'
 import { logAudit } from '@/lib/shared/audit'
 import { PaginationParams, PaginatedResult, parsePaginationParams, paginatedResult } from '@/lib/shared/pagination'
@@ -133,8 +133,6 @@ export interface InvestorDetail {
         status: string
     }[]
 }
-
-const formatMoney = sharedFormatMoney
 
 // Get investors with pagination and search
 export async function getInvestors(params?: PaginationParams): Promise<PaginatedResult<InvestorListItem>> {
@@ -581,9 +579,9 @@ export async function getInvestorsForExport(): Promise<{
             email: inv.email || '',
             contactName: inv.contactName || '',
             contactEmail: inv.contactEmail || '',
-            totalCommitted: sharedFormatMoney(totalCommitted),
-            totalCalled: sharedFormatMoney(totalCalled),
-            totalPaid: sharedFormatMoney(totalPaid),
+            totalCommitted: formatMoney(totalCommitted),
+            totalCalled: formatMoney(totalCalled),
+            totalPaid: formatMoney(totalPaid),
             createdAt: inv.createdAt.toISOString().split('T')[0],
         }
     })

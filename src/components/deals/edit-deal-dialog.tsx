@@ -16,7 +16,6 @@ import {
 import {
     Form,
     FormControl,
-    FormDescription,
     FormField,
     FormItem,
     FormLabel,
@@ -29,6 +28,18 @@ import { DealStage } from './deal-stage-badge'
 import { updateDeal } from '@/lib/actions/deals'
 import { Edit } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+
+// Hardcoded hex colors for portal component (Dialog renders outside layout div)
+const dark = {
+    dialog: 'bg-[#1E293B] text-[#F8FAFC] border-[#334155]',
+    input: 'bg-[#11141D] border-[#334155] text-[#F8FAFC] placeholder:text-[#94A3B8] focus-visible:ring-[#3E5CFF]',
+    label: 'text-[#94A3B8]',
+    error: 'bg-[#DC2626]/15 text-[#DC2626] rounded-md p-3 text-sm',
+    cancelBtn: 'border-[#334155] bg-transparent text-[#F8FAFC] hover:bg-[#334155] hover:text-[#F8FAFC]',
+    saveBtn: 'bg-[#F8FAFC] text-[#11141D] hover:bg-[#F8FAFC]/90',
+    muted: 'text-[#94A3B8]',
+    textarea: 'bg-[#11141D] border-[#334155] text-[#F8FAFC] placeholder:text-[#94A3B8] focus-visible:ring-[#3E5CFF] resize-none min-h-[100px]',
+} as const
 
 // Form Schema
 const formSchema = z.object({
@@ -109,15 +120,15 @@ export function EditDealDialog({ deal }: EditDealDialogProps) {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="outline">
+                <Button variant="outline" className={dark.cancelBtn}>
                     <Edit className="mr-2 h-4 w-4" />
                     Edit Deal
                 </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className={`max-w-2xl max-h-[90vh] overflow-y-auto ${dark.dialog}`}>
                 <DialogHeader>
-                    <DialogTitle>Edit Deal</DialogTitle>
-                    <DialogDescription>
+                    <DialogTitle className="text-[#F8FAFC]">Edit Deal</DialogTitle>
+                    <DialogDescription className={dark.muted}>
                         Update the basic information for this deal.
                     </DialogDescription>
                 </DialogHeader>
@@ -128,13 +139,10 @@ export function EditDealDialog({ deal }: EditDealDialogProps) {
                             name="name"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Company Name</FormLabel>
+                                    <FormLabel className={dark.label}>Company Name</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Acme Corp" {...field} />
+                                        <Input placeholder="Acme Corp" className={dark.input} {...field} />
                                     </FormControl>
-                                    <FormDescription>
-                                        The legal name of the target company.
-                                    </FormDescription>
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -146,7 +154,7 @@ export function EditDealDialog({ deal }: EditDealDialogProps) {
                                 name="stage"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Stage</FormLabel>
+                                        <FormLabel className={dark.label}>Stage</FormLabel>
                                         <FormControl>
                                             <DealStageSelect
                                                 value={field.value as DealStage}
@@ -163,9 +171,9 @@ export function EditDealDialog({ deal }: EditDealDialogProps) {
                                 name="sector"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Sector</FormLabel>
+                                        <FormLabel className={dark.label}>Sector</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="Manufacturing" {...field} />
+                                            <Input placeholder="Manufacturing" className={dark.input} {...field} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -178,9 +186,9 @@ export function EditDealDialog({ deal }: EditDealDialogProps) {
                             name="askPrice"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Asking Price</FormLabel>
+                                    <FormLabel className={dark.label}>Asking Price</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="$5,000,000" {...field} />
+                                        <Input placeholder="$5,000,000" className={dark.input} {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -192,11 +200,11 @@ export function EditDealDialog({ deal }: EditDealDialogProps) {
                             name="description"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Description / Investment Thesis</FormLabel>
+                                    <FormLabel className={dark.label}>Description / Investment Thesis</FormLabel>
                                     <FormControl>
                                         <Textarea
                                             placeholder="Tell us about the deal..."
-                                            className="resize-none min-h-[100px]"
+                                            className={dark.textarea}
                                             {...field}
                                         />
                                     </FormControl>
@@ -206,7 +214,7 @@ export function EditDealDialog({ deal }: EditDealDialogProps) {
                         />
 
                         {error && (
-                            <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
+                            <div className={dark.error}>
                                 {error}
                             </div>
                         )}
@@ -217,10 +225,15 @@ export function EditDealDialog({ deal }: EditDealDialogProps) {
                                 variant="outline"
                                 onClick={() => setOpen(false)}
                                 disabled={isLoading}
+                                className={dark.cancelBtn}
                             >
                                 Cancel
                             </Button>
-                            <Button type="submit" disabled={isLoading}>
+                            <Button
+                                type="submit"
+                                disabled={isLoading}
+                                className={dark.saveBtn}
+                            >
                                 {isLoading ? 'Saving...' : 'Save Changes'}
                             </Button>
                         </div>

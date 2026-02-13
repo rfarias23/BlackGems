@@ -1,14 +1,19 @@
+import type { Decimal } from '@prisma/client/runtime/library'
+
 /**
  * Shared formatters for currency, percentages, and multiples.
  * Used across all server actions and components.
+ *
+ * Accepts Prisma Decimal, number, string, null, or undefined.
  */
+
+type NumericValue = Decimal | number | string | null | undefined
 
 /**
  * Formats a numeric value as a USD currency string.
  * Returns null if value is falsy.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function formatCurrency(value: any): string | null {
+export function formatCurrency(value: NumericValue): string | null {
   if (!value) return null
   return `$${Number(value).toLocaleString()}`
 }
@@ -16,8 +21,7 @@ export function formatCurrency(value: any): string | null {
 /**
  * Formats a numeric value as a currency string, defaulting to '$0'.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function formatMoney(value: any): string {
+export function formatMoney(value: NumericValue): string {
   if (!value) return '$0'
   return `$${Number(value).toLocaleString()}`
 }
@@ -25,17 +29,16 @@ export function formatMoney(value: any): string {
 /**
  * Returns the raw numeric string representation of a Decimal.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function formatDecimalRaw(value: any): string | null {
+export function formatDecimalRaw(value: NumericValue): string | null {
   if (!value) return null
   return Number(value).toString()
 }
 
 /**
  * Formats a decimal ratio (0.351) as a percentage string ("35.1%").
+ * Returns null if value is falsy.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function formatPercentage(value: any): string | null {
+export function formatPercentage(value: NumericValue): string | null {
   if (!value) return null
   return `${(Number(value) * 100).toFixed(1)}%`
 }
@@ -43,8 +46,7 @@ export function formatPercentage(value: any): string | null {
 /**
  * Formats a decimal ratio as a percentage, defaulting to '0%'.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function formatPercent(value: any): string {
+export function formatPercent(value: NumericValue): string {
   if (!value) return '0%'
   return `${(Number(value) * 100).toFixed(1)}%`
 }
@@ -52,8 +54,7 @@ export function formatPercent(value: any): string {
 /**
  * Formats a numeric value as a multiple (e.g., "2.50x").
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function formatMultiple(value: any): string {
+export function formatMultiple(value: NumericValue): string {
   if (!value) return '-'
   return `${Number(value).toFixed(2)}x`
 }

@@ -10,6 +10,7 @@ import { softDelete, notDeleted } from '@/lib/shared/soft-delete'
 import { requireFundAccess } from '@/lib/shared/fund-access'
 import { VALID_CALL_TRANSITIONS } from '@/lib/shared/workflow-transitions'
 import { notifyFundMembers } from '@/lib/actions/notifications'
+import { formatMoney, parseMoney } from '@/lib/shared/formatters'
 import { PaginationParams, PaginatedResult, parsePaginationParams, paginatedResult } from '@/lib/shared/pagination'
 
 // Display mappings
@@ -95,18 +96,6 @@ export interface CapitalCallDetail {
     }[]
 }
 
-// Helper to format decimal
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function formatMoney(value: any): string {
-    if (!value) return '$0'
-    return `$${Number(value).toLocaleString()}`
-}
-
-// Helper to parse money string
-function parseMoney(value: string): number {
-    if (!value) return 0
-    return parseFloat(value.replace(/[$,]/g, '')) || 0
-}
 
 // Get capital calls with pagination and search
 export async function getCapitalCalls(params?: PaginationParams): Promise<PaginatedResult<CapitalCallListItem>> {
@@ -369,8 +358,7 @@ export async function updateCapitalCallStatus(id: string, status: string) {
             return { error: `Cannot transition from ${CALL_STATUS_DISPLAY[existingCall.status]} to ${CALL_STATUS_DISPLAY[dbStatus] || dbStatus}` }
         }
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const updateData: Record<string, any> = {
+        const updateData: Record<string, unknown> = {
             status: dbStatus,
         }
 

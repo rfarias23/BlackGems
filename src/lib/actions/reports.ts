@@ -5,27 +5,8 @@ import { auth } from '@/lib/auth'
 import { calculateFundIRR, calculateCompanyIRR, calculateLPIRR } from '@/lib/shared/irr'
 import { calculateWaterfall, type WaterfallTier } from '@/lib/shared/waterfall'
 import { notDeleted } from '@/lib/shared/soft-delete'
+import { formatMoney, formatPercent, formatMultiple } from '@/lib/shared/formatters'
 
-// Helper to format decimal
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function formatMoney(value: any): string {
-    if (!value) return '$0'
-    return `$${Number(value).toLocaleString()}`
-}
-
-// Helper to format percentage
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function formatPercent(value: any): string {
-    if (!value) return '0%'
-    return `${(Number(value) * 100).toFixed(1)}%`
-}
-
-// Helper to format multiple
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function formatMultiple(value: any): string {
-    if (!value) return '-'
-    return `${Number(value).toFixed(2)}x`
-}
 
 // ============================================================================
 // DASHBOARD DATA

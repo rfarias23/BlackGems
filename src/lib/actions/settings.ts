@@ -8,6 +8,7 @@ import { z } from 'zod'
 import { FundStatus } from '@prisma/client'
 import { logAudit, computeChanges } from '@/lib/shared/audit'
 import { requireFundAccess } from '@/lib/shared/fund-access'
+import { formatCurrency, formatPercentage, parseMoney } from '@/lib/shared/formatters'
 
 // ============================================================================
 // USER PROFILE
@@ -193,23 +194,6 @@ export interface FundConfig {
     description: string | null
 }
 
-// Helper to format decimal
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function formatMoney(value: any): string {
-    if (!value) return ''
-    return `$${Number(value).toLocaleString()}`
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function formatPercent(value: any): string {
-    if (!value) return ''
-    return `${(Number(value) * 100).toFixed(2)}%`
-}
-
-function parseMoney(value: string): number {
-    if (!value) return 0
-    return parseFloat(value.replace(/[$,]/g, '')) || 0
-}
 
 function parsePercent(value: string): number {
     if (!value) return 0
@@ -236,13 +220,13 @@ export async function getFundConfig(): Promise<FundConfig | null> {
         type: fund.type,
         status: fund.status,
         vintage: fund.vintage,
-        targetSize: formatMoney(fund.targetSize),
-        hardCap: fund.hardCap ? formatMoney(fund.hardCap) : null,
-        minimumCommitment: fund.minimumCommitment ? formatMoney(fund.minimumCommitment) : null,
+        targetSize: formatCurrency(fund.targetSize) ?? '',
+        hardCap: fund.hardCap ? formatCurrency(fund.hardCap) : null,
+        minimumCommitment: fund.minimumCommitment ? formatCurrency(fund.minimumCommitment) : null,
         currency: fund.currency,
-        managementFee: formatPercent(fund.managementFee),
-        carriedInterest: formatPercent(fund.carriedInterest),
-        hurdleRate: fund.hurdleRate ? formatPercent(fund.hurdleRate) : null,
+        managementFee: formatPercentage(fund.managementFee) ?? '',
+        carriedInterest: formatPercentage(fund.carriedInterest) ?? '',
+        hurdleRate: fund.hurdleRate ? formatPercentage(fund.hurdleRate) : null,
         description: fund.description,
     }
 }
