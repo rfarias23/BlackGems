@@ -5,7 +5,8 @@ import { DealStage } from '@/components/deals/deal-stage-badge'
 import { DataPagination } from '@/components/ui/data-pagination'
 import { Plus } from 'lucide-react'
 import Link from 'next/link'
-import { getDeals } from '@/lib/actions/deals'
+import { getDeals, getDealPipelineAnalytics } from '@/lib/actions/deals'
+import { DealPipelineAnalytics } from '@/components/deals/deal-pipeline-analytics'
 
 interface DealsPageProps {
     searchParams: Promise<{
@@ -25,14 +26,17 @@ export default async function DealsPage({ searchParams }: DealsPageProps) {
     const sortBy = (params.sortBy || 'createdAt') as 'name' | 'createdAt' | 'askingPrice' | 'stage'
     const sortDir = (params.sortDir || 'desc') as 'asc' | 'desc'
 
-    const result = await getDeals({
-        page,
-        search: params.search,
-        stages,
-        status: params.status,
-        sortBy,
-        sortDir,
-    })
+    const [result, pipelineAnalytics] = await Promise.all([
+        getDeals({
+            page,
+            search: params.search,
+            stages,
+            status: params.status,
+            sortBy,
+            sortDir,
+        }),
+        getDealPipelineAnalytics(),
+    ])
 
     const tableDeals: DealTableItem[] = result.data.map((deal) => ({
         id: deal.id,
@@ -59,6 +63,10 @@ export default async function DealsPage({ searchParams }: DealsPageProps) {
                     </Link>
                 </Button>
             </div>
+
+            {pipelineAnalytics && (
+                <DealPipelineAnalytics analytics={pipelineAnalytics} />
+            )}
 
             <DealFilters />
             <DealTable deals={tableDeals} sortBy={sortBy} sortDir={sortDir} />
