@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import {
     TrendingUp,
@@ -299,10 +300,13 @@ function DualInterfaceSection() {
                 </FadeIn>
                 <FadeIn delay={300}>
                     <div className="landing-card w-full max-w-[500px] h-[220px] md:h-[320px] bg-slate-800 border border-slate-700 rounded-lg overflow-hidden relative">
-                        <img
+                        <Image
                             src="/images/cockpit-preview.png"
                             alt="BlackGem Manager Dashboard — Deal Pipeline"
                             className="w-full h-full object-cover object-top"
+                            fill
+                            sizes="500px"
+                            priority
                         />
                     </div>
                 </FadeIn>
@@ -330,10 +334,12 @@ function DualInterfaceSection() {
                 </FadeIn>
                 <FadeIn delay={300}>
                     <div className="landing-card w-full max-w-[500px] h-[220px] md:h-[320px] bg-white border border-slate-200 rounded-lg overflow-hidden relative">
-                        <img
+                        <Image
                             src="/images/library-preview.png"
                             alt="BlackGem LP Portal — Investment Overview"
                             className="w-full h-full object-cover object-top"
+                            fill
+                            sizes="500px"
                         />
                     </div>
                 </FadeIn>

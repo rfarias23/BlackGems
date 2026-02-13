@@ -14,41 +14,6 @@ import { requireFundAccess } from '@/lib/shared/fund-access'
 
 const DD_MANAGE_ROLES = ['SUPER_ADMIN', 'FUND_ADMIN', 'INVESTMENT_MANAGER', 'ANALYST']
 
-const DD_CATEGORY_LABELS: Record<DDCategory, string> = {
-    FINANCIAL: 'Financial',
-    ACCOUNTING: 'Accounting',
-    TAX: 'Tax',
-    LEGAL: 'Legal',
-    COMMERCIAL: 'Commercial',
-    OPERATIONAL: 'Operational',
-    HR: 'Human Resources',
-    IT: 'Information Technology',
-    ENVIRONMENTAL: 'Environmental',
-    INSURANCE: 'Insurance',
-    REAL_ESTATE: 'Real Estate',
-    IP: 'Intellectual Property',
-    REGULATORY: 'Regulatory',
-    QUALITY: 'Quality',
-    OTHER: 'Other',
-}
-
-const DD_STATUS_LABELS: Record<DDStatus, string> = {
-    NOT_STARTED: 'Not Started',
-    IN_PROGRESS: 'In Progress',
-    PENDING_INFO: 'Pending Info',
-    UNDER_REVIEW: 'Under Review',
-    COMPLETED: 'Completed',
-    NA: 'N/A',
-}
-
-const PRIORITY_LABELS: Record<number, string> = {
-    1: 'Critical',
-    2: 'High',
-    3: 'Medium',
-    4: 'Low',
-    5: 'Optional',
-}
-
 // ============================================================================
 // TYPES
 // ============================================================================
