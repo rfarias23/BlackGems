@@ -1117,3 +1117,140 @@ export async function getDealAnalytics(dealId: string): Promise<DealAnalytics | 
         totalStages: PIPELINE_STAGES.length,
     }
 }
+
+// ============================================================================
+// DEAL PIPELINE ANALYTICS
+// ============================================================================
+
+/** Display stages in pipeline order (used for funnel visualization) */
+const DISPLAY_STAGE_ORDER = [
+    'Identified',
+    'Initial Review',
+    'NDA Signed',
+    'IOI Submitted',
+    'Due Diligence',
+    'LOI Negotiation',
+    'Closing',
+] as const
+
+type DisplayStage = (typeof DISPLAY_STAGE_ORDER)[number]
+
+export interface PipelineStageMetrics {
+    stage: DisplayStage
+    count: number
+    totalValue: number
+    avgDaysInStage: number | null
+}
+
+export interface PipelineAnalytics {
+    stages: PipelineStageMetrics[]
+    totalActiveDeals: number
+    totalPipelineValue: string | null
+    avgDaysInPipeline: number | null
+    closedWon: number
+    closedLost: number
+    winRate: string | null
+    conversionRate: string | null
+}
+
+/** Pipeline-level analytics across all active deals in the fund */
+export async function getDealPipelineAnalytics(): Promise<PipelineAnalytics | null> {
+    const session = await auth()
+    if (!session?.user?.id) return null
+
+    const fund = await prisma.fund.findFirst()
+    if (!fund) return null
+
+    const deals = await prisma.deal.findMany({
+        where: {
+            fundId: fund.id,
+            ...notDeleted,
+        },
+        select: {
+            id: true,
+            stage: true,
+            askingPrice: true,
+            createdAt: true,
+            actualCloseDate: true,
+        },
+    })
+
+    if (deals.length === 0) return null
+
+    const now = new Date()
+
+    // Group deals by display stage
+    const stageMap = new Map<DisplayStage, { count: number; totalValue: number; totalDays: number; daysCount: number }>()
+    for (const stage of DISPLAY_STAGE_ORDER) {
+        stageMap.set(stage, { count: 0, totalValue: 0, totalDays: 0, daysCount: 0 })
+    }
+
+    let totalActiveDeals = 0
+    let totalPipelineValue = 0
+    let totalDaysSum = 0
+    let totalDaysCount = 0
+    let closedWon = 0
+    let closedLost = 0
+
+    for (const deal of deals) {
+        const displayStage = STAGE_TO_DISPLAY[deal.stage] || deal.stage
+        const endDate = deal.actualCloseDate ?? now
+        const days = daysBetween(deal.createdAt, endDate)
+        const value = deal.askingPrice ? Number(deal.askingPrice) : 0
+
+        // Track closed outcomes
+        if (displayStage === 'Closed Won') {
+            closedWon++
+        } else if (displayStage === 'Closed Lost') {
+            closedLost++
+        }
+
+        // Track active pipeline stages (exclude terminal and On Hold)
+        const bucket = stageMap.get(displayStage as DisplayStage)
+        if (bucket) {
+            bucket.count++
+            bucket.totalValue += value
+            if (days !== null) {
+                bucket.totalDays += days
+                bucket.daysCount++
+            }
+            totalActiveDeals++
+            totalPipelineValue += value
+            if (days !== null) {
+                totalDaysSum += days
+                totalDaysCount++
+            }
+        }
+    }
+
+    // Build stage metrics array
+    const stages: PipelineStageMetrics[] = DISPLAY_STAGE_ORDER.map((stage) => {
+        const data = stageMap.get(stage)!
+        return {
+            stage,
+            count: data.count,
+            totalValue: data.totalValue,
+            avgDaysInStage: data.daysCount > 0 ? Math.round(data.totalDays / data.daysCount) : null,
+        }
+    })
+
+    // Compute rates
+    const totalTerminal = closedWon + closedLost
+    const winRate = totalTerminal > 0
+        ? formatPercentage(closedWon / totalTerminal)
+        : null
+    const conversionRate = deals.length > 0
+        ? formatPercentage(closedWon / deals.length)
+        : null
+
+    return {
+        stages,
+        totalActiveDeals,
+        totalPipelineValue: totalPipelineValue > 0 ? formatCurrency(totalPipelineValue) : null,
+        avgDaysInPipeline: totalDaysCount > 0 ? Math.round(totalDaysSum / totalDaysCount) : null,
+        closedWon,
+        closedLost,
+        winRate,
+        conversionRate,
+    }
+}
