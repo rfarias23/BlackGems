@@ -47,7 +47,7 @@ export async function getDashboardChartData(): Promise<DashboardChartData | null
         orderBy: { distributionDate: 'asc' },
       }),
       prisma.commitment.findMany({
-        where: { fundId: fund.id },
+        where: { fundId: fund.id, ...notDeleted },
         select: { distributedAmount: true, paidAmount: true },
       }),
     ])
@@ -121,7 +121,7 @@ export async function getLPChartData(
   if (!session?.user?.id) return null
 
   const commitments = await prisma.commitment.findMany({
-    where: { investorId },
+    where: { investorId, ...notDeleted },
     include: {
       fund: { select: { name: true } },
     },
@@ -158,7 +158,7 @@ export async function getWaterfallChartData(
   if (!fund) return null
 
   const commitments = await prisma.commitment.findMany({
-    where: { fundId: fund.id },
+    where: { fundId: fund.id, ...notDeleted },
   })
 
   const totalPaid = commitments.reduce(

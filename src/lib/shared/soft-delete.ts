@@ -9,7 +9,7 @@ import { prisma } from '@/lib/prisma'
  *   await softDelete('investor', investorId)
  */
 export async function softDelete(
-  model: 'deal' | 'investor' | 'portfolioCompany' | 'document' | 'capitalCall' | 'distribution',
+  model: 'deal' | 'investor' | 'portfolioCompany' | 'document' | 'capitalCall' | 'distribution' | 'commitment',
   id: string
 ): Promise<void> {
   const now = new Date()
@@ -47,6 +47,12 @@ export async function softDelete(
       break
     case 'distribution':
       await prisma.distribution.update({
+        where: { id },
+        data: { deletedAt: now },
+      })
+      break
+    case 'commitment':
+      await prisma.commitment.update({
         where: { id },
         data: { deletedAt: now },
       })

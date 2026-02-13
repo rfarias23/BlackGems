@@ -55,7 +55,7 @@ export async function getDashboardData(): Promise<DashboardData | null> {
 
     // Parallel queries for performance
     const [commitments, portfolioCompanies, deals, investors, recentAuditLogs] = await Promise.all([
-        prisma.commitment.findMany({ where: { fundId: fund.id } }),
+        prisma.commitment.findMany({ where: { fundId: fund.id, ...notDeleted } }),
         prisma.portfolioCompany.findMany({ where: { fundId: fund.id } }),
         prisma.deal.findMany({
             where: { fundId: fund.id, deletedAt: null },
@@ -213,7 +213,7 @@ export async function getFundPerformanceReport(fundId?: string): Promise<FundPer
 
     // Get commitments
     const commitments = await prisma.commitment.findMany({
-        where: { fundId: fund.id },
+        where: { fundId: fund.id, ...notDeleted },
     })
 
     const totalCommitments = commitments.reduce((sum, c) => sum + Number(c.committedAmount), 0)
@@ -416,12 +416,11 @@ export async function getLPCapitalStatement(investorId: string, fundId?: string)
     }
 
     // Get commitment
-    const commitment = await prisma.commitment.findUnique({
+    const commitment = await prisma.commitment.findFirst({
         where: {
-            investorId_fundId: {
-                investorId: investorId,
-                fundId: fund.id,
-            },
+            investorId: investorId,
+            fundId: fund.id,
+            ...notDeleted,
         },
     })
 
@@ -431,7 +430,7 @@ export async function getLPCapitalStatement(investorId: string, fundId?: string)
 
     // Get all commitments to calculate ownership %
     const allCommitments = await prisma.commitment.findMany({
-        where: { fundId: fund.id },
+        where: { fundId: fund.id, ...notDeleted },
     })
     const totalCommitted = allCommitments.reduce((sum, c) => sum + Number(c.committedAmount), 0)
     const ownershipPct = totalCommitted > 0 ? Number(commitment.committedAmount) / totalCommitted : 0

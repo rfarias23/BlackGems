@@ -8,6 +8,7 @@ import { z } from 'zod'
 import { UserRole } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 import { logAudit } from '@/lib/shared/audit'
+import { notDeleted } from '@/lib/shared/soft-delete'
 import { sendInviteEmail } from '@/lib/email'
 import crypto from 'crypto'
 
@@ -496,7 +497,7 @@ export async function createLPInvitation(formData: FormData) {
 
     // Get fund name for the email
     const fundCommitment = await prisma.commitment.findFirst({
-        where: { investorId },
+        where: { investorId, ...notDeleted },
         include: { fund: { select: { name: true } } },
     })
     const fundName = fundCommitment?.fund.name || 'BlackGem Fund'

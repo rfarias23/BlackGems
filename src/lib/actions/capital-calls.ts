@@ -276,6 +276,7 @@ export async function createCapitalCall(formData: FormData) {
             where: {
                 fundId: data.fundId,
                 status: { in: ['ACTIVE', 'FUNDED', 'SIGNED'] },
+                ...notDeleted,
             },
             include: {
                 investor: true,
@@ -455,12 +456,11 @@ export async function recordCallItemPayment(
         })
 
         // Update the commitment's called and paid amounts
-        const commitment = await prisma.commitment.findUnique({
+        const commitment = await prisma.commitment.findFirst({
             where: {
-                investorId_fundId: {
-                    investorId: item.investorId,
-                    fundId: item.capitalCall.fundId,
-                },
+                investorId: item.investorId,
+                fundId: item.capitalCall.fundId,
+                ...notDeleted,
             },
         })
 

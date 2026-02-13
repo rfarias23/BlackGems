@@ -10,6 +10,7 @@ vi.mock('@/lib/prisma', () => ({
         document: { update: vi.fn().mockResolvedValue({}) },
         capitalCall: { update: vi.fn().mockResolvedValue({}) },
         distribution: { update: vi.fn().mockResolvedValue({}) },
+        commitment: { update: vi.fn().mockResolvedValue({}) },
     },
 }))
 
@@ -68,6 +69,15 @@ describe('softDelete', () => {
 
         expect(prisma.distribution.update).toHaveBeenCalledWith({
             where: { id: 'dist-222' },
+            data: { deletedAt: expect.any(Date) },
+        })
+    })
+
+    it('soft-deletes a commitment', async () => {
+        await softDelete('commitment', 'com-333')
+
+        expect(prisma.commitment.update).toHaveBeenCalledWith({
+            where: { id: 'com-333' },
             data: { deletedAt: expect.any(Date) },
         })
     })

@@ -297,6 +297,7 @@ export async function createDistribution(formData: FormData) {
             where: {
                 fundId: data.fundId,
                 status: { in: ['ACTIVE', 'FUNDED'] },
+                ...notDeleted,
             },
             include: {
                 investor: true,
@@ -458,12 +459,11 @@ export async function processDistributionItem(itemId: string) {
         })
 
         // Update the commitment's distributed amount
-        const commitment = await prisma.commitment.findUnique({
+        const commitment = await prisma.commitment.findFirst({
             where: {
-                investorId_fundId: {
-                    investorId: item.investorId,
-                    fundId: item.distribution.fundId,
-                },
+                investorId: item.investorId,
+                fundId: item.distribution.fundId,
+                ...notDeleted,
             },
         })
 

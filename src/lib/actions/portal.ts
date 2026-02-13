@@ -7,6 +7,7 @@ import { z } from 'zod'
 import { Decimal } from '@prisma/client/runtime/library'
 import { logAudit } from '@/lib/shared/audit'
 import { computeChanges } from '@/lib/shared/audit'
+import { notDeleted } from '@/lib/shared/soft-delete'
 import {
     getLPCapitalStatement,
     getFundPerformanceReport,
@@ -212,7 +213,7 @@ export async function getPortalDocuments() {
 
     // Get fund-level documents (shared with all LPs in the fund)
     const commitments = await prisma.commitment.findMany({
-        where: { investorId: session.user.investorId },
+        where: { investorId: session.user.investorId, ...notDeleted },
         select: { fundId: true },
     })
     const fundIds = commitments.map(c => c.fundId)

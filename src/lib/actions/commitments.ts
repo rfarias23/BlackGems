@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { requireFundAccess } from '@/lib/shared/fund-access'
 import { logAudit, computeChanges } from '@/lib/shared/audit'
 import { revalidatePath } from 'next/cache'
-import { notDeleted } from '@/lib/shared/soft-delete'
+import { notDeleted, softDelete } from '@/lib/shared/soft-delete'
 import { z } from 'zod'
 
 // ============================================================================
@@ -96,8 +96,8 @@ export async function createCommitment(
         }
 
         // Check for duplicate commitment
-        const existing = await prisma.commitment.findUnique({
-            where: { investorId_fundId: { investorId, fundId } },
+        const existing = await prisma.commitment.findFirst({
+            where: { investorId, fundId, ...notDeleted },
         })
         if (existing) {
             return { error: 'This investor already has a commitment to this fund.' }
@@ -162,8 +162,8 @@ export async function updateCommitment(
     }
 
     try {
-        const existing = await prisma.commitment.findUnique({
-            where: { id: commitmentId },
+        const existing = await prisma.commitment.findFirst({
+            where: { id: commitmentId, ...notDeleted },
         })
         if (!existing) {
             return { error: 'Commitment not found.' }
@@ -234,8 +234,8 @@ export async function deleteCommitment(
     }
 
     try {
-        const existing = await prisma.commitment.findUnique({
-            where: { id: commitmentId },
+        const existing = await prisma.commitment.findFirst({
+            where: { id: commitmentId, ...notDeleted },
         })
         if (!existing) {
             return { error: 'Commitment not found.' }
@@ -243,12 +243,7 @@ export async function deleteCommitment(
 
         await requireFundAccess(session.user.id, existing.fundId)
 
-        // Note: Commitment model does not have deletedAt field in schema.
-        // Hard delete is used here. A schema migration to add deletedAt
-        // should be done before production deployment.
-        await prisma.commitment.delete({
-            where: { id: commitmentId },
-        })
+        await softDelete('commitment', commitmentId)
 
         await logAudit({
             userId: session.user.id,
