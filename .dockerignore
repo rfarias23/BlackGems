@@ -1,0 +1,16 @@
+.git
+.gitignore
+.next
+.env*
+!.env.example
+node_modules
+.claude
+.vscode
+.idea
+docs
+Technical Documents
+Desing & UI
+*.md
+!README.md
+coverage
+uploads
