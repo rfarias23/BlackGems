@@ -13,6 +13,7 @@ import {
     BarChart3,
     Building2,
     DollarSign,
+    FileText,
     TrendingUp,
     Users,
     Target,
@@ -27,7 +28,9 @@ import {
     getInvestorsForReports,
 } from '@/lib/actions/reports';
 import { getDashboardChartData, getWaterfallChartData } from '@/lib/actions/chart-data';
+import { listReports } from '@/lib/actions/quarterly-updates';
 import { LPStatementSelector } from '@/components/reports/lp-statement-selector';
+import { QuarterlyUpdateBuilder } from '@/components/reports/quarterly-update-builder';
 import { FundPerformanceCharts, PortfolioCharts } from '@/components/charts/reports-charts';
 import { ExportFundPerformance, ExportPortfolioSummary, ExportDealPipeline } from '@/components/reports/export-buttons';
 import { DownloadFundReportButton } from '@/components/reports/download-fund-report-button';
@@ -42,13 +45,14 @@ function formatDate(date: Date): string {
 }
 
 export default async function ReportsPage() {
-    const [fundPerformance, portfolioSummary, dealPipeline, investors, chartData, waterfallData] = await Promise.all([
+    const [fundPerformance, portfolioSummary, dealPipeline, investors, chartData, waterfallData, reports] = await Promise.all([
         getFundPerformanceReport(),
         getPortfolioSummaryReport(),
         getDealPipelineReport(),
         getInvestorsForReports(),
         getDashboardChartData(),
         getWaterfallChartData(),
+        listReports(),
     ]);
 
     return (
@@ -67,6 +71,7 @@ export default async function ReportsPage() {
                     <TabsTrigger value="portfolio">Portfolio Summary</TabsTrigger>
                     <TabsTrigger value="pipeline">Deal Pipeline</TabsTrigger>
                     <TabsTrigger value="lp-statements">LP Statements</TabsTrigger>
+                    <TabsTrigger value="quarterly-updates">Quarterly Updates</TabsTrigger>
                 </TabsList>
 
                 {/* Fund Performance Tab */}
@@ -607,6 +612,25 @@ export default async function ReportsPage() {
                             <LPStatementSelector investors={investors} fundName={fundPerformance?.fund.name} />
                         </CardContent>
                     </Card>
+                </TabsContent>
+
+                {/* Quarterly Updates Tab */}
+                <TabsContent value="quarterly-updates" className="space-y-4">
+                    {fundPerformance ? (
+                        <QuarterlyUpdateBuilder
+                            fundId={fundPerformance.fund.id}
+                            initialReports={reports}
+                        />
+                    ) : (
+                        <Card>
+                            <CardContent className="p-6">
+                                <div className="text-center py-12">
+                                    <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                                    <p className="text-muted-foreground">No fund data available to generate quarterly updates</p>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
                 </TabsContent>
             </Tabs>
             </ErrorBoundary>
