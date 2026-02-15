@@ -1,237 +1,366 @@
 # BlackGem — Session Handoff Document
 
-> Documento base para continuar desarrollo en nueva sesión.
-> Actualizado: 2026-02-13
-> Último commit: `50720d8` (production readiness + deal analytics)
+> Documento base para continuar desarrollo en nueva sesion.
+> Actualizado: 2026-02-15
+> Ultimo commit: `f467446` (login redesign + favicon + deployment)
 
 ---
 
 ## 1. Estado General del Proyecto
 
-- **MVP Completion:** ~99.9% — production-ready pending DB migration + env vars
-- **Tech Stack:** Next.js 15.5.10, React 19, TypeScript, Prisma 6, PostgreSQL (Neon), Tailwind CSS 4, NextAuth v5 (beta.30), jsPDF, Resend
-- **Repo:** https://github.com/rfarias23/BlackGems
-- **Branch principal:** `main` (commit `50720d8`)
-- **Dev server:** `localhost:3002` (corre desde `~/Desktop/BlackGem`)
+- **MVP Completion:** 100% — **EN PRODUCCION** en https://www.blackgem.ai
+- **Stack:** Next.js 15.5.10, React 19, TypeScript, Prisma 6, PostgreSQL (Neon via RDS), Tailwind CSS 4, NextAuth v5 beta.30, jsPDF, Resend
+- **Repo:** github.com/rfarias23/BlackGems | Branch: `main` (commit `f467446`)
+- **Dev server:** localhost:3002
 - **Tests:** 187/187 pass (11 test files, Vitest)
 - **TypeScript:** Zero `any` types, zero `eslint-disable`, zero `@ts-ignore`
-- **Build:** Clean — `npm run build` passes with zero errors/warnings
-- **Lint:** Clean — `npm run lint` passes with zero errors/warnings
+- **Build/Lint:** Both pass clean
 
 ---
 
-## 2. Estado Limpio — No Hay Pendientes de Código
+## 2. Infraestructura de Produccion
 
-- Working tree limpio — nada sin commitear
-- Branches: solo `main` + `origin/main` (15 remote branches + 1 local limpiados)
-- Worktrees: ninguno activo
-- Resend: instalado manualmente en node_modules (npm install cuelga en esta máquina)
+### AWS Resources
 
----
+| Recurso | ID / Valor |
+|---------|------------|
+| EC2 Instance | `i-02d2ed4c5d598f672` (t3.micro, Amazon Linux 2023) |
+| Elastic IP | `3.223.165.121` (`eipalloc-0455088545467ba9b`) |
+| Security Group EC2 | `sg-0400b24b78152cde5` (ports 22, 80, 443) |
+| Key Pair | `blackgem-ec2` (`~/.ssh/blackgem-ec2.pem`) |
+| IAM Role | `blackgem-ec2-role` (ECR read-only) |
+| Instance Profile | `blackgem-ec2-profile` |
+| ECR Registry | `829163697507.dkr.ecr.us-east-1.amazonaws.com/blackgem` |
+| RDS Host | `blackgem-prod.ca9mk6ayu74v.us-east-1.rds.amazonaws.com` |
+| RDS Security Group | `sg-0cf5124eab58f6333` |
+| VPC | `vpc-02aa023e74e9bbbf1` |
+| Subnet | `subnet-0ab0f906e21192128` |
+| Region | `us-east-1` |
 
-## 3. PRs — Historial Completo
+### Dominio & TLS
 
-| PR | Sprint | Título | Estado |
-|----|--------|--------|--------|
-| #36 | 12 | Security hardening & type safety | MERGED |
-| #35 | 11 | Testing & shared module extraction | MERGED |
-| #34 | 10 | Reports & communications (PDF reports, investor comms, CSV export) | MERGED |
-| #33 | 9 | LP Portal enhancement (waterfall, profile edit, docs, acknowledgment) | MERGED |
-| #32 | 8 | Capital & distributions polish (summary cards, workflow, PDF notices) | MERGED |
-| #31 | 7 | Portfolio module (financials, KPIs, valuation) | MERGED |
-| #30 | 6 | Deals module completion (filters, analytics, tasks) | MERGED |
-| #29 | 5 | Pagination, security, build fix | MERGED |
-| #28 | — | Codify Product & Engineering Ethos (CLAUDE.md) | MERGED |
-| #27 | — | Harden session validation & add LP portal PDF exports | MERGED |
-| #26 | 4 | Deal conversion, PDFs, LP invites, notifications | MERGED |
-| #25 | 3 | Audit logging, fund access, error boundaries & tests | MERGED |
-| #24 | — | Brand identity dark theme corrections | MERGED |
-| #23 | 2 | IRR, waterfall, charts & CSV export | MERGED |
-| #22 | 1 | Audit, Soft Deletes, Fund Access | MERGED |
-| #21 | — | Section transitions, smooth scroll & preview images | MERGED |
-| #20 | — | Logo font size fix | MERGED |
-| #19 | — | Chain pattern animation fix | MERGED |
-| #18 | — | Landing page UX enhancements | MERGED |
-| #17 | — | BlackGem landing page — 9 sections | MERGED |
+| Item | Valor |
+|------|-------|
+| Dominio | `blackgem.ai` (GoDaddy) |
+| DNS A records | `@` y `www` -> `3.223.165.121` |
+| TLS | Let's Encrypt via certbot (auto-renew, expira 2026-05-16) |
+| nginx config | `/etc/nginx/conf.d/blackgem.conf` |
 
-**No hay PRs abiertos.**
+### Stack de Produccion
 
----
+```
+GitHub push -> GitHub Actions -> Docker build -> ECR push -> SSH to EC2 -> docker compose pull + up
+```
 
-## 4. Lo Que Se Completó Recientemente
+- **Dockerfile:** Multi-stage build, `--chown=nextjs:nodejs`, standalone output
+- **Docker Compose:** `/opt/blackgem/docker-compose.yml` (puerto `127.0.0.1:3000:3000`)
+- **nginx:** Reverse proxy HTTPS -> localhost:3000, con proxy headers (X-Forwarded-Proto, X-Real-IP)
+- **ECR credential helper:** `~/.docker/config.json` con `ecr-login` (via IAM instance profile)
+- **Deploy time:** ~2 min 20s (build + push + pull + restart)
 
-### Deal Analytics Dashboard (commits `aef8236`..`5890df3`)
-- **Server action:** `getDealPipelineAnalytics()` in `deals.ts` — stage funnel, pipeline value, avg days, conversion rates
-- **Component:** `DealPipelineAnalytics` in `src/components/deals/deal-pipeline-analytics.tsx` — horizontal funnel bars, value cards, time metrics
-- **Tests:** 6 unit tests in `deal-pipeline-analytics.test.ts`
-- **Integration:** Promise.all parallel fetch on `/deals` page
-- **Key pattern:** `STAGE_TO_DISPLAY` maps 18 DB enum values → ~10 display stages
+### GitHub Secrets Configurados
 
-### Production Readiness (commits `d1692ba`..`50720d8`)
-- **Commitment soft-delete:** Added `deletedAt DateTime?` to Commitment model, updated `soft-delete.ts` utility, converted all 15+ commitment queries across 7 files to use `...notDeleted` filter, replaced hard delete with `softDelete()` in `commitments.ts`
-- **Prisma findUnique → findFirst:** Compound key lookups can't have extra `where` clauses, so all `findUnique` with compound keys were converted to `findFirst`
-- **Environment vars:** Added `RESEND_FROM_EMAIL` and `NEXT_PUBLIC_APP_URL` to `.env.example`
-- **Unused code cleanup:** Removed `DD_CATEGORY_LABELS`, `DD_STATUS_LABELS`, `PRIORITY_LABELS` from `due-diligence.ts`
-- **Next.js Image:** Replaced 2 `<img>` tags with `<Image>` on landing page
-- **Vitest fix:** Added `'**/.claude/worktrees/**'` to exclude array to prevent stale worktree test files from failing
+| Secret | Proposito |
+|--------|-----------|
+| `AWS_ACCESS_KEY_ID` | ECR push desde GitHub Actions |
+| `AWS_SECRET_ACCESS_KEY` | ECR push desde GitHub Actions |
+| `EC2_HOST` | `3.223.165.121` |
+| `EC2_SSH_KEY` | Contenido de `blackgem-ec2.pem` |
 
-### Sprint 12 (PR #36)
-- **commitments.ts rewritten:** Added `requireFundAccess()` to all 3 mutations, Zod validation schemas, `try/catch` error handling, `computeChanges()` for audit diffs
-- **Zero `any` types:** All 13 `Record<string, any>` replaced with `Record<string, unknown>`
-- **Shared formatters consolidated:** 7 duplicates removed, single source in `formatters.ts`
-- **Zod bug fix:** `.errors[0]` → `.issues[0]` (Zod v3 uses `.issues`)
+### Variables de Entorno en EC2 (`/opt/blackgem/.env`)
 
----
+```
+DATABASE_URL=postgresql://blackgem_admin:***@blackgem-prod.ca9mk6ayu74v.us-east-1.rds.amazonaws.com:5432/blackgem
+NEXTAUTH_SECRET=***
+NEXTAUTH_URL=https://www.blackgem.ai
+NEXT_PUBLIC_APP_URL=https://www.blackgem.ai
+AUTH_TRUST_HOST=true
+RESEND_API_KEY=re_placeholder          # <-- PENDIENTE: configurar key real
+RESEND_FROM_EMAIL=BlackGem <noreply@blackgem.ai>
+```
 
-## 5. Gaps Restantes para Producción
+### Acceso SSH
 
-Solo quedan items operacionales (no de código):
-
-### 5.1 Database Migration
-- El schema de Prisma ya tiene `deletedAt DateTime?` en Commitment, pero la migración no se ha corrido en la DB
-- **Acción:** `npx prisma migrate dev --name add-commitment-soft-delete` (requiere `DATABASE_URL` conectado a Neon)
-
-### 5.2 Environment Variables (en hosting)
-- `RESEND_API_KEY` — Requerido para emails de invitación LP
-- `RESEND_FROM_EMAIL` — Dirección de envío (default: `BlackGem <noreply@blackgem.app>`)
-- `NEXT_PUBLIC_APP_URL` — URL de producción para links de invitación
+```bash
+ssh -i ~/.ssh/blackgem-ec2.pem ec2-user@3.223.165.121
+cd /opt/blackgem
+docker compose logs --tail 50    # Ver logs
+docker compose pull && docker compose up -d  # Redeploy manual
+```
 
 ---
 
-## 6. Patrones Arquitectónicos Clave
+## 3. Sesion 2026-02-14/15 — Lo Que Se Hizo
+
+### 3.1 Migracion de App Runner a EC2 (dia completo)
+- App Runner fallo 6+ veces (health check redirects, ARM64/AMD64 mismatch, OCI attestation, file ownership)
+- Pivoteamos a EC2 + Docker Compose + nginx siguiendo first principles
+- Toda la infra se creo desde cero: EC2, Elastic IP, SG, IAM, ECR credential helper, nginx, certbot
+
+### 3.2 Archivos Modificados/Creados
+- `.github/workflows/deploy.yml` — Reescrito de App Runner a EC2 SSH deploy
+- `.env.example` — Agregado `AUTH_TRUST_HOST=true`
+- `src/app/page.tsx` — Removido LP Login, links cambiados de localhost a rutas relativas
+- `src/components/landing/mobile-nav.tsx` — Removido LP Login
+- `src/app/favicon.ico` + `src/app/icon.png` — Favicon de BlackGem
+- `src/app/login/page.tsx` — Rediseno inspirado en D.E. Shaw (dark bg, vertical brand mark, serif title)
+- `src/components/auth/login-form.tsx` — Rediseno sin Card wrapper, inputs custom, Heritage Sapphire CTA
+
+### 3.3 Commits de esta sesion
+
+```
+f467446 fix: use correct BlackGem font-serif logo style on login page
+3e44267 feat: redesign Manager Login inspired by D.E. Shaw
+a8b7e1c fix: add favicon and remove LP Login from landing page
+aa6239c fix: remove LP Login link from landing page hero
+8a20ec7 fix: use relative paths for login links on landing page
+e346996 feat: switch deployment from App Runner to EC2 + Docker Compose
+20a30c4 feat: add AWS App Runner deployment infrastructure
+```
+
+---
+
+## 4. Roadmap de Prioridades
+
+### PRIORIDAD 1 — Operacional Inmediato (no requiere codigo)
+
+| # | Tarea | Esfuerzo | Detalles |
+|---|-------|----------|----------|
+| 1.1 | **Configurar Resend API key real** | 15 min | Crear cuenta en resend.com, verificar dominio `blackgem.ai`, obtener API key, actualizar `/opt/blackgem/.env` en EC2, reiniciar container |
+| 1.2 | **Tighten RDS Security Group** | 5 min | `sg-0cf5124eab58f6333` debe permitir solo trafico desde `sg-0400b24b78152cde5` (EC2 SG), no IPs arbitrarias |
+| 1.3 | **Restringir SSH (port 22)** | 2 min | Limitar a tu IP actual en el SG del EC2. Comando: `aws ec2 authorize-security-group-ingress --group-id sg-0400b24b78152cde5 --protocol tcp --port 22 --cidr YOUR_IP/32` (y revocar la regla 0.0.0.0/0) |
+| 1.4 | **Cleanup App Runner resources** | 10 min | Eliminar servicio App Runner huerfano si existe |
+
+### PRIORIDAD 2 — Deuda Tecnica Menor
+
+| # | Tarea | Esfuerzo | Detalles |
+|---|-------|----------|----------|
+| 2.1 | **Settings audit logging** | 30 min | Agregar `logAudit()` a `settings.ts`: `updateProfile`, `changePassword`, `updateFundConfig`, `updateFundStatus`. Patron: copiar de `investors.ts` |
+| 2.2 | **Error boundary integration** | 1 hr | `src/components/ui/error-boundary.tsx` existe pero no esta integrado en ninguna pagina. Wrappear modulos principales |
+| 2.3 | **Login page — verificar deploy** | 5 min | El rediseno del login (D.E. Shaw style) fue commiteado pero puede no haberse deployado. Verificar en https://www.blackgem.ai/login y si no refleja el cambio, hacer push manual |
+
+### PRIORIDAD 3 — Features de Alto Impacto
+
+| # | Feature | Esfuerzo | Descripcion |
+|---|---------|----------|-------------|
+| 3.1 | **Document Management System** | 2-3 dias | Upload a S3/R2, versioning, deal room. Es el gap funcional mas grande del PRD. Modelos `Document` y `DocumentVersion` ya existen en schema |
+| 3.2 | **Advanced Reporting** | 2 dias | Quarterly update builder templated, custom date ranges, comparison periods. PRD tiene wireframes en `07_Module_Reports.md` |
+
+### PRIORIDAD 4 — Features de Impacto Medio
+
+| # | Feature | Esfuerzo | Descripcion |
+|---|---------|----------|-------------|
+| 4.1 | **Deal Scoring System** | 1 dia | Campos existentes sin usar: `attractivenessScore`, `fitScore`, `riskScore`, `source`, `sourceContact`. Solo UI + server action |
+| 4.2 | **Investor Communications Hub** | 2 dias | Bulk comms, templates, tracking de lectura. Resend ya esta integrado |
+| 4.3 | **Portfolio Monitoring Dashboard** | 1-2 dias | KPI trends over time, sparklines, period comparison |
+
+### PRIORIDAD 5 — Nice to Have
+
+| # | Feature | Esfuerzo | Descripcion |
+|---|---------|----------|-------------|
+| 5.1 | Activity Feed / Timeline | 1 dia | Deal history visualization usando AuditLog data |
+| 5.2 | Role-Based Permissions granular | 2 dias | Mas alla de fund-level access. RBAC matrix en PRD `01_PRD_Overview.md` |
+| 5.3 | API Integration Layer | 3+ dias | Webhooks, external data sources |
+| 5.4 | OAuth (Google Login) | 1 dia | NextAuth ya soporta, solo configurar provider |
+| 5.5 | Sentry Monitoring | 30 min | Error tracking en produccion |
+
+---
+
+## 5. PRD vs Realidad — Decisiones de Diseno
+
+El PRD original (`01_PRD_Overview.md`) mencionaba varias tecnologias que **NO se implementaron por decision consciente (YAGNI)**:
+
+| PRD Feature | Decision | Razon |
+|-------------|----------|-------|
+| TanStack Query | No usado | Server components + `revalidatePath` resuelven data fetching sin client-side cache |
+| Zustand stores | No usado | Server actions eliminan necesidad de client state management |
+| React Hook Form | No usado | Native forms + `useActionState` + Zod validation es mas simple |
+| Recharts | No usado | Metrics como cards + CSS bars son mas performantes y no requieren dependencia pesada |
+| `@react-pdf/renderer` | Sustituido | Se usa jsPDF (client-side) — mas ligero y no requiere server-side rendering |
+| pnpm | Sustituido | Se usa npm (npm install cuelga en la maquina del dev — workaround: curl tarballs) |
+| Vercel hosting | Sustituido | EC2 + Docker Compose — mas control, mas barato, debuggable via SSH |
+| Supabase | Sustituido | Neon PostgreSQL via AWS RDS — self-managed, mismo costo |
+
+**Estas no son gaps — son simplificaciones correctas.**
+
+---
+
+## 6. Patrones Arquitectonicos Clave
+
+### Server Actions Flow
+```
+'use server' -> auth() -> !session?.user?.id -> requireFundAccess() -> Zod -> logic -> logAudit() -> revalidatePath()
+```
 
 ### Dark Mode
-- **Dashboard:** Inline CSS vars en layout div (NO `.dark` class de Tailwind)
-- **Portal components** (Dialog, Select, Popover): Hardcoded hex colors
-- **Patrón:**
-  ```typescript
-  const dark = { dialog: 'bg-[#1E293B] text-[#F8FAFC] border-[#334155]', ... } as const
-  ```
-
-### Server Actions
-```
-'use server' → auth() → !session?.user?.id check → requireFundAccess() → Zod validation → business logic → logAudit() → revalidatePath()
-```
-
-### Shared Formatters
-```typescript
-// src/lib/shared/formatters.ts — SINGLE SOURCE, never duplicate
-import type { Decimal } from '@prisma/client/runtime/library'
-type NumericValue = Decimal | number | string | null | undefined
-formatCurrency(v) → "$1,234" | null
-formatMoney(v) → "$1,234" | "$0"
-formatPercentage(v) → "35.1%" | null
-formatPercent(v) → "35.1%" | "0%"
-formatMultiple(v) → "2.50x" | "-"
-parseMoney("$1,234") → 1234
-parsePercent("85%") → 0.85
-```
+- Dashboard: Inline CSS vars en layout div (NO `.dark` de Tailwind)
+- Portal components (Dialog, Select, Popover): Hardcoded hex (`bg-[#1E293B]`, `text-[#F8FAFC]`, `border-[#334155]`)
+- Login page: Full dark background `#11141D` con inputs `bg-[#1E2432]`
 
 ### Brand Colors (NUNCA cambiar)
-- Primary: `#11141D` | Accent: `#3E5CFF` | Text: `#F8FAFC` | Muted: `#94A3B8` | Border: `#334155`
+```
+Primary: #11141D (midnight ink)
+Accent:  #3E5CFF (heritage sapphire — CTAs only)
+Text:    #F8FAFC
+Muted:   #94A3B8
+Border:  #334155
+Success: #059669 (emerald — positive metrics only)
+```
+
+### Logo Typography
+```tsx
+<span className="font-serif">
+    <span className="font-normal">Black</span>
+    <span className="font-semibold">Gem</span>
+</span>
+```
+
+### SDK Clients — Lazy Init
+```typescript
+let _client: Client | null = null
+function getClient() { if (!_client) _client = new Client(key); return _client }
+```
 
 ### Prisma Gotchas
-- `Commitment` (no `CapitalCommitment`) | `VerificationToken` (no `InvitationToken`)
+- `Commitment` (NO `CapitalCommitment`)
+- `VerificationToken` (NO `InvitationToken`)
+- Despues de editar `schema.prisma`, SIEMPRE: `npx prisma generate`
+- `findUnique` -> `findFirst` cuando agregas `...notDeleted` a compound keys
 
 ### npm install Workaround
-npm install cuelga en esta máquina. Para instalar packages:
+npm install cuelga en esta maquina. Para instalar packages:
 ```bash
 curl -sL https://registry.npmjs.org/<package>/-/<package>-<version>.tgz -o /tmp/pkg.tgz
 tar -xzf /tmp/pkg.tgz -C node_modules/<package> --strip-components=1
-# Repetir recursivamente para transitive deps
 ```
 
 ---
 
-## 7. Deal Analytics Dashboard — COMPLETADO
+## 7. Archivos Clave por Modulo
 
-Feature terminada y pusheada. Archivos creados:
-- `src/components/deals/deal-pipeline-analytics.tsx` — Pipeline funnel + metrics component
-- `src/lib/shared/__tests__/deal-pipeline-analytics.test.ts` — 6 unit tests
-- `docs/plans/2026-02-13-deal-analytics-dashboard.md` — Implementation plan
+### Server Actions
+| File | Module | Estado |
+|------|--------|--------|
+| `src/lib/actions/deals.ts` | Deal CRUD + pipeline + conversion | Completo |
+| `src/lib/actions/investors.ts` | Investor CRUD + LP management | Completo |
+| `src/lib/actions/portfolio.ts` | Portfolio companies + valuations | Completo |
+| `src/lib/actions/capital-calls.ts` | Capital call lifecycle | Completo |
+| `src/lib/actions/distributions.ts` | Distribution lifecycle | Completo |
+| `src/lib/actions/commitments.ts` | LP commitments | Completo (hardened) |
+| `src/lib/actions/due-diligence.ts` | Deal due diligence items | Completo |
+| `src/lib/actions/reports.ts` | Fund reports + CSV export | Completo |
+| `src/lib/actions/chart-data.ts` | Chart aggregations | Completo |
+| `src/lib/actions/tasks.ts` | Deal task management | Completo |
+| `src/lib/actions/settings.ts` | Fund settings + profile | Falta audit logging |
+| `src/lib/actions/notifications.ts` | Notification CRUD + broadcast | Completo |
+| `src/lib/actions/users.ts` | LP invitations + user management | Completo |
+| `src/lib/actions/portal.ts` | Read-only portal data | Completo |
 
-Función `getDealPipelineAnalytics()` agregada a `src/lib/actions/deals.ts`. Integrada en `src/app/(dashboard)/deals/page.tsx` con Promise.all parallel fetch.
+### Shared Libraries
+| File | Purpose |
+|------|---------|
+| `src/lib/shared/formatters.ts` | Currency, percentage, multiple formatters (SINGLE SOURCE) |
+| `src/lib/shared/fund-access.ts` | `requireFundAccess()` guard |
+| `src/lib/shared/audit.ts` | `logAudit()` + `computeChanges()` |
+| `src/lib/shared/soft-delete.ts` | `notDeleted` filter + `softDelete()` for 7 entity types |
+| `src/lib/shared/stage-transitions.ts` | Deal pipeline validation |
+| `src/lib/shared/pagination.ts` | Pagination utilities |
+| `src/lib/shared/rate-limit.ts` | Rate limiting (exists, not integrated) |
+| `src/lib/shared/workflow-transitions.ts` | State machine transitions |
 
-### Unused Deal Fields Still Available
-`attractivenessScore`, `fitScore`, `riskScore`, `source`, `sourceContact`, `employeeCount`, `yearFounded`, `subIndustry`, `businessModel` — disponibles para futuras features (e.g., Deal Scoring System)
+### PDF Generation
+| File | Purpose |
+|------|---------|
+| `src/lib/pdf/dashboard-report.ts` | Dashboard summary PDF |
+| `src/lib/pdf/capital-call-notice.ts` | Capital call notice PDF |
+| `src/lib/pdf/distribution-notice.ts` | Distribution notice PDF |
+| `src/lib/pdf/capital-statement.ts` | LP capital account statement PDF |
+
+### CI/CD
+| File | Purpose |
+|------|---------|
+| `.github/workflows/deploy.yml` | GitHub Actions: build Docker -> push ECR -> SSH deploy to EC2 |
+| `Dockerfile` | Multi-stage Next.js build (standalone output, `--chown` fix) |
 
 ---
 
 ## 8. Testing
 
 - **187/187 tests pass** (11 test files)
-- **Fallo pre-existente:** `audit.test.ts` falla sin `DATABASE_URL` — documentado, no es bug
-- **Vitest config:** Excluye `'**/.claude/worktrees/**'` para evitar falsos fallos de archivos stale
-- **TypeScript:** Clean — `npx tsc --noEmit` pasa (0 errores)
-- **Build:** `npm run build` exitoso (zero warnings)
-- **Lint:** `npm run lint` limpio (zero warnings)
+- **Test files:**
+  - `formatters.test.ts` — 23 tests
+  - `stage-transitions.test.ts` — 18 tests
+  - `fund-access.test.ts` — 9 tests
+  - `pagination.test.ts` — 23 tests
+  - `waterfall.test.ts` — 12 tests
+  - `workflow-transitions.test.ts` — 46 tests
+  - `deal-pipeline-analytics.test.ts` — 6 tests
+  - `export.test.ts` — 13 tests
+  - `audit.test.ts` — 8 tests
+  - + 2 more
+- **Vitest config:** Excluye `'**/.claude/worktrees/**'`
+- **No hay E2E tests (Playwright)** — mencionado en PRD pero no implementado
 
 ---
 
-## 9. Archivos Clave por Módulo
+## 9. PRs — Historial Completo
 
-### Server Actions
-| File | Module |
-|------|--------|
-| `src/lib/actions/deals.ts` | Deal CRUD + pipeline + conversion |
-| `src/lib/actions/investors.ts` | Investor CRUD + LP management |
-| `src/lib/actions/portfolio.ts` | Portfolio companies + valuations |
-| `src/lib/actions/capital-calls.ts` | Capital call lifecycle |
-| `src/lib/actions/distributions.ts` | Distribution lifecycle |
-| `src/lib/actions/commitments.ts` | LP commitments (hardened + soft-delete) |
-| `src/lib/actions/due-diligence.ts` | Deal due diligence items |
-| `src/lib/actions/reports.ts` | Fund reports + CSV export |
-| `src/lib/actions/chart-data.ts` | Chart aggregations |
-| `src/lib/actions/tasks.ts` | Deal task management |
-| `src/lib/actions/settings.ts` | Fund settings + profile |
-| `src/lib/actions/notifications.ts` | Notification CRUD + broadcast |
-| `src/lib/actions/users.ts` | LP invitations + user management |
+| PR | Sprint | Titulo | Estado |
+|----|--------|--------|--------|
+| #36 | 12 | Security hardening & type safety | MERGED |
+| #35 | 11 | Testing & shared module extraction | MERGED |
+| #34 | 10 | Reports & communications | MERGED |
+| #33 | 9 | LP Portal enhancement | MERGED |
+| #32 | 8 | Capital & distributions polish | MERGED |
+| #31 | 7 | Portfolio module | MERGED |
+| #30 | 6 | Deals module completion | MERGED |
+| #29 | 5 | Pagination, security, build fix | MERGED |
+| #28 | -- | CLAUDE.md engineering constitution | MERGED |
+| #27 | -- | Session validation + LP portal PDFs | MERGED |
+| #26 | 4 | Deal conversion, PDFs, LP invites, notifications | MERGED |
+| #25 | 3 | Audit logging, fund access, error boundaries | MERGED |
+| #24 | -- | Brand identity dark theme | MERGED |
+| #23 | 2 | IRR, waterfall, charts & CSV | MERGED |
+| #22 | 1 | Audit, soft deletes, fund access | MERGED |
+| #21-17 | -- | Landing page (5 PRs) | MERGED |
 
-### Shared Libraries
-| File | Purpose |
-|------|---------|
-| `src/lib/shared/formatters.ts` | Currency, percentage, multiple formatters |
-| `src/lib/shared/fund-access.ts` | `requireFundAccess()` guard |
-| `src/lib/shared/audit.ts` | `logAudit()` + `computeChanges()` |
-| `src/lib/shared/soft-delete.ts` | `notDeleted` filter + `softDelete()` for 7 entity types |
-| `src/lib/shared/pagination.ts` | Pagination utilities |
-| `src/lib/shared/rate-limit.ts` | Rate limiting |
-| `src/lib/shared/workflow-transitions.ts` | State machine transitions |
-
-### Key Components
-| File | Purpose |
-|------|---------|
-| `src/components/deals/deal-analytics.tsx` | Single-deal analytics (MetricCard pattern) |
-| `src/components/deals/deal-pipeline-analytics.tsx` | Pipeline-level funnel + metrics |
-| `src/components/deals/deal-filters.tsx` | Deal pipeline filters |
-| `src/components/deals/deal-table.tsx` | Deal list table |
-| `src/components/deals/edit-deal-dialog.tsx` | Inline deal editing |
-| `src/components/portfolio/portfolio-*.tsx` | Portfolio module components |
-| `src/components/portal/portal-*.tsx` | LP portal components |
-| `src/components/ui/data-pagination.tsx` | Reusable pagination |
+**No hay PRs abiertos.**
 
 ---
 
-## 10. Post-MVP Feature Prioritization
+## 10. Seed Data
 
-Based on exploration session (2026-02-13):
+- **Admin user:** `admin@blackgem.com` / `admin123` / role: `FUND_ADMIN`
+- **Fund:** Single fund mode (`prisma.fund.findFirst()`)
+- **FundMember:** Admin linked to fund (role: PRINCIPAL)
+- **5 seed deals** with enriched data (EBITDA margins, key dates)
 
-### Tier 1 — High Impact, Ready to Build
-1. ~~**Deal Analytics Dashboard**~~ — COMPLETADO (see section 7)
-2. **Document Management System** — upload, versioning, deal room
-3. **Advanced Reporting** — custom date ranges, comparison periods
+---
 
-### Tier 2 — Medium Impact
-4. **Deal Scoring System** — use existing unused Prisma fields
-5. **Investor Communications Hub** — bulk comms, templates
-6. **Portfolio Monitoring Dashboard** — KPI trends over time
+## 11. Known Issues
 
-### Tier 3 — Nice to Have
-7. **Activity Feed / Timeline** — deal history visualization
-8. **Role-Based Permissions** — granular access beyond fund-level
-9. **API Integration Layer** — webhooks, external data sources
+| Issue | Severity | Details |
+|-------|----------|---------|
+| npm install hangs | Known | Workaround: curl tarballs manually |
+| Dialog portal dark mode | Known | All portal-rendered components need hardcoded hex colors |
+| Resend API key placeholder | Required | Email invitations won't send until real key configured |
+| Login redesign may need deploy verification | Low | Commits `3e44267` + `f467446` were pushed but verify at https://www.blackgem.ai/login |
 
-### Infrastructure (when ready)
-- GCP migration (Cloud Run + Cloud SQL)
-- CI/CD pipeline
-- Monitoring & alerting
+---
+
+## 12. Referencia Rapida de Documentos
+
+| Documento | Ubicacion | Proposito |
+|-----------|-----------|-----------|
+| Engineering Constitution | `CLAUDE.md` | Standards, pre-ship checklist, prohibited patterns |
+| PRD Overview | `Technical Documents/01_PRD_Overview.md` | Product vision, phases, RBAC matrix |
+| Database Schema | `Technical Documents/02_PRD_Schema.md` | 27 Prisma models |
+| Deals Module | `Technical Documents/03_Module_Deals.md` | Deal pipeline spec |
+| Investors Module | `Technical Documents/04_Module_Investors.md` | LP management spec |
+| Portfolio Module | `Technical Documents/05_Module_Portfolio.md` | Portfolio tracking spec |
+| Capital Module | `Technical Documents/06_Module_Capital.md` | Capital calls & distributions spec |
+| Reports Module | `Technical Documents/07_Module_Reports.md` | Reporting spec with wireframes |
+| Business Rules | `Technical Documents/08_Business_Rules.md` | PE domain logic, validations |
+| Claude Instructions | `Technical Documents/09_Claude_Instructions.md` | Full implementation guide |
+| Brand System | `Desing & UI/11_Brand_System.md` | Visual identity, typography, colors |
+| Product Strategy | `Business & Product/00_Product_Strategy.md` | Vision, personas, market analysis |
