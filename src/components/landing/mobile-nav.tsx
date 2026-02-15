@@ -62,13 +62,6 @@ export function MobileNav() {
                             onClick={close}
                             className="text-[15px] text-slate-400 hover:text-slate-100 transition-colors"
                         >
-                            LP Login
-                        </Link>
-                        <Link
-                            href="/login"
-                            onClick={close}
-                            className="text-[15px] text-slate-400 hover:text-slate-100 transition-colors"
-                        >
                             Manager Login
                         </Link>
 

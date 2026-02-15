@@ -74,12 +74,6 @@ function HeroSection() {
             {/* Desktop right-side navigation — hidden below lg */}
             <nav className="hidden lg:flex absolute right-[100px] top-[260px] z-10 w-[180px] flex-col gap-2">
                 <a
-                    href="/portal"
-                    className="text-[13px] text-slate-600 hover:text-slate-400 transition-colors"
-                >
-                    LP Login
-                </a>
-                <a
                     href="/login"
                     className="text-[13px] text-slate-600 hover:text-slate-400 transition-colors"
                 >
