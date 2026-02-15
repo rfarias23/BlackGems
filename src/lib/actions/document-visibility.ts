@@ -23,9 +23,10 @@ export async function toggleDocumentVisibility(documentId: string) {
   })
   if (!doc) return { error: 'Document not found' }
 
-  if (doc.deal?.fundId) {
+  const fundId = doc.deal?.fundId || doc.fundId
+  if (fundId) {
     try {
-      await requireFundAccess(session.user.id, doc.deal.fundId)
+      await requireFundAccess(session.user.id, fundId)
     } catch {
       return { error: 'Access denied' }
     }
