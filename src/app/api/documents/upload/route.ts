@@ -5,6 +5,7 @@ import { DocumentCategory } from '@prisma/client'
 import { notDeleted } from '@/lib/shared/soft-delete'
 import { requireFundAccess } from '@/lib/shared/fund-access'
 import { logAudit } from '@/lib/shared/audit'
+import { rateLimit } from '@/lib/shared/rate-limit'
 import { revalidatePath } from 'next/cache'
 import fs from 'fs/promises'
 import path from 'path'
@@ -25,6 +26,15 @@ export async function POST(request: NextRequest) {
   const userRole = (session.user as { role?: string }).role || 'LP_VIEWER'
   if (!MANAGE_ROLES.includes(userRole)) {
     return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+  }
+
+  // Rate limit: 20 uploads per minute per user
+  const rateLimitResult = rateLimit(`upload:${session.user.id}`, 20, 60_000)
+  if (!rateLimitResult.success) {
+    return NextResponse.json(
+      { error: 'Too many uploads. Please try again later.' },
+      { status: 429 }
+    )
   }
 
   try {
