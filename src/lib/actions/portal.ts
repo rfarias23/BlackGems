@@ -198,6 +198,7 @@ export async function getPortalDocuments() {
         where: {
             investorId: session.user.investorId,
             deletedAt: null,
+            visibleToLPs: true,
         },
         orderBy: { createdAt: 'desc' },
         select: {
@@ -223,6 +224,7 @@ export async function getPortalDocuments() {
             fundId: { in: fundIds },
             investorId: null, // Fund-level, not investor-specific
             deletedAt: null,
+            visibleToLPs: true,
             category: {
                 in: ['FUND_FORMATION', 'INVESTOR_COMMS', 'TAX', 'FINANCIAL_STATEMENTS', 'OPERATING_REPORTS', 'OTHER'],
             },

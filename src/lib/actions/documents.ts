@@ -60,6 +60,7 @@ export async function getDealDocuments(dealId: string): Promise<DocumentItem[]> 
     version: doc.version,
     isLatest: doc.isLatest,
     parentId: doc.parentId,
+    visibleToLPs: doc.visibleToLPs,
   }))
 }
 
@@ -162,5 +163,6 @@ export async function getInvestorDocuments(investorId: string): Promise<Document
     version: doc.version,
     isLatest: doc.isLatest,
     parentId: doc.parentId,
+    visibleToLPs: doc.visibleToLPs,
   }))
 }

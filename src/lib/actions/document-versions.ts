@@ -67,6 +67,7 @@ export async function getDocumentVersions(documentId: string): Promise<DocumentI
     version: v.version,
     isLatest: v.isLatest,
     parentId: v.parentId,
+    visibleToLPs: v.visibleToLPs,
   }))
 }
 

@@ -9,8 +9,9 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { FileText, Download, Trash2, AlertTriangle, Eye, X } from 'lucide-react';
+import { FileText, Download, Trash2, AlertTriangle, Eye, EyeOff, X } from 'lucide-react';
 import { deleteDocument } from '@/lib/actions/documents';
+import { toggleDocumentVisibility } from '@/lib/actions/document-visibility';
 import type { DocumentItem } from '@/lib/shared/document-types';
 
 const dark = {
@@ -154,6 +155,22 @@ export function DocumentList({ documents, canManage }: DocumentListProps) {
 
                                 {/* Actions */}
                                 <div className="flex items-center gap-1">
+                                    {canManage && (
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className={`h-8 w-8 ${doc.visibleToLPs ? 'text-[#059669]' : 'text-muted-foreground'} hover:text-foreground`}
+                                            onClick={() => {
+                                                startTransition(async () => {
+                                                    await toggleDocumentVisibility(doc.id)
+                                                    window.location.reload()
+                                                })
+                                            }}
+                                            title={doc.visibleToLPs ? 'Visible to LPs \u2014 click to hide' : 'Hidden from LPs \u2014 click to show'}
+                                        >
+                                            {doc.visibleToLPs ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                                        </Button>
+                                    )}
                                     <Button
                                         variant="ghost"
                                         size="icon"

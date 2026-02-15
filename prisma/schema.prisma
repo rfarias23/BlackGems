@@ -410,6 +410,7 @@ model Document {
   // Versioning
   version       Int              @default(1)
   isLatest      Boolean          @default(true)
+  visibleToLPs  Boolean          @default(false)
   parentId      String?
   parent        Document?        @relation("DocumentVersions", fields: [parentId], references: [id])
   versions      Document[]       @relation("DocumentVersions")

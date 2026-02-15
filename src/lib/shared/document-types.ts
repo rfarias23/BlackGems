@@ -61,4 +61,5 @@ export interface DocumentItem {
   version: number
   isLatest: boolean
   parentId: string | null
+  visibleToLPs: boolean
 }
