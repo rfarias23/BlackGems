@@ -5,6 +5,7 @@ import { notDeleted } from '@/lib/shared/soft-delete'
 import { requireFundAccess } from '@/lib/shared/fund-access'
 import fs from 'fs/promises'
 import path from 'path'
+import { getSignedDownloadUrl } from '@/lib/s3'
 
 // Resolve proper MIME type from stored fileType or fileName
 const MIME_MAP: Record<string, string> = {
@@ -65,7 +66,17 @@ export async function GET(
     }
   }
 
-  // Read file from disk
+  // S3 documents: redirect to signed URL
+  if (doc.fileUrl.startsWith('documents/')) {
+    try {
+      const signedUrl = await getSignedDownloadUrl(doc.fileUrl)
+      return NextResponse.redirect(signedUrl)
+    } catch {
+      return NextResponse.json({ error: 'File not found in storage' }, { status: 404 })
+    }
+  }
+
+  // Legacy disk documents: serve from filesystem
   try {
     const filePath = path.join(process.cwd(), doc.fileUrl)
     const fileBuffer = await fs.readFile(filePath)

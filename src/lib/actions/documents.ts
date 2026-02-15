@@ -10,6 +10,7 @@ import { CATEGORY_LABELS } from '@/lib/shared/document-types'
 import type { DocumentItem } from '@/lib/shared/document-types'
 import fs from 'fs/promises'
 import path from 'path'
+import { deleteFromS3 } from '@/lib/s3'
 
 // Roles that can manage documents
 const MANAGE_ROLES = ['SUPER_ADMIN', 'FUND_ADMIN', 'INVESTMENT_MANAGER', 'ANALYST']
@@ -93,10 +94,14 @@ export async function deleteDocument(documentId: string) {
   // Soft delete the record
   await softDelete('document', documentId)
 
-  // Remove file from disk
+  // Remove file from storage
   try {
-    const filePath = path.join(process.cwd(), doc.fileUrl)
-    await fs.unlink(filePath)
+    if (doc.fileUrl.startsWith('documents/')) {
+      await deleteFromS3(doc.fileUrl)
+    } else {
+      const filePath = path.join(process.cwd(), doc.fileUrl)
+      await fs.unlink(filePath)
+    }
   } catch {
     // File might already be gone — that's fine
   }

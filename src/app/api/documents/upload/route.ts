@@ -7,8 +7,8 @@ import { requireFundAccess } from '@/lib/shared/fund-access'
 import { logAudit } from '@/lib/shared/audit'
 import { rateLimit } from '@/lib/shared/rate-limit'
 import { revalidatePath } from 'next/cache'
-import fs from 'fs/promises'
 import path from 'path'
+import { uploadToS3, getS3Key } from '@/lib/s3'
 
 const MANAGE_ROLES = ['SUPER_ADMIN', 'FUND_ADMIN', 'INVESTMENT_MANAGER', 'ANALYST']
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
@@ -85,27 +85,18 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create upload directory
-    const uploadDir = path.join(process.cwd(), 'uploads', ownerId)
-    await fs.mkdir(uploadDir, { recursive: true })
-
-    // Generate unique filename to avoid collisions
-    const timestamp = Date.now()
-    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
-    const storedName = `${timestamp}_${safeName}`
-    const filePath = path.join(uploadDir, storedName)
-    const relativePath = `uploads/${ownerId}/${storedName}`
-
-    // Write file to disk
+    // Upload to S3
+    const s3Key = getS3Key(ownerId, file.name)
     const buffer = Buffer.from(await file.arrayBuffer())
-    await fs.writeFile(filePath, buffer)
+    const contentType = file.type || 'application/octet-stream'
+    await uploadToS3(s3Key, buffer, contentType)
 
     // Create document record
     const doc = await prisma.document.create({
       data: {
         name: documentName || file.name,
         fileName: file.name,
-        fileUrl: relativePath,
+        fileUrl: s3Key,
         fileType: file.type || ext,
         fileSize: file.size,
         category: category as DocumentCategory,
