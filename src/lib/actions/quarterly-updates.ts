@@ -71,7 +71,7 @@ export async function generateQuarterlyUpdate(fundId: string, year: number, quar
   const [commitments, portfolioCompanies, deals] = await Promise.all([
     prisma.commitment.findMany({ where: { fundId, ...notDeleted } }),
     prisma.portfolioCompany.findMany({ where: { fundId } }),
-    prisma.deal.findMany({ where: { fundId, deletedAt: null, status: 'ACTIVE' } }),
+    prisma.deal.findMany({ where: { fundId, ...notDeleted, status: 'ACTIVE' } }),
   ])
 
   // Capital metrics
@@ -255,10 +255,17 @@ export async function updateQuarterlySection(reportId: string, sectionKey: strin
 // APPROVE & PUBLISH
 // ============================================================================
 
+const approveSchema = z.object({
+  reportId: z.string().min(1),
+})
+
 /** Approve and publish a quarterly update */
 export async function approveAndPublish(reportId: string) {
   const session = await auth()
   if (!session?.user?.id) return { error: 'Unauthorized' }
+
+  const validated = approveSchema.safeParse({ reportId })
+  if (!validated.success) return { error: validated.error.issues[0]?.message || 'Invalid input' }
 
   const report = await prisma.report.findUnique({ where: { id: reportId } })
   if (!report) return { error: 'Report not found' }
