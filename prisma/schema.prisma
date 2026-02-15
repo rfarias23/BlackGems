@@ -121,6 +121,7 @@ model Fund {
   capitalCalls      CapitalCall[]
   distributions     Distribution[]
   portfolioCompanies PortfolioCompany[]
+  reports            Report[]
 }
 
 enum FundType {
@@ -1115,4 +1116,58 @@ enum MetricPeriodType {
   MONTHLY
   QUARTERLY
   ANNUAL
+}
+
+// ============================================================================
+// REPORTS & COMMUNICATIONS
+// ============================================================================
+
+model Report {
+  id          String       @id @default(cuid())
+  fund        Fund         @relation(fields: [fundId], references: [id], onDelete: Cascade)
+  fundId      String
+
+  type        ReportType
+  title       String
+
+  periodStart DateTime?
+  periodEnd   DateTime?
+
+  content     Json?
+  fileUrl     String?
+
+  status      ReportStatus @default(DRAFT)
+
+  publishedAt DateTime?
+  publishedBy String?
+
+  sentToLPs   Boolean      @default(false)
+  sentAt      DateTime?
+
+  notes       String?      @db.Text
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([fundId])
+  @@index([type])
+  @@index([status])
+}
+
+enum ReportType {
+  QUARTERLY_UPDATE
+  ANNUAL_REPORT
+  CAPITAL_CALL_NOTICE
+  DISTRIBUTION_NOTICE
+  K1
+  FINANCIAL_STATEMENT
+  PORTFOLIO_SUMMARY
+  CUSTOM
+}
+
+enum ReportStatus {
+  DRAFT
+  REVIEW
+  APPROVED
+  PUBLISHED
+  ARCHIVED
 }
