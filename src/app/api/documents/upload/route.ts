@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
     const investorId = formData.get('investorId') as string | null
     const category = formData.get('category') as string | null
     const documentName = formData.get('name') as string | null
+    const parentDocumentId = formData.get('parentDocumentId') as string | null
 
     if (!file || !category || (!dealId && !investorId)) {
       return NextResponse.json({ error: 'Missing required fields: file, category, and dealId or investorId' }, { status: 400 })
@@ -91,6 +92,47 @@ export async function POST(request: NextRequest) {
     const contentType = file.type || 'application/octet-stream'
     await uploadToS3(s3Key, buffer, contentType)
 
+    // Version logic
+    let version = 1
+    let parentId: string | undefined = undefined
+
+    if (parentDocumentId) {
+      const parentDoc = await prisma.document.findFirst({
+        where: { id: parentDocumentId, ...notDeleted },
+      })
+      if (parentDoc) {
+        // Find the root document
+        const rootId = parentDoc.parentId || parentDoc.id
+
+        // Get highest version in the chain
+        const maxVersion = await prisma.document.aggregate({
+          where: {
+            OR: [
+              { id: rootId },
+              { parentId: rootId },
+            ],
+            ...notDeleted,
+          },
+          _max: { version: true },
+        })
+
+        version = (maxVersion._max.version || 0) + 1
+        parentId = rootId
+
+        // Mark all existing versions as not latest
+        await prisma.document.updateMany({
+          where: {
+            OR: [
+              { id: rootId },
+              { parentId: rootId },
+            ],
+            ...notDeleted,
+          },
+          data: { isLatest: false },
+        })
+      }
+    }
+
     // Create document record
     const doc = await prisma.document.create({
       data: {
@@ -103,6 +145,9 @@ export async function POST(request: NextRequest) {
         dealId: dealId || undefined,
         investorId: investorId || undefined,
         uploadedBy: session.user.id,
+        version,
+        isLatest: true,
+        parentId: parentId || undefined,
       },
     })
 

@@ -34,7 +34,7 @@ export async function getDealDocuments(dealId: string): Promise<DocumentItem[]> 
   }
 
   const documents = await prisma.document.findMany({
-    where: { dealId, ...notDeleted },
+    where: { dealId, ...notDeleted, isLatest: true },
     orderBy: { createdAt: 'desc' },
   })
 
@@ -57,6 +57,9 @@ export async function getDealDocuments(dealId: string): Promise<DocumentItem[]> 
     uploadedBy: doc.uploadedBy,
     uploaderName: userMap.get(doc.uploadedBy) || null,
     createdAt: doc.createdAt,
+    version: doc.version,
+    isLatest: doc.isLatest,
+    parentId: doc.parentId,
   }))
 }
 
@@ -134,7 +137,7 @@ export async function getInvestorDocuments(investorId: string): Promise<Document
   if (!investor) return []
 
   const documents = await prisma.document.findMany({
-    where: { investorId, ...notDeleted },
+    where: { investorId, ...notDeleted, isLatest: true },
     orderBy: { createdAt: 'desc' },
   })
 
@@ -156,5 +159,8 @@ export async function getInvestorDocuments(investorId: string): Promise<Document
     uploadedBy: doc.uploadedBy,
     uploaderName: userMap.get(doc.uploadedBy) || null,
     createdAt: doc.createdAt,
+    version: doc.version,
+    isLatest: doc.isLatest,
+    parentId: doc.parentId,
   }))
 }

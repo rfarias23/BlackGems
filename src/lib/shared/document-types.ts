@@ -58,4 +58,7 @@ export interface DocumentItem {
   uploadedBy: string
   uploaderName: string | null
   createdAt: Date
+  version: number
+  isLatest: boolean
+  parentId: string | null
 }

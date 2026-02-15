@@ -63,9 +63,11 @@ function formatFileSize(bytes: number): string {
 interface DocumentUploadButtonProps {
     dealId?: string;
     investorId?: string;
+    parentDocumentId?: string;
+    buttonLabel?: string;
 }
 
-export function DocumentUploadButton({ dealId, investorId }: DocumentUploadButtonProps) {
+export function DocumentUploadButton({ dealId, investorId, parentDocumentId, buttonLabel }: DocumentUploadButtonProps) {
     const categories = investorId ? INVESTOR_DOC_CATEGORIES : DEAL_CATEGORIES;
     const [open, setOpen] = useState(false);
     const [file, setFile] = useState<File | null>(null);
@@ -120,6 +122,7 @@ export function DocumentUploadButton({ dealId, investorId }: DocumentUploadButto
             if (investorId) formData.append('investorId', investorId);
             formData.append('category', category);
             formData.append('name', docName || file.name);
+            if (parentDocumentId) formData.append('parentDocumentId', parentDocumentId);
 
             const res = await fetch('/api/documents/upload', {
                 method: 'POST',
@@ -152,7 +155,7 @@ export function DocumentUploadButton({ dealId, investorId }: DocumentUploadButto
             <DialogTrigger asChild>
                 <Button size="sm">
                     <Upload className="mr-2 h-4 w-4" />
-                    Upload File
+                    {buttonLabel || 'Upload File'}
                 </Button>
             </DialogTrigger>
             <DialogContent className={`sm:max-w-[500px] ${dark.dialog}`}>

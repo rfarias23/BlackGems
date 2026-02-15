@@ -128,6 +128,11 @@ export function DocumentList({ documents, canManage }: DocumentListProps) {
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm font-medium text-foreground truncate">
                                         {doc.name}
+                                        {doc.version > 1 && (
+                                            <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-[#3E5CFF]/20 text-[#3E5CFF]">
+                                                v{doc.version}
+                                            </span>
+                                        )}
                                     </p>
                                     <div className="flex items-center gap-2 mt-0.5">
                                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${CATEGORY_COLORS[doc.category] || CATEGORY_COLORS.OTHER}`}>
