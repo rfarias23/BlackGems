@@ -12,10 +12,10 @@ export default function LoginPage() {
             {/* Vertical brand mark — left edge */}
             <div className="hidden lg:flex items-center pl-8 select-none">
                 <span
-                    className="text-[13px] tracking-[0.25em] text-slate-600 uppercase"
+                    className="font-serif text-[16px] text-slate-500 tracking-tight"
                     style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
                 >
-                    Black<span className="font-semibold">Gem</span>
+                    <span className="font-normal">Black</span><span className="font-semibold">Gem</span>
                 </span>
             </div>
 
