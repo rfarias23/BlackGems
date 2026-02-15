@@ -2,6 +2,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { getPortalDocuments } from '@/lib/actions/portal';
 import { FileText, Download, Folder } from 'lucide-react';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
 
 function formatFileSize(bytes: number): string {
     if (bytes < 1024) return `${bytes} B`;
@@ -43,6 +44,7 @@ export default async function PortalDocumentsPage() {
                 </p>
             </div>
 
+            <ErrorBoundary module="Portal Documents">
             {documents.length === 0 ? (
                 <Card className="bg-white border-slate-200">
                     <CardContent className="py-16 text-center">
@@ -87,6 +89,7 @@ export default async function PortalDocumentsPage() {
                     ))}
                 </div>
             )}
+            </ErrorBoundary>
         </div>
     );
 }

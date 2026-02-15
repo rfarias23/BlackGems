@@ -5,6 +5,7 @@ import { Plus, Building2, TrendingUp, DollarSign, Target } from 'lucide-react';
 import Link from 'next/link';
 import { getPortfolioCompanies, getPortfolioSummary } from '@/lib/actions/portfolio';
 import { PortfolioTable } from '@/components/portfolio/portfolio-table';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
 
 interface PortfolioPageProps {
     searchParams: Promise<{ page?: string; search?: string }>;
@@ -36,6 +37,7 @@ export default async function PortfolioPage({ searchParams }: PortfolioPageProps
                 </Button>
             </div>
 
+            <ErrorBoundary module="Portfolio">
             {/* Summary Cards */}
             {summary && (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -97,6 +99,7 @@ export default async function PortfolioPage({ searchParams }: PortfolioPageProps
                 total={result.total}
                 pageSize={result.pageSize}
             />
+            </ErrorBoundary>
         </div>
     );
 }

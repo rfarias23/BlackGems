@@ -89,7 +89,7 @@ export default async function CapitalCallDetailPage({ params }: { params: Promis
     const paidCount = call.items.filter((item) => item.status === 'Paid').length;
 
     return (
-        <ErrorBoundary module="capital">
+        <ErrorBoundary module="Capital Call Detail">
         <div className="space-y-6">
             {/* Header */}
             <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">

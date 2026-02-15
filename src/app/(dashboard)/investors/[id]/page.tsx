@@ -16,6 +16,7 @@ import { getInvestor, getInvestorCommunications } from '@/lib/actions/investors'
 import { getInvestorDocuments } from '@/lib/actions/documents';
 import { DeleteInvestorButton } from '@/components/investors/delete-investor-button';
 import { InvestorCommunications } from '@/components/investors/investor-communications';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { auth } from '@/lib/auth';
 
 export default async function InvestorDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -48,6 +49,7 @@ export default async function InvestorDetailPage({ params }: { params: Promise<{
     );
 
     return (
+        <ErrorBoundary module="Investor Detail">
         <div className="space-y-6">
             {/* Header */}
             <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
@@ -191,5 +193,6 @@ export default async function InvestorDetailPage({ params }: { params: Promise<{
                 </TabsContent>
             </Tabs>
         </div>
+        </ErrorBoundary>
     );
 }

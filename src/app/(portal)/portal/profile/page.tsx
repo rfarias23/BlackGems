@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { User } from 'lucide-react';
 import { ProfileEditForm } from '@/components/portal/profile-edit-form';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
 
 export default async function PortalProfilePage() {
     const session = await auth();
@@ -36,6 +37,7 @@ export default async function PortalProfilePage() {
                 <p className="text-sm text-slate-500 mt-1">Your investor profile and contact information.</p>
             </div>
 
+            <ErrorBoundary module="Portal Profile">
             {/* Account info */}
             <Card className="bg-white border-slate-200">
                 <CardHeader>
@@ -104,6 +106,7 @@ export default async function PortalProfilePage() {
                     contactTitle={investor.contactTitle}
                 />
             )}
+            </ErrorBoundary>
         </div>
     );
 }

@@ -99,7 +99,7 @@ export default async function DistributionDetailPage({ params }: { params: Promi
     const paidCount = distribution.items.filter((item) => item.status === 'Paid').length;
 
     return (
-        <ErrorBoundary module="capital">
+        <ErrorBoundary module="Distribution Detail">
         <div className="space-y-6">
             {/* Header */}
             <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">

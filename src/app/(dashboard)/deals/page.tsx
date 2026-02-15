@@ -7,6 +7,7 @@ import { Plus } from 'lucide-react'
 import Link from 'next/link'
 import { getDeals, getDealPipelineAnalytics } from '@/lib/actions/deals'
 import { DealPipelineAnalytics } from '@/components/deals/deal-pipeline-analytics'
+import { ErrorBoundary } from '@/components/ui/error-boundary'
 
 interface DealsPageProps {
     searchParams: Promise<{
@@ -64,6 +65,7 @@ export default async function DealsPage({ searchParams }: DealsPageProps) {
                 </Button>
             </div>
 
+            <ErrorBoundary module="Deals">
             {pipelineAnalytics && (
                 <DealPipelineAnalytics analytics={pipelineAnalytics} />
             )}
@@ -76,6 +78,7 @@ export default async function DealsPage({ searchParams }: DealsPageProps) {
                 total={result.total}
                 pageSize={result.pageSize}
             />
+            </ErrorBoundary>
         </div>
     )
 }

@@ -6,6 +6,7 @@ import { ExportInvestorsButton } from '@/components/investors/export-investors-b
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
 import { getInvestors, getInvestorsForExport } from '@/lib/actions/investors';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
 
 interface InvestorsPageProps {
     searchParams: Promise<{ page?: string; search?: string }>;
@@ -50,6 +51,7 @@ export default async function InvestorsPage({ searchParams }: InvestorsPageProps
                 </div>
             </div>
 
+            <ErrorBoundary module="Investors">
             <InvestorTable investors={tableInvestors} />
             <DataPagination
                 page={result.page}
@@ -57,6 +59,7 @@ export default async function InvestorsPage({ searchParams }: InvestorsPageProps
                 total={result.total}
                 pageSize={result.pageSize}
             />
+            </ErrorBoundary>
         </div>
     );
 }

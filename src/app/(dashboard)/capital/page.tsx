@@ -8,6 +8,7 @@ import { getCapitalCalls, getCapitalCallSummary } from '@/lib/actions/capital-ca
 import { getDistributions, getDistributionSummary } from '@/lib/actions/distributions';
 import { CapitalCallsTable } from '@/components/capital/capital-calls-table';
 import { DistributionsTable } from '@/components/capital/distributions-table';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
 
 function formatCompact(value: number): string {
     if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
@@ -42,6 +43,7 @@ export default async function CapitalPage({ searchParams }: CapitalPageProps) {
                 </div>
             </div>
 
+            <ErrorBoundary module="Capital">
             {/* Summary Cards */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Card>
@@ -146,6 +148,7 @@ export default async function CapitalPage({ searchParams }: CapitalPageProps) {
                     />
                 </TabsContent>
             </Tabs>
+            </ErrorBoundary>
         </div>
     );
 }

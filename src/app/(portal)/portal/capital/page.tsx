@@ -6,6 +6,7 @@ import {
     Landmark,
 } from 'lucide-react';
 import { AcknowledgeCallButton } from '@/components/portal/acknowledge-call-button';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
 
 function formatCurrency(amount: number): string {
     return new Intl.NumberFormat('en-US', {
@@ -46,6 +47,7 @@ export default async function CapitalAccountPage() {
                 <p className="text-sm text-slate-500 mt-1">Your capital contributions, distributions, and account balance.</p>
             </div>
 
+            <ErrorBoundary module="Portal Capital">
             {/* Account summary */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Card className="bg-white border-slate-200">
@@ -149,6 +151,7 @@ export default async function CapitalAccountPage() {
                     </Card>
                 )}
             </div>
+            </ErrorBoundary>
         </div>
     );
 }

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { getUsers, getInvestorsForLinking } from '@/lib/actions/users';
 import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
 
 export default async function AdminUsersPage() {
     const session = await auth();
@@ -47,7 +48,9 @@ export default async function AdminUsersPage() {
                     </Button>
                 </div>
             </div>
+            <ErrorBoundary module="User Management">
             <UserTable users={tableUsers} />
+            </ErrorBoundary>
         </div>
     );
 }

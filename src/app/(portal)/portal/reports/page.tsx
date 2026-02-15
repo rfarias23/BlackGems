@@ -13,6 +13,7 @@ import { getPortalReports } from '@/lib/actions/portal';
 import { PortalReportsTabs, TabsContent } from '@/components/portal/portal-reports-tabs';
 import { PortalPDFExport } from '@/components/portal/portal-pdf-export';
 import { FundPerformanceCharts, PortfolioCharts } from '@/components/charts/reports-charts';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
 
 function formatDate(date: Date): string {
     return new Intl.DateTimeFormat('en-US', {
@@ -49,6 +50,7 @@ export default async function PortalReportsPage() {
                 </p>
             </div>
 
+            <ErrorBoundary module="Portal Reports">
             <PortalReportsTabs>
                 {/* ============================================================ */}
                 {/* TAB 1: CAPITAL ACCOUNT STATEMENT                             */}
@@ -608,6 +610,7 @@ export default async function PortalReportsPage() {
                     )}
                 </TabsContent>
             </PortalReportsTabs>
+            </ErrorBoundary>
         </div>
     );
 }

@@ -5,6 +5,7 @@ import { PasswordForm } from '@/components/settings/password-form';
 import { FundConfigForm } from '@/components/settings/fund-config-form';
 import { Card, CardContent } from '@/components/ui/card';
 import { User, Building2 } from 'lucide-react';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
 
 export default async function SettingsPage() {
     const [user, fundConfig] = await Promise.all([
@@ -21,6 +22,7 @@ export default async function SettingsPage() {
                 </p>
             </div>
 
+            <ErrorBoundary module="Settings">
             <Tabs defaultValue="profile" className="space-y-4">
                 <TabsList>
                     <TabsTrigger value="profile" className="flex items-center gap-2">
@@ -62,6 +64,7 @@ export default async function SettingsPage() {
                     )}
                 </TabsContent>
             </Tabs>
+            </ErrorBoundary>
         </div>
     );
 }

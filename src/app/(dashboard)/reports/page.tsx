@@ -31,6 +31,7 @@ import { LPStatementSelector } from '@/components/reports/lp-statement-selector'
 import { FundPerformanceCharts, PortfolioCharts } from '@/components/charts/reports-charts';
 import { ExportFundPerformance, ExportPortfolioSummary, ExportDealPipeline } from '@/components/reports/export-buttons';
 import { DownloadFundReportButton } from '@/components/reports/download-fund-report-button';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
 
 function formatDate(date: Date): string {
     return new Intl.DateTimeFormat('en-US', {
@@ -59,6 +60,7 @@ export default async function ReportsPage() {
                 </p>
             </div>
 
+            <ErrorBoundary module="Reports">
             <Tabs defaultValue="performance" className="space-y-4">
                 <TabsList>
                     <TabsTrigger value="performance">Fund Performance</TabsTrigger>
@@ -607,6 +609,7 @@ export default async function ReportsPage() {
                     </Card>
                 </TabsContent>
             </Tabs>
+            </ErrorBoundary>
         </div>
     );
 }

@@ -6,6 +6,7 @@ import { DownloadReportButton } from '@/components/dashboard/download-report-but
 import { getDashboardData } from '@/lib/actions/reports';
 import { getDashboardChartData } from '@/lib/actions/chart-data';
 import { DashboardCharts } from '@/components/charts/dashboard-charts';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
 
 // Map audit actions to human-readable descriptions
 function describeActivity(action: string, entityType: string): string {
@@ -83,6 +84,7 @@ export default async function DashboardPage() {
                 <DownloadReportButton metrics={pdfMetrics} />
             </div>
 
+            <ErrorBoundary module="Dashboard">
             {/* Top Metrics */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Card>
@@ -260,6 +262,7 @@ export default async function DashboardPage() {
                     </CardContent>
                 </Card>
             </div>
+            </ErrorBoundary>
         </div>
     );
 }

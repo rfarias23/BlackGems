@@ -46,7 +46,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
     const canEdit = EDIT_ROLES.includes(userRole);
 
     return (
-        <ErrorBoundary module="deals">
+        <ErrorBoundary module="Deal Detail">
         <div className="space-y-6">
             {/* Header */}
             <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">

@@ -57,7 +57,7 @@ export default async function PortfolioCompanyDetailPage({ params }: { params: P
     }
 
     return (
-        <ErrorBoundary module="portfolio">
+        <ErrorBoundary module="Portfolio Detail">
         <div className="space-y-6">
             {/* Header */}
             <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">

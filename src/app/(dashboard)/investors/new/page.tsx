@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { InvestorForm } from '@/components/investors/investor-form';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
 
 export default function NewInvestorPage() {
     return (
@@ -20,7 +21,9 @@ export default function NewInvestorPage() {
                 </div>
             </div>
 
+            <ErrorBoundary module="Investors">
             <InvestorForm />
+            </ErrorBoundary>
         </div>
     );
 }

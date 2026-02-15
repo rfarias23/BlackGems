@@ -8,6 +8,7 @@ import {
     ArrowUpRight,
     Landmark,
 } from 'lucide-react';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
 
 function formatCurrency(amount: number): string {
     return new Intl.NumberFormat('en-US', {
@@ -54,6 +55,7 @@ export default async function PortalPage() {
                 </p>
             </div>
 
+            <ErrorBoundary module="Portal Dashboard">
             {/* Summary cards */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Card className="bg-white border-slate-200">
@@ -194,6 +196,7 @@ export default async function PortalPage() {
                     </Card>
                 )}
             </div>
+            </ErrorBoundary>
         </div>
     );
 }

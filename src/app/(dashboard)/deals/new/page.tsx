@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
 
 export default function NewDealPage() {
     return (
@@ -16,6 +17,7 @@ export default function NewDealPage() {
                 <h2 className="text-2xl font-bold tracking-tight text-foreground">Add New Deal</h2>
             </div>
 
+            <ErrorBoundary module="Deals">
             <Card>
                 <CardHeader>
                     <CardTitle>Deal Information</CardTitle>
@@ -27,6 +29,7 @@ export default function NewDealPage() {
                     <DealForm />
                 </CardContent>
             </Card>
+            </ErrorBoundary>
         </div>
     );
 }
