@@ -121,12 +121,6 @@ function HeroSection() {
                 </div>
             </div>
 
-            {/* Footer mark — hidden on mobile */}
-            <div className="hidden md:block absolute bottom-10 right-6 md:right-12 lg:right-[100px] z-10">
-                <span className="font-serif text-sm font-medium text-slate-600">
-                    BlackGem
-                </span>
-            </div>
         </section>
     );
 }
