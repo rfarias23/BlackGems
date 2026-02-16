@@ -219,29 +219,20 @@ function PlatformSection() {
 
                 <FadeIn delay={100}>
                     <h2 className="font-display text-[28px] md:text-[34px] lg:text-[40px] leading-[1.15] font-normal text-slate-100 text-center max-w-[800px] mx-auto mb-3 md:mb-4">
-                        Everything a fund needs.
+                        One platform.
                         <br />
-                        Nothing it doesn&apos;t.
+                        Complete fund operations.
                     </h2>
                 </FadeIn>
 
                 <FadeIn delay={150}>
                     <p className="text-base md:text-lg text-slate-400 text-center max-w-[700px] mx-auto mb-8 md:mb-12">
-                        One platform for deals, investors, portfolio, capital, and reporting.
+                        Deal pipeline through LP reporting.
                     </p>
                 </FadeIn>
 
-                {/* Screenshot placeholder */}
-                <FadeIn delay={250}>
-                    <div className="w-full max-w-[1100px] mx-auto h-[240px] md:h-[400px] lg:h-[520px] bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-center mb-6 md:mb-8 overflow-hidden relative">
-                        {/* Subtle inner glow */}
-                        <div className="absolute inset-0 bg-gradient-to-b from-heritage-sapphire/[0.03] to-transparent pointer-events-none" />
-                        <span className="text-base text-slate-600 relative z-10">Platform Screenshot</span>
-                    </div>
-                </FadeIn>
-
                 {/* Module pills */}
-                <FadeIn delay={350}>
+                <FadeIn delay={250}>
                     <div className="flex items-center justify-center gap-2 md:gap-4 flex-wrap">
                         {modules.map((m) => (
                             <span
