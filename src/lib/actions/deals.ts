@@ -8,7 +8,7 @@ import { z } from 'zod'
 import { DealStage, DealStatus } from '@prisma/client'
 import { formatCurrency, formatPercentage, parseMoney, parsePercent } from '@/lib/shared/formatters'
 import { softDelete, notDeleted } from '@/lib/shared/soft-delete'
-import { logAudit } from '@/lib/shared/audit'
+import { logAudit, computeChanges } from '@/lib/shared/audit'
 import { requireFundAccess } from '@/lib/shared/fund-access'
 import { canTransitionDealStage } from '@/lib/shared/stage-transitions'
 import { notifyFundMembers } from '@/lib/actions/notifications'
@@ -1252,5 +1252,120 @@ export async function getDealPipelineAnalytics(): Promise<PipelineAnalytics | nu
         closedLost,
         winRate,
         conversionRate,
+    }
+}
+
+// ============================================================================
+// DEAL SCORING
+// ============================================================================
+
+const scoringSchema = z.object({
+    attractivenessScore: z.number().int().min(1).max(10),
+    fitScore: z.number().int().min(1).max(10),
+    riskScore: z.number().int().min(1).max(10),
+})
+
+export interface DealScores {
+    attractivenessScore: number | null
+    fitScore: number | null
+    riskScore: number | null
+}
+
+/** Get the three score fields for a deal */
+export async function getDealScores(dealId: string): Promise<DealScores | null> {
+    const session = await auth()
+    if (!session?.user?.id) return null
+
+    const deal = await prisma.deal.findFirst({
+        where: { id: dealId, ...notDeleted },
+        select: {
+            fundId: true,
+            attractivenessScore: true,
+            fitScore: true,
+            riskScore: true,
+        },
+    })
+
+    if (!deal) return null
+
+    try {
+        await requireFundAccess(session.user.id, deal.fundId)
+    } catch {
+        return null
+    }
+
+    return {
+        attractivenessScore: deal.attractivenessScore,
+        fitScore: deal.fitScore,
+        riskScore: deal.riskScore,
+    }
+}
+
+/** Update the three score fields for a deal */
+export async function updateDealScores(
+    dealId: string,
+    scores: { attractivenessScore: number; fitScore: number; riskScore: number }
+) {
+    const session = await auth()
+    if (!session?.user?.id) {
+        return { error: 'Unauthorized' }
+    }
+
+    // Load existing deal for fund access check and old scores
+    const deal = await prisma.deal.findFirst({
+        where: { id: dealId, ...notDeleted },
+        select: {
+            fundId: true,
+            attractivenessScore: true,
+            fitScore: true,
+            riskScore: true,
+        },
+    })
+    if (!deal) {
+        return { error: 'Deal not found' }
+    }
+
+    try {
+        await requireFundAccess(session.user.id, deal.fundId)
+    } catch {
+        return { error: 'Access denied' }
+    }
+
+    const parsed = scoringSchema.safeParse(scores)
+    if (!parsed.success) {
+        return { error: parsed.error.issues[0]?.message ?? 'Invalid scores' }
+    }
+
+    const { attractivenessScore, fitScore, riskScore } = parsed.data
+
+    try {
+        await prisma.deal.update({
+            where: { id: dealId },
+            data: { attractivenessScore, fitScore, riskScore },
+        })
+
+        const changes = computeChanges(
+            {
+                attractivenessScore: deal.attractivenessScore,
+                fitScore: deal.fitScore,
+                riskScore: deal.riskScore,
+            },
+            { attractivenessScore, fitScore, riskScore }
+        )
+
+        await logAudit({
+            userId: session.user.id,
+            action: 'UPDATE',
+            entityType: 'Deal',
+            entityId: dealId,
+            changes,
+        })
+
+        revalidatePath('/deals')
+        revalidatePath(`/deals/${dealId}`)
+        return { success: true }
+    } catch (error) {
+        console.error('Error updating deal scores:', error)
+        return { error: 'Failed to update scores' }
     }
 }

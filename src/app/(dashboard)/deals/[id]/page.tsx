@@ -5,7 +5,7 @@ import { DealStageBadge, DealStage } from '@/components/deals/deal-stage-badge';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getDeal, getDealPortfolioLink, getDealRawData, getDealAnalytics } from '@/lib/actions/deals';
+import { getDeal, getDealPortfolioLink, getDealRawData, getDealAnalytics, getDealScores } from '@/lib/actions/deals';
 import { getDealDocuments } from '@/lib/actions/documents';
 import { getDealTimeline } from '@/lib/actions/activities';
 import { getDealNotes } from '@/lib/actions/notes';
@@ -26,6 +26,7 @@ import { DealAnalyticsTab } from '@/components/deals/deal-analytics';
 import { DealTasks } from '@/components/deals/deal-tasks';
 import { AddTaskButton } from '@/components/deals/add-task-button';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
+import { DealScoring } from '@/components/deals/deal-scoring';
 import { auth } from '@/lib/auth';
 
 // Roles that can edit deals
@@ -34,9 +35,9 @@ const EDIT_ROLES = ['SUPER_ADMIN', 'FUND_ADMIN', 'INVESTMENT_MANAGER', 'ANALYST'
 export default async function DealDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
     const [deal, session] = await Promise.all([getDeal(id), auth()]);
-    const [documents, timeline, notes, ddItems, ddStats, portfolioLink, rawDeal, analytics, tasks, members] = deal
-        ? await Promise.all([getDealDocuments(id), getDealTimeline(id), getDealNotes(id), getDealDueDiligence(id), getDDStats(id), getDealPortfolioLink(id), getDealRawData(id), getDealAnalytics(id), getDealTasks(id), getFundMembers(id)])
-        : [[], [], [], [], null, null, null, null, [], []];
+    const [documents, timeline, notes, ddItems, ddStats, portfolioLink, rawDeal, analytics, tasks, members, scores] = deal
+        ? await Promise.all([getDealDocuments(id), getDealTimeline(id), getDealNotes(id), getDealDueDiligence(id), getDDStats(id), getDealPortfolioLink(id), getDealRawData(id), getDealAnalytics(id), getDealTasks(id), getFundMembers(id), getDealScores(id)])
+        : [[], [], [], [], null, null, null, null, [], [], null];
 
     if (!deal) {
         notFound();
@@ -131,6 +132,15 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
                         userRole={userRole}
                         portfolioLink={portfolioLink}
                         rawDeal={rawDeal}
+                    />
+                    <DealScoring
+                        dealId={deal.id}
+                        initialScores={{
+                            attractivenessScore: scores?.attractivenessScore ?? null,
+                            fitScore: scores?.fitScore ?? null,
+                            riskScore: scores?.riskScore ?? null,
+                        }}
+                        canEdit={canEdit}
                     />
                 </TabsContent>
 
