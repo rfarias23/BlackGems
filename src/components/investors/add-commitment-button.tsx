@@ -84,7 +84,7 @@ export function AddCommitmentButton({ investorId }: AddCommitmentButtonProps) {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button>
+                <Button size="sm" variant="outline" className="border-[#334155] text-[#F8FAFC] hover:bg-[#334155]">
                     <Plus className="mr-2 h-4 w-4" />
                     Add Commitment
                 </Button>

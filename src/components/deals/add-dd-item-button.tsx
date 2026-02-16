@@ -107,7 +107,7 @@ export function AddDDItemButton({ dealId }: AddDDItemButtonProps) {
             if (!isOpen) resetForm();
         }}>
             <DialogTrigger asChild>
-                <Button size="sm">
+                <Button size="sm" variant="outline" className="border-[#334155] text-[#F8FAFC] hover:bg-[#334155]">
                     <Plus className="mr-2 h-4 w-4" />
                     Add Item
                 </Button>
