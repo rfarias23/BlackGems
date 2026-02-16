@@ -111,7 +111,7 @@ function HeroSection() {
                                 href="#contact"
                                 className="inline-flex items-center justify-center px-8 py-3.5 bg-heritage-sapphire text-white text-sm font-semibold rounded-md hover:bg-[#3350E0] transition-all hover:shadow-[0_0_24px_rgba(62,92,255,0.3)]"
                             >
-                                Request a Demo
+                                Request Access
                             </SmoothScrollLink>
                         </div>
                     </FadeIn>
@@ -424,32 +424,18 @@ function FinalCtaSection() {
 
             <div className="max-w-[800px] mx-auto text-center relative z-10">
                 <FadeIn>
-                    <h2 className="font-display text-[28px] md:text-[36px] lg:text-[44px] leading-[1.15] font-normal text-white mb-4">
-                        Your fund deserves better
-                        <br className="hidden md:block" />
-                        {' '}than spreadsheets.
+                    <h2 className="font-display text-[28px] md:text-[36px] lg:text-[44px] leading-[1.15] font-normal text-white mb-6 md:mb-8">
+                        Ready when you are.
                     </h2>
                 </FadeIn>
 
-                <FadeIn delay={150}>
-                    <p className="text-base md:text-lg text-slate-400 mb-6 md:mb-8">
-                        Join the next generation of fund managers.
-                    </p>
-                </FadeIn>
-
-                <FadeIn delay={300}>
+                <FadeIn delay={200}>
                     <SmoothScrollLink
                         href="#contact"
                         className="inline-flex items-center justify-center px-8 py-3.5 md:px-10 md:py-4 bg-heritage-sapphire text-white text-sm md:text-[15px] font-semibold rounded-md hover:bg-[#3350E0] transition-all hover:shadow-[0_0_32px_rgba(62,92,255,0.3)]"
                     >
-                        Request a Demo
+                        Request Access
                     </SmoothScrollLink>
-                </FadeIn>
-
-                <FadeIn delay={400}>
-                    <p className="mt-5 md:mt-6 text-[12px] md:text-[13px] text-slate-600">
-                        No credit card required &middot; Free onboarding &middot; Setup in minutes
-                    </p>
                 </FadeIn>
             </div>
         </section>

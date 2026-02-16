@@ -71,7 +71,7 @@ export function MobileNav() {
                                 onClick={close}
                                 className="inline-flex items-center justify-center px-8 py-3.5 bg-heritage-sapphire text-white text-sm font-semibold rounded-md hover:bg-[#3350E0] transition-colors"
                             >
-                                Request a Demo
+                                Request Access
                             </Link>
                         </div>
                     </nav>
