@@ -19,7 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { ArrowLeft, FileText, Plus, CheckCircle2, Download } from 'lucide-react'
+import { ArrowLeft, FileText, Plus, CheckCircle2, Download, Send } from 'lucide-react'
 import {
   generateQuarterlyUpdate,
   getQuarterlyUpdateDraft,
@@ -27,6 +27,7 @@ import {
   listReports,
 } from '@/lib/actions/quarterly-updates'
 import type { QuarterlyReport, ReportListItem } from '@/lib/actions/quarterly-updates'
+import { distributeReport, getDistributionPreview } from '@/lib/actions/report-distribution'
 import { SectionEditor } from '@/components/reports/section-editor'
 import { generateQuarterlyUpdatePDF } from '@/lib/pdf/quarterly-update'
 import type { QuarterlyUpdatePDFData } from '@/lib/pdf/quarterly-update'
@@ -76,6 +77,11 @@ export function QuarterlyUpdateBuilder({ fundId, fundName, initialReports }: Qua
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
+  // Send to LPs state
+  const [showSendConfirm, setShowSendConfirm] = useState(false)
+  const [previewRecipientCount, setPreviewRecipientCount] = useState<number | null>(null)
+  const [sendSuccess, setSendSuccess] = useState<number | null>(null)
+
   const refreshReports = useCallback(() => {
     startTransition(async () => {
       const updated = await listReports()
@@ -111,6 +117,9 @@ export function QuarterlyUpdateBuilder({ fundId, fundName, initialReports }: Qua
 
   const handleOpenDraft = (reportId: string) => {
     setError(null)
+    setShowSendConfirm(false)
+    setPreviewRecipientCount(null)
+    setSendSuccess(null)
     startTransition(async () => {
       const report = await getQuarterlyUpdateDraft(reportId)
       if (report) {
@@ -150,7 +159,52 @@ export function QuarterlyUpdateBuilder({ fundId, fundName, initialReports }: Qua
     setDraft(null)
     setView('list')
     setError(null)
+    setShowSendConfirm(false)
+    setPreviewRecipientCount(null)
+    setSendSuccess(null)
     refreshReports()
+  }
+
+  const handleSendToLPs = () => {
+    if (!draft) return
+    setError(null)
+    setSendSuccess(null)
+
+    startTransition(async () => {
+      const preview = await getDistributionPreview(draft.id)
+      if (!preview || preview.recipientCount === 0) {
+        setError('No eligible recipients found. Ensure investors have email addresses and active commitments.')
+        return
+      }
+      setPreviewRecipientCount(preview.recipientCount)
+      setShowSendConfirm(true)
+    })
+  }
+
+  const handleConfirmSend = () => {
+    if (!draft) return
+    setError(null)
+
+    startTransition(async () => {
+      const result = await distributeReport(draft.id)
+      if (result.error) {
+        setError(result.error)
+        setShowSendConfirm(false)
+        return
+      }
+      setShowSendConfirm(false)
+      setSendSuccess(result.recipientCount ?? 0)
+      // Refresh draft to reflect sentToLPs
+      const updatedDraft = await getQuarterlyUpdateDraft(draft.id)
+      if (updatedDraft) setDraft(updatedDraft)
+      const updated = await listReports()
+      setReports(updated)
+    })
+  }
+
+  const handleCancelSend = () => {
+    setShowSendConfirm(false)
+    setPreviewRecipientCount(null)
   }
 
   const handlePreviewPDF = () => {
@@ -231,9 +285,66 @@ export function QuarterlyUpdateBuilder({ fundId, fundName, initialReports }: Qua
               {isPending ? 'Publishing...' : 'Approve & Publish'}
             </Button>
           )}
+          {draft.status === 'PUBLISHED' && !draft.sentToLPs && (
+            <Button
+              onClick={handleSendToLPs}
+              disabled={isPending}
+            >
+              <Send className="mr-2 h-4 w-4" />
+              {isPending ? 'Preparing...' : 'Send to LPs'}
+            </Button>
+          )}
         </div>
 
-        {draft.status === 'PUBLISHED' && (
+        {showSendConfirm && previewRecipientCount !== null && (
+          <div className="rounded-md border border-[#334155] bg-[#11141D]/50 px-4 py-4 space-y-3">
+            <p className="text-sm">
+              Are you sure you want to send this report to{' '}
+              <span className="font-mono font-medium">{previewRecipientCount}</span>{' '}
+              investor{previewRecipientCount === 1 ? '' : 's'}?
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Each investor will receive an email notification directing them to the portal.
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCancelSend}
+                disabled={isPending}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleConfirmSend}
+                disabled={isPending}
+              >
+                <Send className="mr-2 h-3.5 w-3.5" />
+                {isPending ? 'Sending...' : 'Confirm Send'}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {sendSuccess !== null && (
+          <div className="rounded-md border border-emerald-500/20 bg-emerald-500/5 px-4 py-3">
+            <p className="text-sm text-emerald-400">
+              Report sent to {sendSuccess} investor{sendSuccess === 1 ? '' : 's'}.
+            </p>
+          </div>
+        )}
+
+        {draft.status === 'PUBLISHED' && draft.sentToLPs && (
+          <div className="rounded-md border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+            <p className="text-sm text-emerald-400">
+              This report has been published and sent to LPs.
+            </p>
+          </div>
+        )}
+
+        {draft.status === 'PUBLISHED' && !draft.sentToLPs && !showSendConfirm && sendSuccess === null && (
           <div className="rounded-md border border-emerald-500/20 bg-emerald-500/5 px-4 py-3">
             <p className="text-sm text-emerald-400">
               This report has been published.
@@ -318,6 +429,7 @@ export function QuarterlyUpdateBuilder({ fundId, fundName, initialReports }: Qua
                   <TableHead className="text-muted-foreground text-xs tracking-wider uppercase">Period</TableHead>
                   <TableHead className="text-muted-foreground text-xs tracking-wider uppercase">Created</TableHead>
                   <TableHead className="text-muted-foreground text-xs tracking-wider uppercase">Published</TableHead>
+                  <TableHead className="text-muted-foreground text-xs tracking-wider uppercase">Distributed</TableHead>
                   <TableHead className="text-muted-foreground text-xs tracking-wider uppercase text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -338,6 +450,15 @@ export function QuarterlyUpdateBuilder({ fundId, fundName, initialReports }: Qua
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {formatDate(report.publishedAt)}
+                    </TableCell>
+                    <TableCell>
+                      {report.sentToLPs ? (
+                        <Badge variant="outline" className="text-emerald-400 border-emerald-500/30">
+                          Sent
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       <Button

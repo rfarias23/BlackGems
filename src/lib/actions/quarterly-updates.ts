@@ -29,6 +29,7 @@ export interface QuarterlyReport {
   periodStart: Date
   periodEnd: Date
   sections: QuarterlySection[]
+  sentToLPs: boolean
   createdAt: Date
   updatedAt: Date
 }
@@ -190,6 +191,7 @@ export async function getQuarterlyUpdateDraft(reportId: string): Promise<Quarter
     periodStart: report.periodStart || new Date(),
     periodEnd: report.periodEnd || new Date(),
     sections: content?.sections || [],
+    sentToLPs: report.sentToLPs,
     createdAt: report.createdAt,
     updatedAt: report.updatedAt,
   }
