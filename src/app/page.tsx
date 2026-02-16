@@ -145,22 +145,22 @@ function NavItem({ label, href }: { label: string; href: string }) {
 function ProblemSection() {
     const problems = [
         {
-            stat: '8-10 hrs',
-            label: 'per week on admin',
+            stat: 'Spreadsheets',
+            label: 'still running your back office',
             description:
-                'Hours spent updating spreadsheets, sending LP emails, compiling reports.',
+                'Capital accounts in Excel. LP updates by email. Reports compiled manually.',
         },
         {
-            stat: 'Manual',
-            label: 'capital calculations',
+            stat: 'Manual processes',
+            label: 'across every capital operation',
             description:
-                'Error-prone Excel formulas for capital accounts, pro-rata, and waterfalls.',
+                'Pro-rata allocations, waterfall calculations, and distribution schedules built on formulas.',
         },
         {
-            stat: 'Zero',
-            label: 'LP visibility',
+            stat: 'Fragmented access',
+            label: 'for the investors who trust you',
             description:
-                'Investors have no self-service access. Every question requires an email.',
+                'No single source of truth. Every LP question requires a manual response.',
         },
     ];
 
@@ -175,9 +175,9 @@ function ProblemSection() {
 
                 <FadeIn delay={100}>
                     <h2 className="font-display text-[28px] md:text-[34px] lg:text-[40px] leading-[1.15] font-normal text-slate-100 text-center max-w-[800px] mx-auto mb-8 md:mb-12">
-                        Fund managers spend more time
+                        Fund operations are an afterthought
                         <br className="hidden md:block" />
-                        {' '}on spreadsheets than on deals.
+                        {' '}until they become the bottleneck.
                     </h2>
                 </FadeIn>
 
@@ -186,7 +186,7 @@ function ProblemSection() {
                     {problems.map((p, i) => (
                         <FadeIn key={p.stat} delay={200 + i * 120}>
                             <div className="landing-card bg-slate-800 border border-slate-700 rounded-lg p-6 md:p-8 flex flex-col gap-4 h-full">
-                                <span className="font-mono text-3xl md:text-4xl font-medium text-heritage-sapphire">
+                                <span className="font-mono text-xl md:text-2xl font-medium text-heritage-sapphire">
                                     {p.stat}
                                 </span>
                                 <span className="text-sm font-medium text-slate-100">
