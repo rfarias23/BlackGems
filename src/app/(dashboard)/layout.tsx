@@ -2,6 +2,9 @@ import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
 import { auth } from '@/lib/auth';
 import { getUnreadCount } from '@/lib/actions/notifications';
+import { redirect } from 'next/navigation';
+
+const LP_ROLES = ['LP_PRIMARY', 'LP_VIEWER'] as const;
 
 export default async function DashboardLayout({
     children,
@@ -9,6 +12,16 @@ export default async function DashboardLayout({
     children: React.ReactNode;
 }) {
     const session = await auth();
+
+    // Defense-in-depth: LP users must use the portal, not the dashboard
+    if (!session?.user?.id) {
+        redirect('/login');
+    }
+    const userRole = (session.user as { role?: string }).role;
+    if (userRole && LP_ROLES.includes(userRole as typeof LP_ROLES[number])) {
+        redirect('/portal');
+    }
+
     const unreadCount = await getUnreadCount();
 
     return (
