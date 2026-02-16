@@ -1037,6 +1037,7 @@ model PortfolioCompany {
 
   // Relations
   metrics         PortfolioMetric[]
+  valuations      Valuation[]
 
   @@index([fundId])
   @@index([status])
@@ -1116,6 +1117,30 @@ enum MetricPeriodType {
   MONTHLY
   QUARTERLY
   ANNUAL
+}
+
+model Valuation {
+  id              String           @id @default(cuid())
+  company         PortfolioCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId       String
+
+  date            DateTime
+  value           Decimal          @db.Decimal(15, 2)
+  equityValue     Decimal?         @db.Decimal(15, 2)
+
+  methodology     String           // Free text: "DCF", "EBITDA Multiple", etc.
+
+  revenueMultiple Decimal?         @db.Decimal(5, 2)
+  ebitdaMultiple  Decimal?         @db.Decimal(5, 2)
+
+  isOfficial      Boolean          @default(false)
+  notes           String?          @db.Text
+
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([companyId])
+  @@index([date])
 }
 
 // ============================================================================
