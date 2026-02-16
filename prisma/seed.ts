@@ -1,4 +1,4 @@
-import { PrismaClient, UserRole, FundType, FundStatus, DealStage, DealStatus, InvestorType, InvestorStatus, AccreditedStatus, KYCStatus, AMLStatus, CommitmentStatus, CapitalCallStatus, CallItemStatus, DistributionType, DistributionStatus, DistItemStatus, PortfolioStatus, MetricPeriodType } from '@prisma/client'
+import { PrismaClient, UserRole, FundType, FundStatus, Currency, DealStage, DealStatus, InvestorType, InvestorStatus, AccreditedStatus, KYCStatus, AMLStatus, CommitmentStatus, CapitalCallStatus, CallItemStatus, DistributionType, DistributionStatus, DistItemStatus, PortfolioStatus, MetricPeriodType } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient({
@@ -58,7 +58,7 @@ async function main() {
             targetSize: 50000000, // $50M
             hardCap: 75000000, // $75M
             minimumCommitment: 250000, // $250K
-            currency: 'USD',
+            currency: Currency.USD,
             managementFee: 0.02, // 2%
             carriedInterest: 0.20, // 20%
             hurdleRate: 0.08, // 8%

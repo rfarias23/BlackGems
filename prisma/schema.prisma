@@ -99,7 +99,7 @@ model Fund {
   targetSize        Decimal    @db.Decimal(15, 2)
   hardCap           Decimal?   @db.Decimal(15, 2)
   minimumCommitment Decimal?   @db.Decimal(15, 2)
-  currency          String     @default("USD")
+  currency          Currency   @default(USD)
   
   // Fee Structure
   managementFee     Decimal    @db.Decimal(5, 4)
@@ -143,6 +143,12 @@ enum FundStatus {
   EXITED
   DISSOLVED
   CLOSED
+}
+
+enum Currency {
+  USD
+  EUR
+  GBP
 }
 
 model FundMember {
