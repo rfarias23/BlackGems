@@ -193,62 +193,67 @@ export async function getPortalDocuments() {
     const session = await auth()
     if (!session?.user?.investorId) return []
 
-    // Get investor-specific documents
-    const investorDocs = await prisma.document.findMany({
-        where: {
-            investorId: session.user.investorId,
-            deletedAt: null,
-            visibleToLPs: true,
-        },
-        orderBy: { createdAt: 'desc' },
-        select: {
-            id: true,
-            name: true,
-            fileName: true,
-            fileType: true,
-            fileSize: true,
-            category: true,
-            createdAt: true,
-        },
-    })
-
-    // Get fund-level documents (shared with all LPs in the fund)
-    const commitments = await prisma.commitment.findMany({
-        where: { investorId: session.user.investorId, ...notDeleted },
-        select: { fundId: true },
-    })
-    const fundIds = commitments.map(c => c.fundId)
-
-    const fundDocs = fundIds.length > 0 ? await prisma.document.findMany({
-        where: {
-            fundId: { in: fundIds },
-            investorId: null, // Fund-level, not investor-specific
-            deletedAt: null,
-            visibleToLPs: true,
-            category: {
-                in: ['FUND_FORMATION', 'INVESTOR_COMMS', 'TAX', 'FINANCIAL_STATEMENTS', 'OPERATING_REPORTS', 'OTHER'],
+    try {
+        // Get investor-specific documents
+        const investorDocs = await prisma.document.findMany({
+            where: {
+                investorId: session.user.investorId,
+                deletedAt: null,
+                visibleToLPs: true,
             },
-        },
-        orderBy: { createdAt: 'desc' },
-        select: {
-            id: true,
-            name: true,
-            fileName: true,
-            fileType: true,
-            fileSize: true,
-            category: true,
-            createdAt: true,
-        },
-    }) : []
+            orderBy: { createdAt: 'desc' },
+            select: {
+                id: true,
+                name: true,
+                fileName: true,
+                fileType: true,
+                fileSize: true,
+                category: true,
+                createdAt: true,
+            },
+        })
 
-    // Merge and dedupe by id
-    const allDocs = [...investorDocs, ...fundDocs]
-    const seen = new Set<string>()
-    return allDocs.filter(doc => {
-        if (seen.has(doc.id)) return false
-        seen.add(doc.id)
-        return true
-    })
+        // Get fund-level documents (shared with all LPs in the fund)
+        const commitments = await prisma.commitment.findMany({
+            where: { investorId: session.user.investorId, ...notDeleted },
+            select: { fundId: true },
+        })
+        const fundIds = commitments.map(c => c.fundId)
+
+        const fundDocs = fundIds.length > 0 ? await prisma.document.findMany({
+            where: {
+                fundId: { in: fundIds },
+                investorId: null, // Fund-level, not investor-specific
+                deletedAt: null,
+                visibleToLPs: true,
+                category: {
+                    in: ['FUND_FORMATION', 'INVESTOR_COMMS', 'TAX', 'FINANCIAL_STATEMENTS', 'OPERATING_REPORTS', 'OTHER'],
+                },
+            },
+            orderBy: { createdAt: 'desc' },
+            select: {
+                id: true,
+                name: true,
+                fileName: true,
+                fileType: true,
+                fileSize: true,
+                category: true,
+                createdAt: true,
+            },
+        }) : []
+
+        // Merge and dedupe by id
+        const allDocs = [...investorDocs, ...fundDocs]
+        const seen = new Set<string>()
+        return allDocs.filter(doc => {
+            if (seen.has(doc.id)) return false
+            seen.add(doc.id)
+            return true
+        })
+    } catch (error) {
+        console.error('[getPortalDocuments] Error:', error)
+        return []
+    }
 }
 
 // ============================================================================
