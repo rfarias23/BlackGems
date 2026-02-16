@@ -33,16 +33,38 @@ import { auth } from '@/lib/auth';
 // Roles that can edit deals
 const EDIT_ROLES = ['SUPER_ADMIN', 'FUND_ADMIN', 'INVESTMENT_MANAGER', 'ANALYST'];
 
+// Safely execute a server action, returning fallback on error
+async function safe<T>(fn: () => Promise<T>, fallback: T, label: string): Promise<T> {
+    try {
+        return await fn();
+    } catch (error) {
+        console.error(`[DealDetail] ${label} failed:`, error);
+        return fallback;
+    }
+}
+
 export default async function DealDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
     const [deal, session] = await Promise.all([getDeal(id), auth()]);
-    const [documents, timeline, notes, ddItems, ddStats, portfolioLink, rawDeal, analytics, tasks, members, scores, dealSources] = deal
-        ? await Promise.all([getDealDocuments(id), getDealTimeline(id), getDealNotes(id), getDealDueDiligence(id), getDDStats(id), getDealPortfolioLink(id), getDealRawData(id), getDealAnalytics(id), getDealTasks(id), getFundMembers(id), getDealScores(id), getDealSources()])
-        : [[], [], [], [], null, null, null, null, [], [], null, []];
 
     if (!deal) {
         notFound();
     }
+
+    const [documents, timeline, notes, ddItems, ddStats, portfolioLink, rawDeal, analytics, tasks, members, scores, dealSources] = await Promise.all([
+        safe(() => getDealDocuments(id), [], 'getDealDocuments'),
+        safe(() => getDealTimeline(id), [], 'getDealTimeline'),
+        safe(() => getDealNotes(id), [], 'getDealNotes'),
+        safe(() => getDealDueDiligence(id), [], 'getDealDueDiligence'),
+        safe(() => getDDStats(id), null, 'getDDStats'),
+        safe(() => getDealPortfolioLink(id), null, 'getDealPortfolioLink'),
+        safe(() => getDealRawData(id), null, 'getDealRawData'),
+        safe(() => getDealAnalytics(id), null, 'getDealAnalytics'),
+        safe(() => getDealTasks(id), [], 'getDealTasks'),
+        safe(() => getFundMembers(id), [], 'getFundMembers'),
+        safe(() => getDealScores(id), null, 'getDealScores'),
+        safe(() => getDealSources(), [], 'getDealSources'),
+    ]);
 
     const userRole = (session?.user as { role?: string })?.role || 'LP_VIEWER';
     const canEdit = EDIT_ROLES.includes(userRole);
