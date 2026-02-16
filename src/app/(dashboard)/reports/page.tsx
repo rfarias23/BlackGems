@@ -619,6 +619,7 @@ export default async function ReportsPage() {
                     {fundPerformance ? (
                         <QuarterlyUpdateBuilder
                             fundId={fundPerformance.fund.id}
+                            fundName={fundPerformance.fund.name}
                             initialReports={reports}
                         />
                     ) : (

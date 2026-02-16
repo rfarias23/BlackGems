@@ -19,7 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { ArrowLeft, FileText, Plus, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, FileText, Plus, CheckCircle2, Download } from 'lucide-react'
 import {
   generateQuarterlyUpdate,
   getQuarterlyUpdateDraft,
@@ -28,9 +28,12 @@ import {
 } from '@/lib/actions/quarterly-updates'
 import type { QuarterlyReport, ReportListItem } from '@/lib/actions/quarterly-updates'
 import { SectionEditor } from '@/components/reports/section-editor'
+import { generateQuarterlyUpdatePDF } from '@/lib/pdf/quarterly-update'
+import type { QuarterlyUpdatePDFData } from '@/lib/pdf/quarterly-update'
 
 interface QuarterlyUpdateBuilderProps {
   fundId: string
+  fundName?: string
   initialReports: ReportListItem[]
 }
 
@@ -64,7 +67,7 @@ function formatPeriod(start: Date | null, end: Date | null): string {
   return `${startStr} - ${endStr}`
 }
 
-export function QuarterlyUpdateBuilder({ fundId, initialReports }: QuarterlyUpdateBuilderProps) {
+export function QuarterlyUpdateBuilder({ fundId, fundName, initialReports }: QuarterlyUpdateBuilderProps) {
   const [view, setView] = useState<View>('list')
   const [reports, setReports] = useState<ReportListItem[]>(initialReports)
   const [draft, setDraft] = useState<QuarterlyReport | null>(null)
@@ -150,6 +153,25 @@ export function QuarterlyUpdateBuilder({ fundId, initialReports }: QuarterlyUpda
     refreshReports()
   }
 
+  const handlePreviewPDF = () => {
+    if (!draft) return
+
+    const pdfData: QuarterlyUpdatePDFData = {
+      fundName: fundName || 'Fund',
+      year: draft.year,
+      quarter: draft.quarter,
+      periodStart: draft.periodStart,
+      periodEnd: draft.periodEnd,
+      sections: draft.sections.map((s) => ({
+        key: s.key,
+        title: s.title,
+        content: s.content,
+      })),
+    }
+
+    generateQuarterlyUpdatePDF(pdfData)
+  }
+
   // ---- EDITOR VIEW ----
   if (view === 'editor' && draft) {
     const canPublish = draft.status === 'DRAFT' || draft.status === 'REVIEW'
@@ -191,8 +213,16 @@ export function QuarterlyUpdateBuilder({ fundId, initialReports }: QuarterlyUpda
           ))}
         </div>
 
-        {canPublish && (
-          <div className="flex justify-end pt-2">
+        <div className="flex justify-end gap-2 pt-2">
+          <Button
+            variant="outline"
+            onClick={handlePreviewPDF}
+            disabled={isPending}
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Preview PDF
+          </Button>
+          {canPublish && (
             <Button
               onClick={handleApproveAndPublish}
               disabled={isPending}
@@ -200,8 +230,8 @@ export function QuarterlyUpdateBuilder({ fundId, initialReports }: QuarterlyUpda
               <CheckCircle2 className="mr-2 h-4 w-4" />
               {isPending ? 'Publishing...' : 'Approve & Publish'}
             </Button>
-          </div>
-        )}
+          )}
+        </div>
 
         {draft.status === 'PUBLISHED' && (
           <div className="rounded-md border border-emerald-500/20 bg-emerald-500/5 px-4 py-3">
