@@ -26,8 +26,8 @@ import { updateInvestor } from '@/lib/actions/investors';
 const EDIT_ROLES = ['SUPER_ADMIN', 'FUND_ADMIN', 'INVESTMENT_MANAGER', 'ANALYST'];
 
 const INVESTOR_TYPES = [
-    'Individual', 'Joint Account', 'Trust', 'IRA', 'Family Office',
-    'Foundation', 'Endowment', 'Pension Fund', 'Fund of Funds',
+    'Individual', 'Joint Venture', 'Trust', 'Individual Retirement Account', 'Family Office',
+    'Foundation', 'Endowment', 'Pension Fund', 'Investment Fund',
     'Corporate', 'Sovereign Wealth', 'Insurance Company', 'Bank', 'Other',
 ];
 

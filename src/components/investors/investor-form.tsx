@@ -18,14 +18,14 @@ import Link from 'next/link';
 
 const INVESTOR_TYPES = [
     'Individual',
-    'Joint Account',
+    'Joint Venture',
     'Trust',
-    'IRA',
+    'Individual Retirement Account',
     'Family Office',
     'Foundation',
     'Endowment',
     'Pension Fund',
-    'Fund of Funds',
+    'Investment Fund',
     'Corporate',
     'Sovereign Wealth',
     'Insurance Company',

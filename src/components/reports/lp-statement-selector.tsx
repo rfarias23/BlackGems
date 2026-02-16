@@ -38,14 +38,14 @@ function formatDate(date: Date): string {
 
 const typeDisplay: Record<string, string> = {
     INDIVIDUAL: 'Individual',
-    JOINT: 'Joint',
+    JOINT_VENTURE: 'Joint Venture',
     TRUST: 'Trust',
-    IRA: 'IRA',
+    IRA: 'Individual Retirement Account',
     FAMILY_OFFICE: 'Family Office',
     FOUNDATION: 'Foundation',
     ENDOWMENT: 'Endowment',
     PENSION: 'Pension',
-    FUND_OF_FUNDS: 'Fund of Funds',
+    INVESTMENT_FUND: 'Investment Fund',
     CORPORATE: 'Corporate',
     OTHER: 'Other',
 };
