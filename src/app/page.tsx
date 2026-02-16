@@ -105,7 +105,7 @@ function HeroSection() {
                     </FadeIn>
                     <FadeIn delay={150}>
                         <p className="text-base md:text-lg text-slate-400 max-w-[700px] leading-relaxed">
-                            Private equity infrastructure for the next generation of fund managers.
+                            Private equity infrastructure for emerging fund managers.
                         </p>
                     </FadeIn>
                     <FadeIn delay={300}>
