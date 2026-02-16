@@ -77,7 +77,7 @@ function HeroSection() {
                     href="/login"
                     className="text-[13px] text-slate-600 hover:text-slate-400 transition-colors"
                 >
-                    Manager Login
+                    Login
                 </a>
 
                 <div className="w-10 h-px bg-slate-700 my-2" />

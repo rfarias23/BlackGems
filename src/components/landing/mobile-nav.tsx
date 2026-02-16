@@ -62,7 +62,7 @@ export function MobileNav() {
                             onClick={close}
                             className="text-[15px] text-slate-400 hover:text-slate-100 transition-colors"
                         >
-                            Manager Login
+                            Login
                         </Link>
 
                         <div className="mt-4">

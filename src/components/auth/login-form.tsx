@@ -12,7 +12,7 @@ export function LoginForm() {
         <div>
             {/* Title */}
             <h1 className="font-serif text-[28px] font-normal text-[#F8FAFC] mb-2">
-                Manager Login
+                Login
             </h1>
             <p className="text-[14px] text-slate-400 mb-10">
                 Enter your credentials to access your account.
