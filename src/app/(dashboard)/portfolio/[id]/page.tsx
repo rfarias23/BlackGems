@@ -7,6 +7,7 @@ import { ArrowLeft, Calendar, DollarSign, TrendingUp, Target } from 'lucide-reac
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getPortfolioCompany, getPortfolioMetrics } from '@/lib/actions/portfolio';
+import { getValuationHistory } from '@/lib/actions/portfolio-monitoring';
 import { PortfolioStatusActions } from '@/components/portfolio/portfolio-status-actions';
 import { UpdateValuationButton } from '@/components/portfolio/update-valuation-button';
 import { DeletePortfolioButton } from '@/components/portfolio/delete-portfolio-button';
@@ -47,9 +48,10 @@ function getStatusColor(status: string) {
 
 export default async function PortfolioCompanyDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
-    const [company, metrics] = await Promise.all([
+    const [company, metrics, valuationResult] = await Promise.all([
         getPortfolioCompany(id),
         getPortfolioMetrics(id),
+        getValuationHistory(id),
     ]);
 
     if (!company) {
@@ -182,6 +184,7 @@ export default async function PortfolioCompanyDetailPage({ params }: { params: P
                             acquisitionDate: company.acquisitionDate,
                         }}
                         metrics={metrics}
+                        valuations={'data' in valuationResult ? valuationResult.data : undefined}
                     />
                 </TabsContent>
             </Tabs>

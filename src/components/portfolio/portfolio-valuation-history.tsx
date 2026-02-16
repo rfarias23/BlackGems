@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import type { MetricItem } from '@/lib/actions/portfolio';
 
 function formatDate(date: Date | null): string {
@@ -19,9 +20,23 @@ interface ValuationCompanyData {
     acquisitionDate: Date;
 }
 
+interface ValuationRecord {
+    id: string;
+    date: Date;
+    value: string;
+    equityValue: string | null;
+    methodology: string;
+    revenueMultiple: string | null;
+    ebitdaMultiple: string | null;
+    isOfficial: boolean;
+    notes: string | null;
+    changePercent: number | null;
+}
+
 interface PortfolioValuationHistoryProps {
     company: ValuationCompanyData;
     metrics: MetricItem[];
+    valuations?: ValuationRecord[];
 }
 
 function parseCurrencyToNumber(value: string | null): number {
@@ -29,7 +44,13 @@ function parseCurrencyToNumber(value: string | null): number {
     return parseFloat(value.replace(/[$,]/g, '')) || 0;
 }
 
-export function PortfolioValuationHistory({ company, metrics }: PortfolioValuationHistoryProps) {
+function formatMethodology(methodology: string): string {
+    return methodology
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+export function PortfolioValuationHistory({ company, metrics, valuations }: PortfolioValuationHistoryProps) {
     const entryVal = parseCurrencyToNumber(company.entryValuation);
     const currentVal = parseCurrencyToNumber(company.currentValuation);
     const valueCreated = currentVal - entryVal;
@@ -126,7 +147,108 @@ export function PortfolioValuationHistory({ company, metrics }: PortfolioValuati
                 </div>
             </div>
 
-            {/* Valuation Timeline Table */}
+            {/* Formal Valuations Table */}
+            <div>
+                <h3 className="text-sm uppercase tracking-wider text-muted-foreground mb-4">
+                    Formal Valuations
+                </h3>
+                {valuations && valuations.length > 0 ? (
+                    <Card>
+                        <CardHeader className="pb-0">
+                            <CardTitle className="sr-only">Formal Valuation Records</CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-sm">
+                                    <thead>
+                                        <tr className="border-b border-border">
+                                            <th className="px-4 py-3 text-left text-xs uppercase tracking-wider text-muted-foreground font-medium">
+                                                Date
+                                            </th>
+                                            <th className="px-4 py-3 text-right text-xs uppercase tracking-wider text-muted-foreground font-medium">
+                                                Enterprise Value
+                                            </th>
+                                            <th className="px-4 py-3 text-right text-xs uppercase tracking-wider text-muted-foreground font-medium">
+                                                Equity Value
+                                            </th>
+                                            <th className="px-4 py-3 text-left text-xs uppercase tracking-wider text-muted-foreground font-medium">
+                                                Methodology
+                                            </th>
+                                            <th className="px-4 py-3 text-right text-xs uppercase tracking-wider text-muted-foreground font-medium">
+                                                Rev Multiple
+                                            </th>
+                                            <th className="px-4 py-3 text-right text-xs uppercase tracking-wider text-muted-foreground font-medium">
+                                                EBITDA Multiple
+                                            </th>
+                                            <th className="px-4 py-3 text-right text-xs uppercase tracking-wider text-muted-foreground font-medium">
+                                                Change
+                                            </th>
+                                            <th className="px-4 py-3 text-center text-xs uppercase tracking-wider text-muted-foreground font-medium">
+                                                Status
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {valuations.map((v) => (
+                                            <tr
+                                                key={v.id}
+                                                className="border-b border-border last:border-0"
+                                            >
+                                                <td className="px-4 py-3 text-foreground">
+                                                    {formatDate(v.date)}
+                                                </td>
+                                                <td className="px-4 py-3 text-right font-mono tabular-nums text-foreground">
+                                                    {v.value}
+                                                </td>
+                                                <td className="px-4 py-3 text-right font-mono tabular-nums text-foreground">
+                                                    {v.equityValue || '\u2014'}
+                                                </td>
+                                                <td className="px-4 py-3 text-muted-foreground">
+                                                    {formatMethodology(v.methodology)}
+                                                </td>
+                                                <td className="px-4 py-3 text-right font-mono tabular-nums text-foreground">
+                                                    {v.revenueMultiple || '\u2014'}
+                                                </td>
+                                                <td className="px-4 py-3 text-right font-mono tabular-nums text-foreground">
+                                                    {v.ebitdaMultiple || '\u2014'}
+                                                </td>
+                                                <td className="px-4 py-3 text-right font-mono tabular-nums">
+                                                    {v.changePercent !== null ? (
+                                                        <span className={v.changePercent >= 0 ? 'text-[#059669]' : 'text-red-500'}>
+                                                            {v.changePercent >= 0 ? '+' : ''}{v.changePercent.toFixed(1)}%
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-muted-foreground">{'\u2014'}</span>
+                                                    )}
+                                                </td>
+                                                <td className="px-4 py-3 text-center">
+                                                    {v.isOfficial ? (
+                                                        <Badge className="bg-emerald-500/20 text-emerald-400 border-transparent">
+                                                            Official
+                                                        </Badge>
+                                                    ) : (
+                                                        <Badge variant="outline" className="text-muted-foreground">
+                                                            Draft
+                                                        </Badge>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </CardContent>
+                    </Card>
+                ) : (
+                    <div className="py-8 text-center">
+                        <p className="text-sm text-muted-foreground">
+                            No formal valuations recorded yet.
+                        </p>
+                    </div>
+                )}
+            </div>
+
+            {/* Valuation Timeline Table (from PortfolioMetric snapshots) */}
             {valuationMetrics.length > 0 ? (
                 <div>
                     <h3 className="text-sm uppercase tracking-wider text-muted-foreground mb-4">
