@@ -336,7 +336,7 @@ function FeaturesSection() {
             icon: Users,
             title: 'LP Management',
             description:
-                'Commitments, communications, portal access. Professional from day one.',
+                'Commitments, communications, portal access. Structured from the start.',
         },
         {
             icon: Building2,
@@ -354,13 +354,13 @@ function FeaturesSection() {
             icon: FileText,
             title: 'Quarterly Reports',
             description:
-                'One-click professional PDFs. Auto-populated, institutional quality.',
+                'Quarterly reports. Auto-populated, formatted, distributed.',
         },
         {
             icon: Globe,
             title: 'LP Portal',
             description:
-                'White-label. Documents, statements, reports — 24/7 self-service for LPs.',
+                'Documents, statements, reports. Self-service access for your LPs.',
         },
     ];
 
