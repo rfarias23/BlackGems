@@ -665,6 +665,7 @@ model Investor {
   capitalCalls    CapitalCallItem[]
   distributions   DistributionItem[]
   documents       Document[]
+  communications  Communication[]
 
   @@index([type])
   @@index([status])
@@ -1195,4 +1196,48 @@ enum ReportStatus {
   APPROVED
   PUBLISHED
   ARCHIVED
+}
+
+// ============================================================================
+// COMMUNICATIONS
+// ============================================================================
+
+model Communication {
+  id          String                @id @default(cuid())
+  investor    Investor              @relation(fields: [investorId], references: [id], onDelete: Cascade)
+  investorId  String
+
+  type        CommunicationType
+  direction   CommunicationDirection
+  subject     String?
+  content     String?               @db.Text
+  date        DateTime
+
+  // Participants
+  contactName String?               // Who at the investor
+  sentBy      String?               // Our team member name
+
+  // Follow-up
+  followUpDate DateTime?
+  followUpDone Boolean              @default(false)
+
+  notes       String?               @db.Text
+  createdAt   DateTime              @default(now())
+
+  @@index([investorId])
+  @@index([date])
+}
+
+enum CommunicationType {
+  EMAIL
+  CALL
+  MEETING
+  VIDEO_CALL
+  TEXT
+  OTHER
+}
+
+enum CommunicationDirection {
+  INBOUND
+  OUTBOUND
 }
