@@ -5,7 +5,7 @@ import { auth } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
-import { DealStage, DealStatus } from '@prisma/client'
+import { DealStage, DealStatus, DealSourceType } from '@prisma/client'
 import { formatCurrency, formatPercentage, parseMoney, parsePercent } from '@/lib/shared/formatters'
 import { softDelete, notDeleted } from '@/lib/shared/soft-delete'
 import { logAudit, computeChanges } from '@/lib/shared/audit'
@@ -391,6 +391,9 @@ export async function createDeal(formData: FormData) {
         }
     }
 
+    // Optional source from FormData
+    const sourceId = formData.get('sourceId') as string | null
+
     try {
         const deal = await prisma.deal.create({
             data: {
@@ -401,6 +404,7 @@ export async function createDeal(formData: FormData) {
                 askingPrice: parsedPrice,
                 description: description || null,
                 fundId,
+                ...(sourceId ? { sourceId } : {}),
             },
         })
 
@@ -715,6 +719,9 @@ export async function getDealRawData(dealId: string) {
 
     const deal = await prisma.deal.findFirst({
         where: { id: dealId, ...notDeleted },
+        include: {
+            source: { select: { id: true, name: true, type: true } },
+        },
     })
     if (!deal) return null
 
@@ -741,6 +748,10 @@ export async function getDealRawData(dealId: string) {
         investmentThesis: deal.investmentThesis,
         actualCloseDate: deal.actualCloseDate,
         stage: deal.stage,
+        sourceId: deal.sourceId,
+        sourceContact: deal.sourceContact,
+        sourceNotes: deal.sourceNotes,
+        source: deal.source,
     }
 }
 
@@ -1367,5 +1378,140 @@ export async function updateDealScores(
     } catch (error) {
         console.error('Error updating deal scores:', error)
         return { error: 'Failed to update scores' }
+    }
+}
+
+// ============================================================================
+// DEAL SOURCE TRACKING
+// ============================================================================
+
+/** Get all active deal sources (fund-agnostic) */
+export async function getDealSources(): Promise<{ id: string; name: string; type: string }[]> {
+    const session = await auth()
+    if (!session?.user?.id) return []
+
+    const sources = await prisma.dealSource.findMany({
+        where: { isActive: true },
+        orderBy: { name: 'asc' },
+        select: { id: true, name: true, type: true },
+    })
+    return sources
+}
+
+const createSourceSchema = z.object({
+    name: z.string().min(1, 'Source name is required'),
+    type: z.nativeEnum(DealSourceType),
+    description: z.string().optional(),
+})
+
+/** Create a new deal source */
+export async function createDealSource(data: { name: string; type: string; description?: string }) {
+    const session = await auth()
+    if (!session?.user?.id) {
+        return { error: 'Unauthorized' }
+    }
+
+    const parsed = createSourceSchema.safeParse(data)
+    if (!parsed.success) {
+        return { error: parsed.error.issues[0]?.message ?? 'Invalid input' }
+    }
+
+    try {
+        const source = await prisma.dealSource.create({
+            data: {
+                name: parsed.data.name,
+                type: parsed.data.type,
+                description: parsed.data.description || null,
+            },
+        })
+
+        await logAudit({
+            userId: session.user.id,
+            action: 'CREATE',
+            entityType: 'DealSource',
+            entityId: source.id,
+        })
+
+        return { success: true, sourceId: source.id }
+    } catch (error) {
+        console.error('Error creating deal source:', error)
+        // Handle unique constraint violation on name
+        if (error instanceof Error && error.message.includes('Unique constraint')) {
+            return { error: 'A source with this name already exists' }
+        }
+        return { error: 'Failed to create deal source' }
+    }
+}
+
+const updateDealSourceSchema = z.object({
+    sourceId: z.string().min(1, 'Source is required'),
+    sourceContact: z.string().optional(),
+    sourceNotes: z.string().optional(),
+})
+
+/** Link or update a source on a deal */
+export async function updateDealSource(
+    dealId: string,
+    data: { sourceId: string; sourceContact?: string; sourceNotes?: string }
+) {
+    const session = await auth()
+    if (!session?.user?.id) {
+        return { error: 'Unauthorized' }
+    }
+
+    const parsed = updateDealSourceSchema.safeParse(data)
+    if (!parsed.success) {
+        return { error: parsed.error.issues[0]?.message ?? 'Invalid input' }
+    }
+
+    const deal = await prisma.deal.findFirst({
+        where: { id: dealId, ...notDeleted },
+        select: { fundId: true, sourceId: true, sourceContact: true, sourceNotes: true },
+    })
+    if (!deal) {
+        return { error: 'Deal not found' }
+    }
+
+    try {
+        await requireFundAccess(session.user.id, deal.fundId)
+    } catch {
+        return { error: 'Access denied' }
+    }
+
+    const updateData = {
+        sourceId: parsed.data.sourceId,
+        sourceContact: parsed.data.sourceContact || null,
+        sourceNotes: parsed.data.sourceNotes || null,
+    }
+
+    try {
+        await prisma.deal.update({
+            where: { id: dealId },
+            data: updateData,
+        })
+
+        const changes = computeChanges(
+            {
+                sourceId: deal.sourceId,
+                sourceContact: deal.sourceContact,
+                sourceNotes: deal.sourceNotes,
+            },
+            updateData
+        )
+
+        await logAudit({
+            userId: session.user.id,
+            action: 'UPDATE',
+            entityType: 'Deal',
+            entityId: dealId,
+            changes,
+        })
+
+        revalidatePath('/deals')
+        revalidatePath(`/deals/${dealId}`)
+        return { success: true }
+    } catch (error) {
+        console.error('Error updating deal source:', error)
+        return { error: 'Failed to update deal source' }
     }
 }

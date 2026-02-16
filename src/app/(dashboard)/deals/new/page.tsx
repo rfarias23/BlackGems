@@ -4,8 +4,11 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
+import { getDealSources } from '@/lib/actions/deals';
 
-export default function NewDealPage() {
+export default async function NewDealPage() {
+    const sources = await getDealSources();
+
     return (
         <div className="space-y-6 max-w-3xl mx-auto">
             <div className="flex items-center gap-4">
@@ -26,7 +29,7 @@ export default function NewDealPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <DealForm />
+                    <DealForm sources={sources} />
                 </CardContent>
             </Card>
             </ErrorBoundary>

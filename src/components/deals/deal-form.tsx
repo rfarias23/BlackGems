@@ -16,10 +16,30 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { DealStageSelect } from './deal-stage-select';
 import { DealStage } from './deal-stage-badge';
 import { createDeal } from '@/lib/actions/deals';
 import Link from 'next/link';
+
+const SOURCE_TYPE_DISPLAY: Record<string, string> = {
+    BROKER: 'Broker',
+    INVESTMENT_BANK: 'Investment Bank',
+    DIRECT_OUTREACH: 'Direct Outreach',
+    REFERRAL_NETWORK: 'Referral Network',
+    REFERRAL_INVESTOR: 'Referral (Investor)',
+    ONLINE_MARKETPLACE: 'Online Marketplace',
+    CONFERENCE: 'Conference',
+    ADVISOR: 'Advisor',
+    INBOUND: 'Inbound',
+    OTHER: 'Other',
+};
 
 // Form Schema
 const formSchema = z.object({
@@ -43,6 +63,7 @@ const formSchema = z.object({
     }),
     askPrice: z.string().optional(),
     description: z.string().optional(),
+    sourceId: z.string().optional(),
 });
 
 type DealFormValues = z.infer<typeof formSchema>;
@@ -50,9 +71,14 @@ type DealFormValues = z.infer<typeof formSchema>;
 const defaultValues: Partial<DealFormValues> = {
     stage: 'Identified',
     description: '',
+    sourceId: '',
 };
 
-export function DealForm() {
+interface DealFormProps {
+    sources?: { id: string; name: string; type: string }[];
+}
+
+export function DealForm({ sources }: DealFormProps) {
     const form = useForm<DealFormValues>({
         resolver: zodResolver(formSchema),
         defaultValues,
@@ -132,6 +158,48 @@ export function DealForm() {
                         </FormItem>
                     )}
                 />
+
+                {sources && sources.length > 0 && (
+                    <FormField
+                        control={form.control}
+                        name="sourceId"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Deal Source</FormLabel>
+                                <FormControl>
+                                    <>
+                                        <input type="hidden" name="sourceId" value={field.value || ''} />
+                                        <Select value={field.value || ''} onValueChange={field.onChange}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select source (optional)" />
+                                            </SelectTrigger>
+                                            <SelectContent className="bg-[#1E293B] border-[#334155]">
+                                                {sources.map((source) => (
+                                                    <SelectItem
+                                                        key={source.id}
+                                                        value={source.id}
+                                                        className="text-[#F8FAFC] focus:bg-[#334155] focus:text-[#F8FAFC]"
+                                                    >
+                                                        <span className="flex items-center gap-2">
+                                                            {source.name}
+                                                            <span className="text-xs text-[#94A3B8]">
+                                                                {SOURCE_TYPE_DISPLAY[source.type] || source.type}
+                                                            </span>
+                                                        </span>
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </>
+                                </FormControl>
+                                <FormDescription>
+                                    How this deal was sourced (optional).
+                                </FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                )}
 
                 <FormField
                     control={form.control}
