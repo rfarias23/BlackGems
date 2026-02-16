@@ -11,6 +11,11 @@ export default function GlobalError({
 }) {
     useEffect(() => {
         console.error('[GlobalError]', error)
+        import('@/lib/sentry').then(({ captureException }) => {
+            captureException(error)
+        }).catch(() => {
+            // Sentry not available
+        })
     }, [error])
 
     return (
