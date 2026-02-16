@@ -7,7 +7,6 @@ import {
     Wallet,
     FileText,
     Globe,
-    Check,
     Linkedin,
     Twitter,
 } from 'lucide-react';
@@ -36,8 +35,6 @@ export default function Home() {
             <DualInterfaceSection />
             <FeaturesSection />
             <SocialProofSection />
-            <SectionTransition variant="to-pricing" />
-            <PricingSection />
             <FinalCtaSection />
             <FooterSection />
         </main>
@@ -88,7 +85,7 @@ function HeroSection() {
                     </span>
                     <NavItem label="The Problem" href="#problem" />
                     <NavItem label="The Platform" href="#platform" />
-                    <NavItem label="Pricing" href="#pricing" />
+                    <NavItem label="Pricing" href="/pricing" />
                     <NavItem label="Contact" href="#contact" />
                 </div>
             </nav>
@@ -418,133 +415,7 @@ function SocialProofSection() {
     );
 }
 
-/* ----- SECTION 7: PRICING ----- */
-function PricingSection() {
-    const tiers = [
-        {
-            name: 'Searcher',
-            price: '49',
-            description: 'Perfect for search fund principals in the acquisition phase.',
-            features: [
-                'Deal pipeline & DD tracker',
-                'Contact management',
-                '2 users, 5GB storage',
-            ],
-            cta: 'Get Started',
-            highlighted: false,
-        },
-        {
-            name: 'Operator',
-            price: '199',
-            description: 'For operating search funds with LP investors.',
-            features: [
-                'Everything in Searcher',
-                'LP Portal & communications',
-                'Capital ops & reports',
-                '5 users, 25GB storage',
-            ],
-            cta: 'Get Started',
-            highlighted: true,
-        },
-        {
-            name: 'Fund Manager',
-            price: '399',
-            description: 'For established funds with multiple vehicles and advanced needs.',
-            features: [
-                'Everything in Operator',
-                'Multi-fund management',
-                'White-label portal & API',
-                'Unlimited users & storage',
-            ],
-            cta: 'Contact Sales',
-            highlighted: false,
-        },
-    ];
-
-    return (
-        <section id="pricing" className="bg-deep-surface pt-8 pb-16 px-6 md:pt-10 md:pb-20 md:px-12 lg:pt-[60px] lg:pb-[100px] lg:px-[120px]">
-            <div className="max-w-[1200px] mx-auto">
-                <FadeIn>
-                    <p className="text-xs font-medium text-heritage-sapphire tracking-[3px] uppercase text-center mb-4 md:mb-6">
-                        PRICING
-                    </p>
-                </FadeIn>
-
-                <FadeIn delay={100}>
-                    <h2 className="font-display text-[28px] md:text-[34px] lg:text-[40px] leading-[1.15] font-normal text-slate-100 text-center max-w-[800px] mx-auto mb-3 md:mb-4">
-                        Right-sized for every stage.
-                    </h2>
-                </FadeIn>
-
-                <FadeIn delay={150}>
-                    <p className="text-base md:text-lg text-slate-400 text-center max-w-[700px] mx-auto mb-8 md:mb-12">
-                        No AUM-based pricing. No per-seat fees. Predictable.
-                    </p>
-                </FadeIn>
-
-                {/* Pricing cards */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-                    {tiers.map((tier, i) => (
-                        <FadeIn key={tier.name} delay={250 + i * 120}>
-                            <div
-                                className={`landing-card ${tier.highlighted ? 'landing-card-highlight' : ''} bg-slate-800 rounded-lg p-6 md:p-9 flex flex-col border h-full ${
-                                    tier.highlighted
-                                        ? 'border-heritage-sapphire'
-                                        : 'border-slate-700'
-                                }`}
-                            >
-                                {/* Badge */}
-                                {tier.highlighted && (
-                                    <span className="inline-flex self-start px-3 py-1 bg-heritage-sapphire text-white text-[11px] font-semibold rounded-full mb-4">
-                                        Most Popular
-                                    </span>
-                                )}
-
-                                <span className="text-sm font-medium text-slate-400 mb-3">
-                                    {tier.name}
-                                </span>
-
-                                <div className="flex items-baseline gap-1 mb-3">
-                                    <span className="font-mono text-3xl md:text-4xl font-medium text-slate-100">
-                                        &euro;{tier.price}
-                                    </span>
-                                    <span className="text-sm text-slate-600">/mo</span>
-                                </div>
-
-                                <p className="text-sm text-slate-400 leading-relaxed mb-6">
-                                    {tier.description}
-                                </p>
-
-                                <div className="h-px bg-slate-700 mb-6" />
-
-                                <ul className="flex flex-col gap-3 mb-8 flex-1">
-                                    {tier.features.map((f) => (
-                                        <li key={f} className="flex items-center gap-2">
-                                            <Check className="w-4 h-4 text-emerald-forest shrink-0" />
-                                            <span className="text-sm text-slate-400">{f}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-
-                                <button
-                                    className={`w-full py-3 rounded-md text-sm font-medium transition-all ${
-                                        tier.highlighted
-                                            ? 'bg-heritage-sapphire text-white hover:bg-[#3350E0] hover:shadow-[0_0_20px_rgba(62,92,255,0.25)]'
-                                            : 'bg-transparent border border-slate-700 text-slate-100 hover:border-slate-500'
-                                    }`}
-                                >
-                                    {tier.cta}
-                                </button>
-                            </div>
-                        </FadeIn>
-                    ))}
-                </div>
-            </div>
-        </section>
-    );
-}
-
-/* ----- SECTION 8: FINAL CTA ----- */
+/* ----- SECTION 7: FINAL CTA ----- */
 function FinalCtaSection() {
     return (
         <section id="contact" className="bg-midnight-ink py-16 px-6 md:py-20 md:px-12 lg:py-[100px] lg:px-[120px] relative overflow-hidden">

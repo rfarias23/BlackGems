@@ -52,7 +52,7 @@ export function MobileNav() {
                     <nav className="flex-1 flex flex-col justify-center items-center gap-6">
                         <NavLink href="#problem" label="The Problem" onClick={close} />
                         <NavLink href="#platform" label="The Platform" onClick={close} />
-                        <NavLink href="#pricing" label="Pricing" onClick={close} />
+                        <NavLink href="/pricing" label="Pricing" onClick={close} />
                         <NavLink href="#contact" label="Contact" onClick={close} />
 
                         <div className="w-12 h-px bg-slate-700 my-2" />
