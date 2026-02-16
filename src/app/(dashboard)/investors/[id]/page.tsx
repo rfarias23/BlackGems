@@ -12,7 +12,8 @@ import { DocumentList } from '@/components/documents/document-list';
 import { ArrowLeft, DollarSign, Building2 } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getInvestor, getInvestorCommunications } from '@/lib/actions/investors';
+import { getInvestor } from '@/lib/actions/investors';
+import { getCommunicationHistory } from '@/lib/actions/communications';
 import { getInvestorDocuments } from '@/lib/actions/documents';
 import { DeleteInvestorButton } from '@/components/investors/delete-investor-button';
 import { InvestorCommunications } from '@/components/investors/investor-communications';
@@ -21,12 +22,14 @@ import { auth } from '@/lib/auth';
 
 export default async function InvestorDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
-    const [investor, session, documents, communications] = await Promise.all([
+    const [investor, session, documents, commResult] = await Promise.all([
         getInvestor(id),
         auth(),
         getInvestorDocuments(id),
-        getInvestorCommunications(id),
+        getCommunicationHistory(id),
     ]);
+
+    const communications = 'data' in commResult ? commResult.data : [];
 
     if (!investor) {
         notFound();
@@ -164,6 +167,7 @@ export default async function InvestorDetailPage({ params }: { params: Promise<{
                         investorName={investor.name}
                         investorEmail={investor.contactEmail || investor.email}
                         communications={communications}
+                        fundId={investor.commitments[0]?.fundId || ''}
                     />
                 </TabsContent>
 

@@ -126,6 +126,7 @@ export interface InvestorDetail {
     updatedAt: Date
     commitments: {
         id: string
+        fundId: string
         fundName: string
         committedAmount: string
         calledAmount: string
@@ -246,6 +247,7 @@ export async function getInvestor(id: string): Promise<InvestorDetail | null> {
         updatedAt: investor.updatedAt,
         commitments: investor.commitments.map((c) => ({
             id: c.id,
+            fundId: c.fundId,
             fundName: c.fund.name,
             committedAmount: formatMoney(c.committedAmount),
             calledAmount: formatMoney(c.calledAmount),
