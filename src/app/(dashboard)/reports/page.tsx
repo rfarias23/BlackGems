@@ -45,7 +45,7 @@ function formatDate(date: Date): string {
 }
 
 export default async function ReportsPage() {
-    const [fundPerformance, portfolioSummary, dealPipeline, investors, chartData, waterfallData, reports] = await Promise.all([
+    const results = await Promise.allSettled([
         getFundPerformanceReport(),
         getPortfolioSummaryReport(),
         getDealPipelineReport(),
@@ -54,6 +54,23 @@ export default async function ReportsPage() {
         getWaterfallChartData(),
         listReports(),
     ]);
+
+    // Extract values, falling back to null/empty on failure
+    const fundPerformance = results[0].status === 'fulfilled' ? results[0].value : null;
+    const portfolioSummary = results[1].status === 'fulfilled' ? results[1].value : null;
+    const dealPipeline = results[2].status === 'fulfilled' ? results[2].value : null;
+    const investors = results[3].status === 'fulfilled' ? results[3].value : [];
+    const chartData = results[4].status === 'fulfilled' ? results[4].value : null;
+    const waterfallData = results[5].status === 'fulfilled' ? results[5].value : null;
+    const reports = results[6].status === 'fulfilled' ? results[6].value : [];
+
+    // Log any failures for debugging
+    results.forEach((r, i) => {
+        if (r.status === 'rejected') {
+            const names = ['fundPerformance', 'portfolioSummary', 'dealPipeline', 'investors', 'chartData', 'waterfallData', 'reports'];
+            console.error(`[ReportsPage] ${names[i]} failed:`, r.reason);
+        }
+    });
 
     return (
         <div className="space-y-6">
