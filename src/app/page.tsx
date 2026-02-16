@@ -400,54 +400,18 @@ function FeaturesSection() {
     );
 }
 
-/* ----- SECTION 6: SOCIAL PROOF / METRICS ----- */
+/* ----- SECTION 6: ETHOS STATEMENT ----- */
 function SocialProofSection() {
-    const metrics = [
-        { value: '70%', color: 'text-heritage-sapphire', label: 'Time saved on admin' },
-        { value: '0', color: 'text-emerald-forest', label: 'Calculation errors' },
-        { value: '<60s', color: 'text-slate-100', label: 'To add a new deal' },
-        { value: '24/7', color: 'text-slate-100', label: 'LP portal access' },
-    ];
-
     return (
         <section className="bg-midnight-ink py-16 px-6 md:py-20 md:px-12 lg:py-[100px] lg:px-[120px] relative overflow-hidden">
             {/* Subtle top accent */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[1px] bg-gradient-to-r from-transparent via-slate-700 to-transparent" aria-hidden="true" />
 
             <div className="max-w-[1200px] mx-auto">
-                {/* Metrics row */}
-                <div className="grid grid-cols-2 md:flex md:items-start md:justify-around gap-8 md:gap-0 mb-12 md:mb-16">
-                    {metrics.map((m, i) => (
-                        <FadeIn key={m.value} delay={i * 150}>
-                            <div className="flex flex-col items-center gap-2 md:gap-3 relative">
-                                {/* Glow behind the number */}
-                                <span className={`metric-glow font-mono text-[36px] md:text-[48px] font-light ${m.color}`} aria-hidden="true">
-                                    {m.value}
-                                </span>
-                                <span className={`font-mono text-[36px] md:text-[48px] font-light ${m.color} relative`}>
-                                    {m.value}
-                                </span>
-                                <span className="text-xs md:text-sm text-slate-400 text-center">
-                                    {m.label}
-                                </span>
-                            </div>
-                        </FadeIn>
-                    ))}
-                </div>
-
-                {/* Divider */}
-                <div className="section-divider h-px w-full max-w-[800px] mx-auto mb-12 md:mb-16" aria-hidden="true" />
-
-                {/* Testimonial */}
                 <FadeIn>
-                    <div className="text-center max-w-[800px] mx-auto px-2">
-                        <p className="font-serif text-lg md:text-xl italic text-slate-400 leading-relaxed mb-4">
-                            &ldquo;BlackGem made our $5M fund look like a $500M operation. Our LPs noticed immediately.&rdquo;
-                        </p>
-                        <span className="text-sm font-medium text-slate-600">
-                            — Search Fund Principal, Former Goldman Sachs
-                        </span>
-                    </div>
+                    <p className="font-display text-[22px] md:text-[28px] lg:text-[32px] text-slate-400 text-center leading-relaxed">
+                        Built by fund operators. For fund operators.
+                    </p>
                 </FadeIn>
             </div>
         </section>
