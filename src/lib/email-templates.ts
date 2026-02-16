@@ -170,8 +170,8 @@ function renderQuarterlyUpdate(vars: Record<string, string>): RenderedEmail {
 function renderCustom(vars: Record<string, string>): RenderedEmail {
   const fundName = escapeHtml(vars.fundName)
   const investorName = escapeHtml(vars.investorName)
-  const customSubject = vars.customSubject || ''
-  const customBody = vars.customBody || ''
+  const customSubject = escapeHtml(vars.customSubject || '')
+  const customBody = escapeHtml(vars.customBody || '')
 
   const body = `<div style="color: #11141D; font-size: 15px; line-height: 1.7; white-space: pre-wrap;">${customBody}</div>
         <p style="color: #94A3B8; font-size: 13px; line-height: 1.5; margin-top: 24px;">
@@ -186,8 +186,7 @@ function renderCustom(vars: Record<string, string>): RenderedEmail {
 
 /**
  * Render a typed email template with the given variables.
- * All variable values are HTML-escaped to prevent XSS, except customBody
- * in the custom template which is assumed to be pre-sanitized.
+ * All variable values are HTML-escaped to prevent XSS.
  */
 export function renderEmailTemplate(
   type: TemplateType,

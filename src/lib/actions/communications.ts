@@ -227,13 +227,14 @@ export async function getCommunicationHistory(
     return { error: 'Investor not found' }
   }
 
-  // Check fund access if investor has commitments
-  if (investor.commitments.length > 0) {
-    try {
-      await requireFundAccess(session.user.id, investor.commitments[0].fundId)
-    } catch {
-      return { error: 'Access denied' }
-    }
+  // Require fund access — investors without commitments are inaccessible
+  if (investor.commitments.length === 0) {
+    return { error: 'Access denied' }
+  }
+  try {
+    await requireFundAccess(session.user.id, investor.commitments[0].fundId)
+  } catch {
+    return { error: 'Access denied' }
   }
 
   const communications = await prisma.communication.findMany({
@@ -299,13 +300,14 @@ export async function logCommunication(
     return { error: 'Investor not found' }
   }
 
-  // Check fund access if investor has commitments
-  if (investor.commitments.length > 0) {
-    try {
-      await requireFundAccess(session.user.id, investor.commitments[0].fundId)
-    } catch {
-      return { error: 'Access denied' }
-    }
+  // Require fund access — investors without commitments are inaccessible
+  if (investor.commitments.length === 0) {
+    return { error: 'Access denied' }
+  }
+  try {
+    await requireFundAccess(session.user.id, investor.commitments[0].fundId)
+  } catch {
+    return { error: 'Access denied' }
   }
 
   const parsed = logCommunicationSchema.safeParse(data)
