@@ -128,7 +128,7 @@ export default function PricingPage() {
             <footer className="pb-10 px-6 md:px-12 lg:px-[120px]">
                 <div className="max-w-[1200px] mx-auto flex items-center justify-between">
                     <span className="text-xs text-slate-600">
-                        &copy; 2026 NIRO Group LLC. All rights reserved.
+                        BlackGem is a product of NIRO Group LLC. &copy; 2026 All rights reserved.
                     </span>
                     <Link
                         href="/"

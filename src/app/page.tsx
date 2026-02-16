@@ -473,7 +473,7 @@ function FooterSection() {
                             <span className="font-normal">Black</span><span className="font-semibold">Gem</span>
                         </span>
                         <span className="text-[13px] text-slate-600">
-                            Institutional excellence from day one.
+                            A product of NIRO Group LLC.
                         </span>
                     </div>
 
