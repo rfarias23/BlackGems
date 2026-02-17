@@ -11,6 +11,7 @@ import {
 } from 'recharts'
 import { ChartWrapper, ChartEmptyState } from './chart-wrapper'
 import { getChartPalette, type ChartTheme } from './chart-colors'
+import { formatCompact, type CurrencyCode } from '@/lib/shared/formatters'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -27,22 +28,18 @@ interface CapitalAccountChartProps {
   data: CapitalAccountDataPoint[]
   theme?: ChartTheme
   height?: number
+  currency?: CurrencyCode
 }
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-function formatCurrency(value: number): string {
-  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`
-  if (value >= 1_000) return `$${(value / 1_000).toFixed(0)}K`
-  return `$${value.toFixed(0)}`
-}
-
 export function CapitalAccountChart({
   data,
   theme = 'dark',
   height = 300,
+  currency,
 }: CapitalAccountChartProps) {
   const palette = getChartPalette(theme)
 
@@ -65,7 +62,7 @@ export function CapitalAccountChart({
         <XAxis
           type="number"
           tick={{ fill: palette.axisText, fontSize: 12 }}
-          tickFormatter={formatCurrency}
+          tickFormatter={(v) => formatCompact(v, currency)}
         />
         <YAxis
           type="category"
@@ -90,7 +87,7 @@ export function CapitalAccountChart({
               distributed: 'Distributed',
             }
             const key = String(name || '')
-            return [formatCurrency(Number(value)), labels[key] || key]
+            return [formatCompact(Number(value), currency), labels[key] || key]
           }}
         />
         <Legend

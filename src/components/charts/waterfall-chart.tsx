@@ -11,6 +11,7 @@ import {
 } from 'recharts'
 import { ChartWrapper, ChartEmptyState } from './chart-wrapper'
 import { getChartPalette, type ChartTheme } from './chart-colors'
+import { formatCompact, type CurrencyCode } from '@/lib/shared/formatters'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -26,22 +27,18 @@ interface WaterfallChartProps {
   data: WaterfallDataPoint[]
   theme?: ChartTheme
   height?: number
+  currency?: CurrencyCode
 }
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-function formatCurrency(value: number): string {
-  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`
-  if (value >= 1_000) return `$${(value / 1_000).toFixed(0)}K`
-  return `$${value.toFixed(0)}`
-}
-
 export function WaterfallChart({
   data,
   theme = 'dark',
   height = 300,
+  currency,
 }: WaterfallChartProps) {
   const palette = getChartPalette(theme)
 
@@ -66,7 +63,7 @@ export function WaterfallChart({
         />
         <YAxis
           tick={{ fill: palette.axisText, fontSize: 12 }}
-          tickFormatter={formatCurrency}
+          tickFormatter={(v) => formatCompact(v, currency)}
         />
         <Tooltip
           cursor={false}
@@ -79,7 +76,7 @@ export function WaterfallChart({
           labelStyle={{ color: palette.tooltipText }}
           itemStyle={{ color: palette.tooltipText }}
           formatter={(value, name) => [
-            formatCurrency(Number(value)),
+            formatCompact(Number(value), currency),
             name === 'lpAmount' ? 'LP Share' : 'GP Share',
           ]}
         />

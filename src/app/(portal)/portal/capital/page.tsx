@@ -7,15 +7,7 @@ import {
 } from 'lucide-react';
 import { AcknowledgeCallButton } from '@/components/portal/acknowledge-call-button';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
-
-function formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-    }).format(amount);
-}
+import { formatMoney } from '@/lib/shared/formatters';
 
 function formatDate(date: Date | string): string {
     return new Date(date).toLocaleDateString('en-US', {
@@ -55,7 +47,7 @@ export default async function CapitalAccountPage() {
                         <CardTitle className="text-sm font-medium text-slate-500">Total Contributions</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-slate-900">{formatCurrency(summary.totalPaid)}</div>
+                        <div className="text-2xl font-bold text-slate-900">{formatMoney(summary.totalPaid)}</div>
                         <p className="text-xs text-slate-500 mt-1">Capital paid in</p>
                     </CardContent>
                 </Card>
@@ -64,7 +56,7 @@ export default async function CapitalAccountPage() {
                         <CardTitle className="text-sm font-medium text-slate-500">Total Distributions</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-emerald-600">{formatCurrency(summary.totalDistributed)}</div>
+                        <div className="text-2xl font-bold text-emerald-600">{formatMoney(summary.totalDistributed)}</div>
                         <p className="text-xs text-slate-500 mt-1">Cash returned</p>
                     </CardContent>
                 </Card>
@@ -73,7 +65,7 @@ export default async function CapitalAccountPage() {
                         <CardTitle className="text-sm font-medium text-slate-500">Net Invested</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-slate-900">{formatCurrency(summary.netValue)}</div>
+                        <div className="text-2xl font-bold text-slate-900">{formatMoney(summary.netValue)}</div>
                         <p className="text-xs text-slate-500 mt-1">Contributions − Distributions</p>
                     </CardContent>
                 </Card>
@@ -82,7 +74,7 @@ export default async function CapitalAccountPage() {
                         <CardTitle className="text-sm font-medium text-slate-500">Remaining Commitment</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-slate-900">{formatCurrency(summary.unfunded)}</div>
+                        <div className="text-2xl font-bold text-slate-900">{formatMoney(summary.unfunded)}</div>
                         <p className="text-xs text-slate-500 mt-1">Uncalled capital</p>
                     </CardContent>
                 </Card>
@@ -133,7 +125,7 @@ export default async function CapitalAccountPage() {
                                             <td className={`py-3 px-6 text-right font-semibold ${
                                                 tx.type === 'DISTRIBUTION' ? 'text-emerald-600' : 'text-slate-900'
                                             }`}>
-                                                {tx.type === 'DISTRIBUTION' ? '+' : '-'}{formatCurrency(tx.amount)}
+                                                {tx.type === 'DISTRIBUTION' ? '+' : '-'}{formatMoney(tx.amount)}
                                             </td>
                                             <td className="py-3 px-6 text-right text-slate-500 capitalize">
                                                 {tx.status.replace(/_/g, ' ').toLowerCase()}

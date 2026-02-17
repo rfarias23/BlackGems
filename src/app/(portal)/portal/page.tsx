@@ -9,15 +9,7 @@ import {
     Landmark,
 } from 'lucide-react';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
-
-function formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-    }).format(amount);
-}
+import { formatMoney } from '@/lib/shared/formatters';
 
 function formatDate(date: Date | string): string {
     return new Date(date).toLocaleDateString('en-US', {
@@ -64,7 +56,7 @@ export default async function PortalPage() {
                         <DollarSign className="h-4 w-4 text-slate-400" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-slate-900">{formatCurrency(summary.totalCommitted)}</div>
+                        <div className="text-2xl font-bold text-slate-900">{formatMoney(summary.totalCommitted)}</div>
                     </CardContent>
                 </Card>
 
@@ -74,7 +66,7 @@ export default async function PortalPage() {
                         <TrendingUp className="h-4 w-4 text-slate-400" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-slate-900">{formatCurrency(summary.totalCalled)}</div>
+                        <div className="text-2xl font-bold text-slate-900">{formatMoney(summary.totalCalled)}</div>
                         <p className="text-xs text-slate-500 mt-1">{summary.calledPct}% of commitment</p>
                     </CardContent>
                 </Card>
@@ -85,7 +77,7 @@ export default async function PortalPage() {
                         <Wallet className="h-4 w-4 text-slate-400" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-emerald-600">{formatCurrency(summary.totalDistributed)}</div>
+                        <div className="text-2xl font-bold text-emerald-600">{formatMoney(summary.totalDistributed)}</div>
                     </CardContent>
                 </Card>
 
@@ -95,7 +87,7 @@ export default async function PortalPage() {
                         <DollarSign className="h-4 w-4 text-slate-400" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-slate-900">{formatCurrency(summary.unfunded)}</div>
+                        <div className="text-2xl font-bold text-slate-900">{formatMoney(summary.unfunded)}</div>
                     </CardContent>
                 </Card>
             </div>
@@ -122,23 +114,23 @@ export default async function PortalPage() {
                                     <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
                                         <div>
                                             <p className="text-slate-500">Committed</p>
-                                            <p className="font-semibold text-slate-900">{formatCurrency(fund.committed)}</p>
+                                            <p className="font-semibold text-slate-900">{formatMoney(fund.committed)}</p>
                                         </div>
                                         <div>
                                             <p className="text-slate-500">Called</p>
-                                            <p className="font-semibold text-slate-900">{formatCurrency(fund.called)}</p>
+                                            <p className="font-semibold text-slate-900">{formatMoney(fund.called)}</p>
                                         </div>
                                         <div>
                                             <p className="text-slate-500">Paid</p>
-                                            <p className="font-semibold text-slate-900">{formatCurrency(fund.paid)}</p>
+                                            <p className="font-semibold text-slate-900">{formatMoney(fund.paid)}</p>
                                         </div>
                                         <div>
                                             <p className="text-slate-500">Distributed</p>
-                                            <p className="font-semibold text-emerald-600">{formatCurrency(fund.distributed)}</p>
+                                            <p className="font-semibold text-emerald-600">{formatMoney(fund.distributed)}</p>
                                         </div>
                                         <div>
                                             <p className="text-slate-500">Unfunded</p>
-                                            <p className="font-semibold text-slate-900">{formatCurrency(fund.unfunded)}</p>
+                                            <p className="font-semibold text-slate-900">{formatMoney(fund.unfunded)}</p>
                                         </div>
                                     </div>
                                 </CardContent>
@@ -183,7 +175,7 @@ export default async function PortalPage() {
                                             <p className={`text-sm font-semibold ${
                                                 tx.type === 'DISTRIBUTION' ? 'text-emerald-600' : 'text-slate-900'
                                             }`}>
-                                                {tx.type === 'DISTRIBUTION' ? '+' : '-'}{formatCurrency(tx.amount)}
+                                                {tx.type === 'DISTRIBUTION' ? '+' : '-'}{formatMoney(tx.amount)}
                                             </p>
                                             <p className="text-xs text-slate-500 capitalize">
                                                 {tx.status.replace(/_/g, ' ').toLowerCase()}
