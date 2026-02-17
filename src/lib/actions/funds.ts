@@ -187,6 +187,7 @@ export async function createFund(
     return { success: true, fundId: fund.id }
   } catch (error) {
     console.error('Failed to create fund:', error)
-    return { error: 'Failed to create fund' }
+    const message = error instanceof Error ? error.message : 'Failed to create fund'
+    return { error: message }
   }
 }
