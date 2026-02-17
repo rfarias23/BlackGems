@@ -10,20 +10,44 @@ import type { Decimal } from '@prisma/client/runtime/library'
 type NumericValue = Decimal | number | string | null | undefined
 
 /**
- * Formats a numeric value as a USD currency string.
- * Returns null if value is falsy.
+ * Supported fund currencies. Each fund operates in exactly one currency.
  */
-export function formatCurrency(value: NumericValue): string | null {
-  if (!value) return null
-  return `$${Number(value).toLocaleString()}`
+export type CurrencyCode = 'USD' | 'EUR' | 'GBP'
+
+const CURRENCY_CONFIG: Record<CurrencyCode, { symbol: string; locale: string }> = {
+  USD: { symbol: '$', locale: 'en-US' },
+  EUR: { symbol: '€', locale: 'de-DE' },
+  GBP: { symbol: '£', locale: 'en-GB' },
 }
 
 /**
- * Formats a numeric value as a currency string, defaulting to '$0'.
+ * Formats a numeric value as a currency string.
+ * Returns null if value is falsy.
  */
-export function formatMoney(value: NumericValue): string {
-  if (!value) return '$0'
-  return `$${Number(value).toLocaleString()}`
+export function formatCurrency(value: NumericValue, currency: CurrencyCode = 'USD'): string | null {
+  if (!value) return null
+  const { symbol, locale } = CURRENCY_CONFIG[currency]
+  return `${symbol}${Number(value).toLocaleString(locale)}`
+}
+
+/**
+ * Formats a numeric value as a currency string, defaulting to symbol + '0'.
+ */
+export function formatMoney(value: NumericValue, currency: CurrencyCode = 'USD'): string {
+  if (!value) return `${CURRENCY_CONFIG[currency].symbol}0`
+  const { symbol, locale } = CURRENCY_CONFIG[currency]
+  return `${symbol}${Number(value).toLocaleString(locale)}`
+}
+
+/**
+ * Formats a numeric value with M/K abbreviations for chart axes and compact displays.
+ */
+export function formatCompact(value: NumericValue, currency: CurrencyCode = 'USD'): string {
+  const { symbol } = CURRENCY_CONFIG[currency]
+  const num = Number(value) || 0
+  if (num >= 1_000_000) return `${symbol}${(num / 1_000_000).toFixed(1)}M`
+  if (num >= 1_000) return `${symbol}${(num / 1_000).toFixed(0)}K`
+  return `${symbol}${num.toFixed(0)}`
 }
 
 /**
@@ -60,11 +84,37 @@ export function formatMultiple(value: NumericValue): string {
 }
 
 /**
- * Parses a currency string ("$1,234,567") into a number.
+ * Parses a currency string ("$1,234,567" or "€1.234.567" or "£1,234,567") into a number.
+ * Handles both dot-decimal (USD/GBP) and comma-decimal (EUR) formats.
  */
 export function parseMoney(value: string): number {
   if (!value) return 0
-  return parseFloat(value.replace(/[$,]/g, '')) || 0
+  // Strip currency symbols and whitespace
+  let cleaned = value.replace(/[$€£\s]/g, '')
+  const dotCount = (cleaned.match(/\./g) || []).length
+  const commaCount = (cleaned.match(/,/g) || []).length
+  if (dotCount > 1) {
+    // Multiple dots = EUR thousands separators (e.g., "1.234.567") — strip all dots
+    cleaned = cleaned.replace(/\./g, '').replace(',', '.')
+  } else if (commaCount > 1) {
+    // Multiple commas = USD/GBP thousands separators (e.g., "1,234,567") — strip all commas
+    cleaned = cleaned.replace(/,/g, '')
+  } else if (dotCount === 1 && commaCount === 1) {
+    const lastDot = cleaned.lastIndexOf('.')
+    const lastComma = cleaned.lastIndexOf(',')
+    if (lastDot > lastComma) {
+      // Format: "1,234.89" — comma is thousands, dot is decimal
+      cleaned = cleaned.replace(/,/g, '')
+    } else {
+      // Format: "1.234,89" — dot is thousands, comma is decimal
+      cleaned = cleaned.replace(/\./g, '').replace(',', '.')
+    }
+  } else if (commaCount === 1 && dotCount === 0) {
+    // Ambiguous single comma: "1,234" — treat as thousands separator
+    cleaned = cleaned.replace(/,/g, '')
+  }
+  // Single dot with no comma: parseFloat handles it naturally as decimal
+  return parseFloat(cleaned) || 0
 }
 
 /**
