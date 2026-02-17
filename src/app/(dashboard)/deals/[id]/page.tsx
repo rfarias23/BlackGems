@@ -29,6 +29,8 @@ import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { DealScoring } from '@/components/deals/deal-scoring';
 import { DealSourceSelect } from '@/components/deals/deal-source-select';
 import { auth } from '@/lib/auth';
+import { getActiveFundWithCurrency } from '@/lib/shared/fund-access';
+import type { CurrencyCode } from '@/lib/shared/formatters';
 
 // Roles that can edit deals
 const EDIT_ROLES = ['SUPER_ADMIN', 'FUND_ADMIN', 'INVESTMENT_MANAGER', 'ANALYST'];
@@ -65,6 +67,10 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
         safe(() => getDealScores(id), null, 'getDealScores'),
         safe(() => getDealSources(), [], 'getDealSources'),
     ]);
+
+    const { currency } = session?.user?.id
+        ? await getActiveFundWithCurrency(session.user.id)
+        : { currency: 'USD' as CurrencyCode };
 
     const userRole = (session?.user as { role?: string })?.role || 'LP_VIEWER';
     const canEdit = EDIT_ROLES.includes(userRole);
@@ -155,6 +161,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
                         userRole={userRole}
                         portfolioLink={portfolioLink}
                         rawDeal={rawDeal}
+                        currency={currency}
                     />
                     <DealScoring
                         dealId={deal.id}

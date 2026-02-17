@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ArrowRightLeft, Briefcase, Building2 } from 'lucide-react';
 import { convertDealToPortfolio } from '@/lib/actions/deals';
+import { formatMoney, type CurrencyCode } from '@/lib/shared/formatters';
 
 const dark = {
     dialog: 'bg-[#1E293B] text-[#F8FAFC] border-[#334155]',
@@ -37,6 +38,7 @@ interface ConvertDealDialogProps {
     actualCloseDate: Date | null;
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    currency?: CurrencyCode;
 }
 
 function formatNum(val: number | null): string {
@@ -54,6 +56,7 @@ export function ConvertDealDialog({
     actualCloseDate,
     open,
     onOpenChange,
+    currency = 'USD',
 }: ConvertDealDialogProps) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
@@ -116,19 +119,19 @@ export function ConvertDealDialog({
                         <div>
                             <span className={dark.muted}>Revenue</span>
                             <div className="text-[#F8FAFC] font-mono mt-0.5">
-                                {revenue ? `$${revenue.toLocaleString()}` : 'N/A'}
+                                {revenue ? formatMoney(revenue, currency) : 'N/A'}
                             </div>
                         </div>
                         <div>
                             <span className={dark.muted}>EBITDA</span>
                             <div className="text-[#F8FAFC] font-mono mt-0.5">
-                                {ebitda ? `$${ebitda.toLocaleString()}` : 'N/A'}
+                                {ebitda ? formatMoney(ebitda, currency) : 'N/A'}
                             </div>
                         </div>
                         <div>
                             <span className={dark.muted}>Asking Price</span>
                             <div className="text-[#F8FAFC] font-mono mt-0.5">
-                                {askingPrice ? `$${askingPrice.toLocaleString()}` : 'N/A'}
+                                {askingPrice ? formatMoney(askingPrice, currency) : 'N/A'}
                             </div>
                         </div>
                     </div>

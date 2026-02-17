@@ -19,6 +19,9 @@ import { ProcessDistributionButton } from '@/components/capital/process-distribu
 import { DeleteDistributionButton } from '@/components/capital/delete-distribution-button';
 import { DownloadDistributionNoticeButton } from '@/components/capital/download-distribution-notice-button';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
+import { formatMoney, parseMoney, type CurrencyCode } from '@/lib/shared/formatters';
+import { auth } from '@/lib/auth';
+import { getActiveFundWithCurrency } from '@/lib/shared/fund-access';
 
 function formatDate(date: Date | null): string {
     if (!date) return '-';
@@ -80,20 +83,25 @@ function getItemStatusColor(status: string) {
 
 export default async function DistributionDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
-    const [distribution, pdfData] = await Promise.all([
+    const [distribution, pdfData, session] = await Promise.all([
         getDistribution(id),
         getDistributionPDFData(id),
+        auth(),
     ]);
 
     if (!distribution) {
         notFound();
     }
 
+    const { currency } = session?.user?.id
+        ? await getActiveFundWithCurrency(session.user.id)
+        : { currency: 'USD' as CurrencyCode };
+
     const totalPaid = distribution.items
         .filter((item) => item.status === 'Paid')
-        .reduce((sum, item) => sum + parseFloat(item.netAmount.replace(/[$,]/g, '')), 0);
+        .reduce((sum, item) => sum + parseMoney(item.netAmount), 0);
     const totalNet = distribution.items.reduce(
-        (sum, item) => sum + parseFloat(item.netAmount.replace(/[$,]/g, '')),
+        (sum, item) => sum + parseMoney(item.netAmount),
         0
     );
     const paidCount = distribution.items.filter((item) => item.status === 'Paid').length;
@@ -160,7 +168,7 @@ export default async function DistributionDetailPage({ params }: { params: Promi
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-emerald-500">
-                            ${totalPaid.toLocaleString()}
+                            {formatMoney(totalPaid, currency)}
                         </div>
                     </CardContent>
                 </Card>
@@ -170,7 +178,7 @@ export default async function DistributionDetailPage({ params }: { params: Promi
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-muted-foreground">
-                            ${(totalNet - totalPaid).toLocaleString()}
+                            {formatMoney(totalNet - totalPaid, currency)}
                         </div>
                     </CardContent>
                 </Card>

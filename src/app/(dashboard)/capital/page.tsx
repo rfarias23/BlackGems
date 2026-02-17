@@ -9,12 +9,9 @@ import { getDistributions, getDistributionSummary } from '@/lib/actions/distribu
 import { CapitalCallsTable } from '@/components/capital/capital-calls-table';
 import { DistributionsTable } from '@/components/capital/distributions-table';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
-
-function formatCompact(value: number): string {
-    if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
-    if (value >= 1_000) return `$${(value / 1_000).toFixed(0)}K`;
-    return `$${value.toLocaleString()}`;
-}
+import { formatCompact } from '@/lib/shared/formatters';
+import { auth } from '@/lib/auth';
+import { getActiveFundWithCurrency } from '@/lib/shared/fund-access';
 
 interface CapitalPageProps {
     searchParams: Promise<{ page?: string; tab?: string }>;
@@ -24,6 +21,11 @@ export default async function CapitalPage({ searchParams }: CapitalPageProps) {
     const params = await searchParams;
     const page = Number(params.page) || 1;
     const activeTab = params.tab || 'calls';
+
+    const session = await auth();
+    const { currency } = session?.user?.id
+        ? await getActiveFundWithCurrency(session.user.id)
+        : { currency: 'USD' as const };
 
     const [callsResult, distResult, callSummary, distSummary] = await Promise.all([
         getCapitalCalls({ page }),
@@ -53,7 +55,7 @@ export default async function CapitalPage({ searchParams }: CapitalPageProps) {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold font-mono tabular-nums">
-                            {formatCompact(callSummary.totalCalled)}
+                            {formatCompact(callSummary.totalCalled, currency)}
                         </div>
                         <p className="text-xs text-muted-foreground">
                             {callSummary.activeCount} active call{callSummary.activeCount !== 1 ? 's' : ''}
@@ -67,10 +69,10 @@ export default async function CapitalPage({ searchParams }: CapitalPageProps) {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold font-mono tabular-nums text-[#059669]">
-                            {formatCompact(callSummary.totalPaid)}
+                            {formatCompact(callSummary.totalPaid, currency)}
                         </div>
                         <p className="text-xs text-muted-foreground">
-                            {formatCompact(callSummary.totalOutstanding)} outstanding
+                            {formatCompact(callSummary.totalOutstanding, currency)} outstanding
                         </p>
                     </CardContent>
                 </Card>
@@ -81,7 +83,7 @@ export default async function CapitalPage({ searchParams }: CapitalPageProps) {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold font-mono tabular-nums">
-                            {formatCompact(distSummary.totalDistributed)}
+                            {formatCompact(distSummary.totalDistributed, currency)}
                         </div>
                         <p className="text-xs text-muted-foreground">
                             {distSummary.completedCount} completed

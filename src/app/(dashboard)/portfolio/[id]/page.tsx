@@ -17,6 +17,9 @@ import { PortfolioFinancials } from '@/components/portfolio/portfolio-financials
 import { PortfolioKPIs } from '@/components/portfolio/portfolio-kpis';
 import { PortfolioValuationHistory } from '@/components/portfolio/portfolio-valuation-history';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
+import { auth } from '@/lib/auth';
+import { getActiveFundWithCurrency } from '@/lib/shared/fund-access';
+import type { CurrencyCode } from '@/lib/shared/formatters';
 
 function formatDate(date: Date | null): string {
     if (!date) return '\u2014';
@@ -48,15 +51,20 @@ function getStatusColor(status: string) {
 
 export default async function PortfolioCompanyDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
-    const [company, metrics, valuationResult] = await Promise.all([
+    const [company, metrics, valuationResult, session] = await Promise.all([
         getPortfolioCompany(id),
         getPortfolioMetrics(id),
         getValuationHistory(id),
+        auth(),
     ]);
 
     if (!company) {
         notFound();
     }
+
+    const { currency } = session?.user?.id
+        ? await getActiveFundWithCurrency(session.user.id)
+        : { currency: 'USD' as CurrencyCode };
 
     return (
         <ErrorBoundary module="Portfolio Detail">
@@ -185,6 +193,7 @@ export default async function PortfolioCompanyDetailPage({ params }: { params: P
                         }}
                         metrics={metrics}
                         valuations={'data' in valuationResult ? valuationResult.data : undefined}
+                        currency={currency}
                     />
                 </TabsContent>
             </Tabs>

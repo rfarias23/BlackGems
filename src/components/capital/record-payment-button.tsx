@@ -16,12 +16,14 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DollarSign } from 'lucide-react';
 import { recordCallItemPayment } from '@/lib/actions/capital-calls';
+import { formatMoney, type CurrencyCode } from '@/lib/shared/formatters';
 
 interface RecordPaymentButtonProps {
     itemId: string;
     investorName: string;
     callAmount: number;
     paidAmount: number;
+    currency?: CurrencyCode;
 }
 
 export function RecordPaymentButton({
@@ -29,6 +31,7 @@ export function RecordPaymentButton({
     investorName,
     callAmount,
     paidAmount,
+    currency = 'USD',
 }: RecordPaymentButtonProps) {
     const [open, setOpen] = useState(false);
     const [isPending, startTransition] = useTransition();
@@ -79,15 +82,15 @@ export function RecordPaymentButton({
                     <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
                             <span className="text-muted-foreground">Called Amount</span>
-                            <div className="font-medium">${callAmount.toLocaleString()}</div>
+                            <div className="font-medium">{formatMoney(callAmount, currency)}</div>
                         </div>
                         <div>
                             <span className="text-muted-foreground">Already Paid</span>
-                            <div className="font-medium text-emerald-500">${paidAmount.toLocaleString()}</div>
+                            <div className="font-medium text-emerald-500">{formatMoney(paidAmount, currency)}</div>
                         </div>
                         <div className="col-span-2">
                             <span className="text-muted-foreground">Outstanding</span>
-                            <div className="font-medium text-lg">${outstanding.toLocaleString()}</div>
+                            <div className="font-medium text-lg">{formatMoney(outstanding, currency)}</div>
                         </div>
                     </div>
                     <div className="space-y-2">

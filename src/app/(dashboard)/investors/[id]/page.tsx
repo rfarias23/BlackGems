@@ -19,6 +19,8 @@ import { DeleteInvestorButton } from '@/components/investors/delete-investor-but
 import { InvestorCommunications } from '@/components/investors/investor-communications';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { auth } from '@/lib/auth';
+import { formatMoney, parseMoney, type CurrencyCode } from '@/lib/shared/formatters';
+import { getActiveFundWithCurrency } from '@/lib/shared/fund-access';
 
 export default async function InvestorDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -35,19 +37,23 @@ export default async function InvestorDetailPage({ params }: { params: Promise<{
         notFound();
     }
 
+    const { currency } = session?.user?.id
+        ? await getActiveFundWithCurrency(session.user.id)
+        : { currency: 'USD' as CurrencyCode };
+
     const userRole = (session?.user as { role?: string })?.role || 'LP_VIEWER';
     const canEdit = ['SUPER_ADMIN', 'FUND_ADMIN', 'INVESTMENT_MANAGER', 'ANALYST'].includes(userRole);
 
     const totalCommitted = investor.commitments.reduce(
-        (sum, c) => sum + parseFloat(c.committedAmount.replace(/[$,]/g, '')),
+        (sum, c) => sum + parseMoney(c.committedAmount),
         0
     );
     const totalCalled = investor.commitments.reduce(
-        (sum, c) => sum + parseFloat(c.calledAmount.replace(/[$,]/g, '')),
+        (sum, c) => sum + parseMoney(c.calledAmount),
         0
     );
     const totalPaid = investor.commitments.reduce(
-        (sum, c) => sum + parseFloat(c.paidAmount.replace(/[$,]/g, '')),
+        (sum, c) => sum + parseMoney(c.paidAmount),
         0
     );
 
@@ -97,7 +103,7 @@ export default async function InvestorDetailPage({ params }: { params: Promise<{
                                 <DollarSign className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">${totalCommitted.toLocaleString()}</div>
+                                <div className="text-2xl font-bold">{formatMoney(totalCommitted, currency)}</div>
                             </CardContent>
                         </Card>
                         <Card>
@@ -105,7 +111,7 @@ export default async function InvestorDetailPage({ params }: { params: Promise<{
                                 <CardTitle className="text-sm font-medium">Total Called</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">${totalCalled.toLocaleString()}</div>
+                                <div className="text-2xl font-bold">{formatMoney(totalCalled, currency)}</div>
                             </CardContent>
                         </Card>
                         <Card>
@@ -113,7 +119,7 @@ export default async function InvestorDetailPage({ params }: { params: Promise<{
                                 <CardTitle className="text-sm font-medium">Total Paid</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold text-emerald-500">${totalPaid.toLocaleString()}</div>
+                                <div className="text-2xl font-bold text-emerald-500">{formatMoney(totalPaid, currency)}</div>
                             </CardContent>
                         </Card>
                         <Card>
@@ -122,7 +128,7 @@ export default async function InvestorDetailPage({ params }: { params: Promise<{
                             </CardHeader>
                             <CardContent>
                                 <div className="text-2xl font-bold text-muted-foreground">
-                                    ${(totalCommitted - totalCalled).toLocaleString()}
+                                    {formatMoney(totalCommitted - totalCalled, currency)}
                                 </div>
                             </CardContent>
                         </Card>

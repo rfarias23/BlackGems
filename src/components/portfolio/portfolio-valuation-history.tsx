@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { MetricItem } from '@/lib/actions/portfolio';
+import { formatMoney, parseMoney, type CurrencyCode } from '@/lib/shared/formatters';
 
 function formatDate(date: Date | null): string {
     if (!date) return '\u2014';
@@ -37,11 +38,12 @@ interface PortfolioValuationHistoryProps {
     company: ValuationCompanyData;
     metrics: MetricItem[];
     valuations?: ValuationRecord[];
+    currency?: CurrencyCode;
 }
 
 function parseCurrencyToNumber(value: string | null): number {
     if (!value) return 0;
-    return parseFloat(value.replace(/[$,]/g, '')) || 0;
+    return parseMoney(value);
 }
 
 function formatMethodology(methodology: string): string {
@@ -50,7 +52,7 @@ function formatMethodology(methodology: string): string {
         .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-export function PortfolioValuationHistory({ company, metrics, valuations }: PortfolioValuationHistoryProps) {
+export function PortfolioValuationHistory({ company, metrics, valuations, currency = 'USD' }: PortfolioValuationHistoryProps) {
     const entryVal = parseCurrencyToNumber(company.entryValuation);
     const currentVal = parseCurrencyToNumber(company.currentValuation);
     const valueCreated = currentVal - entryVal;
@@ -133,7 +135,7 @@ export function PortfolioValuationHistory({ company, metrics, valuations }: Port
                             Total Value Created
                         </p>
                         <p className={`mt-1 text-xl font-mono tabular-nums ${valueCreated >= 0 ? 'text-[#059669]' : 'text-red-500'}`}>
-                            {valueCreated >= 0 ? '+' : ''}{`$${Math.abs(valueCreated).toLocaleString()}`}
+                            {valueCreated >= 0 ? '+' : '-'}{formatMoney(Math.abs(valueCreated), currency)}
                         </p>
                     </div>
                     <div className="rounded-lg border border-border bg-card p-4">

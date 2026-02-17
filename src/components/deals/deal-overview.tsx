@@ -28,6 +28,7 @@ import { updateDeal } from '@/lib/actions/deals';
 import { ConvertDealDialog } from '@/components/deals/convert-deal-dialog';
 import { ArrowRightLeft, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
+import type { CurrencyCode } from '@/lib/shared/formatters';
 
 // Roles that can edit deals
 const EDIT_ROLES = ['SUPER_ADMIN', 'FUND_ADMIN', 'INVESTMENT_MANAGER', 'ANALYST'];
@@ -60,6 +61,7 @@ interface DealOverviewProps {
     };
     userRole: string;
     portfolioLink?: { portfolioId: string } | null;
+    currency?: CurrencyCode;
     rawDeal?: {
         id: string;
         fundId: string;
@@ -139,7 +141,7 @@ function InlineField({
     );
 }
 
-export function DealOverview({ deal, userRole, portfolioLink, rawDeal }: DealOverviewProps) {
+export function DealOverview({ deal, userRole, portfolioLink, rawDeal, currency = 'USD' }: DealOverviewProps) {
     const canEdit = EDIT_ROLES.includes(userRole);
     const [isEditing, setIsEditing] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
@@ -638,6 +640,7 @@ export function DealOverview({ deal, userRole, portfolioLink, rawDeal }: DealOve
                     actualCloseDate={rawDeal.actualCloseDate}
                     open={showConvert}
                     onOpenChange={setShowConvert}
+                    currency={currency}
                 />
             )}
 

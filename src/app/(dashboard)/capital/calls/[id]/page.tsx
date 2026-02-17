@@ -19,6 +19,9 @@ import { RecordPaymentButton } from '@/components/capital/record-payment-button'
 import { DeleteCapitalCallButton } from '@/components/capital/delete-capital-call-button';
 import { DownloadCallNoticeButton } from '@/components/capital/download-call-notice-button';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
+import { formatMoney, parseMoney, type CurrencyCode } from '@/lib/shared/formatters';
+import { auth } from '@/lib/auth';
+import { getActiveFundWithCurrency } from '@/lib/shared/fund-access';
 
 function formatDate(date: Date | null): string {
     if (!date) return '-';
@@ -69,21 +72,26 @@ function getItemStatusColor(status: string) {
 
 export default async function CapitalCallDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
-    const [call, pdfData] = await Promise.all([
+    const [call, pdfData, session] = await Promise.all([
         getCapitalCall(id),
         getCapitalCallPDFData(id),
+        auth(),
     ]);
 
     if (!call) {
         notFound();
     }
 
+    const { currency } = session?.user?.id
+        ? await getActiveFundWithCurrency(session.user.id)
+        : { currency: 'USD' as CurrencyCode };
+
     const totalPaid = call.items.reduce(
-        (sum, item) => sum + parseFloat(item.paidAmount.replace(/[$,]/g, '')),
+        (sum, item) => sum + parseMoney(item.paidAmount),
         0
     );
     const totalCalled = call.items.reduce(
-        (sum, item) => sum + parseFloat(item.callAmount.replace(/[$,]/g, '')),
+        (sum, item) => sum + parseMoney(item.callAmount),
         0
     );
     const paidCount = call.items.filter((item) => item.status === 'Paid').length;
@@ -141,7 +149,7 @@ export default async function CapitalCallDetailPage({ params }: { params: Promis
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-emerald-500">
-                            ${totalPaid.toLocaleString()}
+                            {formatMoney(totalPaid, currency)}
                         </div>
                     </CardContent>
                 </Card>
@@ -151,7 +159,7 @@ export default async function CapitalCallDetailPage({ params }: { params: Promis
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-muted-foreground">
-                            ${(totalCalled - totalPaid).toLocaleString()}
+                            {formatMoney(totalCalled - totalPaid, currency)}
                         </div>
                     </CardContent>
                 </Card>
@@ -274,8 +282,8 @@ export default async function CapitalCallDetailPage({ params }: { params: Promis
                         </TableHeader>
                         <TableBody>
                             {call.items.map((item) => {
-                                const called = parseFloat(item.callAmount.replace(/[$,]/g, ''));
-                                const paid = parseFloat(item.paidAmount.replace(/[$,]/g, ''));
+                                const called = parseMoney(item.callAmount);
+                                const paid = parseMoney(item.paidAmount);
                                 const outstanding = called - paid;
                                 return (
                                     <TableRow key={item.id} className="border-border">
@@ -290,7 +298,7 @@ export default async function CapitalCallDetailPage({ params }: { params: Promis
                                         <TableCell className="font-medium">{item.callAmount}</TableCell>
                                         <TableCell className="text-emerald-500">{item.paidAmount}</TableCell>
                                         <TableCell className="text-muted-foreground">
-                                            ${outstanding.toLocaleString()}
+                                            {formatMoney(outstanding, currency)}
                                         </TableCell>
                                         <TableCell>
                                             <Badge className={getItemStatusColor(item.status)}>
@@ -307,6 +315,7 @@ export default async function CapitalCallDetailPage({ params }: { params: Promis
                                                     investorName={item.investorName}
                                                     callAmount={called}
                                                     paidAmount={paid}
+                                                    currency={currency}
                                                 />
                                             )}
                                         </TableCell>
