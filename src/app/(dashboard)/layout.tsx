@@ -2,6 +2,8 @@ import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
 import { auth } from '@/lib/auth';
 import { getUnreadCount } from '@/lib/actions/notifications';
+import { getUserFunds } from '@/lib/actions/funds';
+import { getActiveFundId } from '@/lib/shared/active-fund';
 import { redirect } from 'next/navigation';
 
 // All dashboard pages require authentication (cookies/headers), so static generation is impossible.
@@ -25,7 +27,11 @@ export default async function DashboardLayout({
         redirect('/portal');
     }
 
-    const unreadCount = await getUnreadCount();
+    const [unreadCount, funds, activeFundId] = await Promise.all([
+        getUnreadCount(),
+        getUserFunds(session.user.id!),
+        getActiveFundId(),
+    ]);
 
     return (
         <div
@@ -57,7 +63,11 @@ export default async function DashboardLayout({
         >
             {/* Sidebar fixed on the left */}
             <div className="fixed inset-y-0 z-50 hidden w-64 md:flex md:flex-col">
-                <Sidebar userRole={session?.user?.role as string | undefined} />
+                <Sidebar
+                    userRole={session?.user?.role as string | undefined}
+                    funds={funds}
+                    activeFundId={activeFundId ?? funds[0]?.id ?? ''}
+                />
             </div>
 
             {/* Main content area */}

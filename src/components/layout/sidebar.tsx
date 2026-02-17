@@ -13,6 +13,9 @@ import {
     Settings,
     Shield,
 } from 'lucide-react';
+import { FundSwitcher } from '@/components/layout/fund-switcher';
+import { CreateFundDialog } from '@/components/layout/create-fund-dialog';
+import type { FundSummary } from '@/lib/actions/funds';
 
 const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -25,9 +28,11 @@ const navigation = [
 
 interface SidebarProps {
     userRole?: string;
+    funds: FundSummary[];
+    activeFundId: string;
 }
 
-export function Sidebar({ userRole }: SidebarProps) {
+export function Sidebar({ userRole, funds, activeFundId }: SidebarProps) {
     const pathname = usePathname();
     const isAdmin = userRole === 'SUPER_ADMIN' || userRole === 'FUND_ADMIN';
 
@@ -41,6 +46,7 @@ export function Sidebar({ userRole }: SidebarProps) {
                     </span>
                 </Link>
             </div>
+            <FundSwitcher funds={funds} activeFundId={activeFundId} userRole={userRole} />
             <nav className="flex-1 space-y-1 px-3 py-4">
                 {navigation.map((item) => {
                     const isActive = pathname?.startsWith(item.href);
@@ -106,6 +112,7 @@ export function Sidebar({ userRole }: SidebarProps) {
                     Settings
                 </Link>
             </div>
+            <CreateFundDialog />
         </div>
     );
 }
