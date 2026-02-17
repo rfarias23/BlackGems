@@ -7,7 +7,7 @@ import bcrypt from 'bcryptjs'
 import { z } from 'zod'
 import { FundStatus } from '@prisma/client'
 import { logAudit, computeChanges } from '@/lib/shared/audit'
-import { requireFundAccess } from '@/lib/shared/fund-access'
+import { requireFundAccess, getActiveFundWithCurrency } from '@/lib/shared/fund-access'
 import { formatCurrency, formatPercentage, parseMoney } from '@/lib/shared/formatters'
 
 // ============================================================================
@@ -207,7 +207,11 @@ export async function getFundConfig(): Promise<FundConfig | null> {
         return null
     }
 
-    const fund = await prisma.fund.findFirst()
+    const { fundId, currency } = await getActiveFundWithCurrency(session.user.id!)
+
+    const fund = await prisma.fund.findUnique({
+        where: { id: fundId },
+    })
 
     if (!fund) {
         return null
@@ -220,9 +224,9 @@ export async function getFundConfig(): Promise<FundConfig | null> {
         type: fund.type,
         status: fund.status,
         vintage: fund.vintage,
-        targetSize: formatCurrency(fund.targetSize) ?? '',
-        hardCap: fund.hardCap ? formatCurrency(fund.hardCap) : null,
-        minimumCommitment: fund.minimumCommitment ? formatCurrency(fund.minimumCommitment) : null,
+        targetSize: formatCurrency(fund.targetSize, currency) ?? '',
+        hardCap: fund.hardCap ? formatCurrency(fund.hardCap, currency) : null,
+        minimumCommitment: fund.minimumCommitment ? formatCurrency(fund.minimumCommitment, currency) : null,
         currency: fund.currency,
         managementFee: formatPercentage(fund.managementFee) ?? '',
         carriedInterest: formatPercentage(fund.carriedInterest) ?? '',

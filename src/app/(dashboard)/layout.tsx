@@ -4,6 +4,9 @@ import { auth } from '@/lib/auth';
 import { getUnreadCount } from '@/lib/actions/notifications';
 import { redirect } from 'next/navigation';
 
+// All dashboard pages require authentication (cookies/headers), so static generation is impossible.
+export const dynamic = 'force-dynamic';
+
 const LP_ROLES = ['LP_PRIMARY', 'LP_VIEWER'] as const;
 
 export default async function DashboardLayout({

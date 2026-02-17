@@ -6,10 +6,10 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { DealStage, DealStatus, DealSourceType } from '@prisma/client'
-import { formatCurrency, formatPercentage, parseMoney, parsePercent } from '@/lib/shared/formatters'
+import { formatCurrency, formatPercentage, parseMoney, parsePercent, type CurrencyCode } from '@/lib/shared/formatters'
 import { softDelete, notDeleted } from '@/lib/shared/soft-delete'
 import { logAudit, computeChanges } from '@/lib/shared/audit'
-import { requireFundAccess } from '@/lib/shared/fund-access'
+import { requireFundAccess, getActiveFundWithCurrency } from '@/lib/shared/fund-access'
 import { canTransitionDealStage } from '@/lib/shared/stage-transitions'
 import { notifyFundMembers } from '@/lib/actions/notifications'
 import { PaginationParams, PaginatedResult, parsePaginationParams, paginatedResult } from '@/lib/shared/pagination'
@@ -149,9 +149,14 @@ export async function getDeals(params?: DealFilterParams): Promise<PaginatedResu
         return paginatedResult([], 0, 1, 25)
     }
 
-    // Get the first fund (for MVP, we'll support single fund)
-    const fund = await prisma.fund.findFirst()
-    if (!fund) {
+    // Get active fund with currency
+    let fundId: string
+    let currency: CurrencyCode
+    try {
+        const result = await getActiveFundWithCurrency(session.user.id!)
+        fundId = result.fundId
+        currency = result.currency
+    } catch {
         return paginatedResult([], 0, 1, 25)
     }
 
@@ -175,7 +180,7 @@ export async function getDeals(params?: DealFilterParams): Promise<PaginatedResu
         : undefined
 
     const where = {
-        fundId: fund.id,
+        fundId,
         ...notDeleted,
         ...(search ? {
             OR: [
@@ -233,7 +238,7 @@ export async function getDeals(params?: DealFilterParams): Promise<PaginatedResu
         companyName: deal.companyName,
         stage: STAGE_TO_DISPLAY[deal.stage] || deal.stage,
         industry: deal.industry,
-        askingPrice: formatCurrency(deal.askingPrice),
+        askingPrice: formatCurrency(deal.askingPrice, currency),
         createdAt: deal.createdAt,
     }))
 
@@ -280,12 +285,17 @@ export async function getDeal(id: string): Promise<DealDetail | null> {
         return null
     }
 
-    // Verify fund access
+    // Verify fund access and get currency
     try {
         await requireFundAccess(session.user.id, deal.fundId)
     } catch {
         return null
     }
+    const fundRecord = await prisma.fund.findUnique({
+        where: { id: deal.fundId },
+        select: { currency: true },
+    })
+    const currency = (fundRecord?.currency ?? 'USD') as CurrencyCode
 
     return {
         id: deal.id,
@@ -297,11 +307,11 @@ export async function getDeal(id: string): Promise<DealDetail | null> {
         subIndustry: deal.subIndustry,
         description: deal.description,
         website: deal.website,
-        askingPrice: formatCurrency(deal.askingPrice),
-        revenue: formatCurrency(deal.revenue),
-        ebitda: formatCurrency(deal.ebitda),
-        grossProfit: formatCurrency(deal.grossProfit),
-        netIncome: formatCurrency(deal.netIncome),
+        askingPrice: formatCurrency(deal.askingPrice, currency),
+        revenue: formatCurrency(deal.revenue, currency),
+        ebitda: formatCurrency(deal.ebitda, currency),
+        grossProfit: formatCurrency(deal.grossProfit, currency),
+        netIncome: formatCurrency(deal.netIncome, currency),
         ebitdaMargin: formatPercentage(deal.ebitdaMargin),
         employeeCount: deal.employeeCount,
         yearFounded: deal.yearFounded,
@@ -336,8 +346,14 @@ export async function getDeal(id: string): Promise<DealDetail | null> {
 
 // Get the default fund ID (for MVP)
 export async function getDefaultFundId(): Promise<string | null> {
-    const fund = await prisma.fund.findFirst()
-    return fund?.id ?? null
+    const session = await auth()
+    if (!session?.user?.id) return null
+    try {
+        const { fundId } = await getActiveFundWithCurrency(session.user.id!)
+        return fundId
+    } catch {
+        return null
+    }
 }
 
 // Create a new deal
@@ -347,17 +363,13 @@ export async function createDeal(formData: FormData) {
         return { error: 'Unauthorized' }
     }
 
-    // Get default fund
-    const fund = await prisma.fund.findFirst()
-    if (!fund) {
-        return { error: 'No fund found. Please create a fund first.' }
-    }
-
-    // Verify fund access
+    // Get active fund (getActiveFundWithCurrency validates access and throws if no fund)
+    let fundId: string
     try {
-        await requireFundAccess(session.user.id!, fund.id)
+        const result = await getActiveFundWithCurrency(session.user.id!)
+        fundId = result.fundId
     } catch {
-        return { error: 'Access denied' }
+        return { error: 'No fund found. Please create a fund first.' }
     }
 
     const rawData = {
@@ -367,7 +379,7 @@ export async function createDeal(formData: FormData) {
         industry: formData.get('sector') as string,
         askingPrice: formData.get('askPrice') as string | undefined,
         description: formData.get('description') as string | undefined,
-        fundId: fund.id,
+        fundId,
     }
 
     const validatedData = createDealSchema.safeParse(rawData)
@@ -376,7 +388,7 @@ export async function createDeal(formData: FormData) {
         return { error: validatedData.error.issues[0].message }
     }
 
-    const { name, companyName, stage, industry, askingPrice, description, fundId } = validatedData.data
+    const { name, companyName, stage, industry, askingPrice, description } = validatedData.data
 
     // Convert display stage to DB enum
     const dbStage = DISPLAY_TO_STAGE[stage] || DealStage.IDENTIFIED
@@ -1076,6 +1088,11 @@ export async function getDealAnalytics(dealId: string): Promise<DealAnalytics | 
     } catch {
         return null
     }
+    const analyticsFundRecord = await prisma.fund.findUnique({
+        where: { id: deal.fundId },
+        select: { currency: true },
+    })
+    const currency = (analyticsFundRecord?.currency ?? 'USD') as CurrencyCode
 
     // Calculate margins from raw values if not already stored
     const revenueNum = deal.revenue ? Number(deal.revenue) : null
@@ -1108,11 +1125,11 @@ export async function getDealAnalytics(dealId: string): Promise<DealAnalytics | 
     const displayStage = STAGE_TO_DISPLAY[deal.stage] || deal.stage
 
     return {
-        askingPrice: formatCurrency(deal.askingPrice),
-        revenue: formatCurrency(deal.revenue),
-        ebitda: formatCurrency(deal.ebitda),
-        grossProfit: formatCurrency(deal.grossProfit),
-        netIncome: formatCurrency(deal.netIncome),
+        askingPrice: formatCurrency(deal.askingPrice, currency),
+        revenue: formatCurrency(deal.revenue, currency),
+        ebitda: formatCurrency(deal.ebitda, currency),
+        grossProfit: formatCurrency(deal.grossProfit, currency),
+        netIncome: formatCurrency(deal.netIncome, currency),
         revenueMultiple: deal.revenueMultiple ? `${Number(deal.revenueMultiple).toFixed(2)}x` : null,
         ebitdaMultiple: deal.ebitdaMultiple ? `${Number(deal.ebitdaMultiple).toFixed(2)}x` : null,
         ebitdaMargin: formatPercentage(deal.ebitdaMargin ?? (ebitdaNum && revenueNum && revenueNum > 0 ? ebitdaNum / revenueNum : null)),
@@ -1169,12 +1186,19 @@ export async function getDealPipelineAnalytics(): Promise<PipelineAnalytics | nu
     const session = await auth()
     if (!session?.user?.id) return null
 
-    const fund = await prisma.fund.findFirst()
-    if (!fund) return null
+    let fundId: string
+    let currency: CurrencyCode
+    try {
+        const result = await getActiveFundWithCurrency(session.user.id!)
+        fundId = result.fundId
+        currency = result.currency
+    } catch {
+        return null
+    }
 
     const deals = await prisma.deal.findMany({
         where: {
-            fundId: fund.id,
+            fundId,
             ...notDeleted,
         },
         select: {
@@ -1257,7 +1281,7 @@ export async function getDealPipelineAnalytics(): Promise<PipelineAnalytics | nu
     return {
         stages,
         totalActiveDeals,
-        totalPipelineValue: totalPipelineValue > 0 ? formatCurrency(totalPipelineValue) : null,
+        totalPipelineValue: totalPipelineValue > 0 ? formatCurrency(totalPipelineValue, currency) : null,
         avgDaysInPipeline: totalDaysCount > 0 ? Math.round(totalDaysSum / totalDaysCount) : null,
         closedWon,
         closedLost,

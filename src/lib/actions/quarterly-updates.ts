@@ -5,8 +5,9 @@ import { auth } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 import { notDeleted } from '@/lib/shared/soft-delete'
 import { logAudit } from '@/lib/shared/audit'
-import { requireFundAccess } from '@/lib/shared/fund-access'
+import { requireFundAccess, getActiveFundWithCurrency } from '@/lib/shared/fund-access'
 import { formatMoney, formatPercent, formatMultiple } from '@/lib/shared/formatters'
+import type { CurrencyCode } from '@/lib/shared/formatters'
 import { z } from 'zod'
 
 // ============================================================================
@@ -68,6 +69,7 @@ export async function generateQuarterlyUpdate(fundId: string, year: number, quar
   // Gather fund data for auto-population
   const fund = await prisma.fund.findUnique({ where: { id: fundId } })
   if (!fund) return { error: 'Fund not found' }
+  const currency = (fund.currency ?? 'USD') as CurrencyCode
 
   const [commitments, portfolioCompanies, deals] = await Promise.all([
     prisma.commitment.findMany({ where: { fundId, ...notDeleted } }),
@@ -98,9 +100,9 @@ export async function generateQuarterlyUpdate(fundId: string, year: number, quar
       title: 'Fund Summary',
       content: [
         `Fund: ${fund.name}`,
-        `Total Commitments: ${formatMoney(totalCommitments)}`,
-        `Capital Called: ${formatMoney(totalCalled)} (${totalCommitments > 0 ? formatPercent(totalCalled / totalCommitments) : '0%'})`,
-        `Capital Distributed: ${formatMoney(totalDistributed)}`,
+        `Total Commitments: ${formatMoney(totalCommitments, currency)}`,
+        `Capital Called: ${formatMoney(totalCalled, currency)} (${totalCommitments > 0 ? formatPercent(totalCalled / totalCommitments) : '0%'})`,
+        `Capital Distributed: ${formatMoney(totalDistributed, currency)}`,
         `Gross MOIC: ${formatMultiple(grossMoic)}`,
         `Active Deals: ${deals.length}`,
         `Portfolio Companies: ${portfolioCompanies.length}`,
@@ -112,7 +114,7 @@ export async function generateQuarterlyUpdate(fundId: string, year: number, quar
       title: 'Portfolio Company Updates',
       content: portfolioCompanies.length > 0
         ? portfolioCompanies.map(pc =>
-            `${pc.name}: Invested ${formatMoney(Number(pc.equityInvested))}, Current Value ${formatMoney(Number(pc.totalValue || 0))}`
+            `${pc.name}: Invested ${formatMoney(Number(pc.equityInvested), currency)}, Current Value ${formatMoney(Number(pc.totalValue || 0), currency)}`
           ).join('\n')
         : 'No portfolio companies to report on.',
       editable: true,
@@ -121,10 +123,10 @@ export async function generateQuarterlyUpdate(fundId: string, year: number, quar
       key: 'capital_summary',
       title: 'Capital Activity',
       content: [
-        `Total Commitments: ${formatMoney(totalCommitments)}`,
-        `Called to Date: ${formatMoney(totalCalled)}`,
-        `Remaining Uncalled: ${formatMoney(totalCommitments - totalCalled)}`,
-        `Distributed to Date: ${formatMoney(totalDistributed)}`,
+        `Total Commitments: ${formatMoney(totalCommitments, currency)}`,
+        `Called to Date: ${formatMoney(totalCalled, currency)}`,
+        `Remaining Uncalled: ${formatMoney(totalCommitments - totalCalled, currency)}`,
+        `Distributed to Date: ${formatMoney(totalDistributed, currency)}`,
       ].join('\n'),
       editable: false,
     },
@@ -324,17 +326,16 @@ export async function listReports(): Promise<ReportListItem[]> {
   const session = await auth()
   if (!session?.user?.id) return []
 
-  const fund = await prisma.fund.findFirst()
-  if (!fund) return []
+  const { fundId } = await getActiveFundWithCurrency(session.user.id!)
 
   try {
-    await requireFundAccess(session.user.id, fund.id)
+    await requireFundAccess(session.user.id, fundId)
   } catch {
     return []
   }
 
   const reports = await prisma.report.findMany({
-    where: { fundId: fund.id },
+    where: { fundId },
     orderBy: { createdAt: 'desc' },
     select: {
       id: true,

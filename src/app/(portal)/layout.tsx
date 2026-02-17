@@ -4,6 +4,9 @@ import { redirect } from 'next/navigation';
 import { PortalSidebar } from '@/components/portal/portal-sidebar';
 import { PortalHeader } from '@/components/portal/portal-header';
 
+// All portal pages require authentication (cookies/headers), so static generation is impossible.
+export const dynamic = 'force-dynamic';
+
 export default async function PortalLayout({
     children,
 }: {

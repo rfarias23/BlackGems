@@ -23,6 +23,7 @@ vi.mock('@/lib/shared/soft-delete', () => ({
 
 vi.mock('@/lib/shared/fund-access', () => ({
     requireFundAccess: vi.fn(),
+    getActiveFundWithCurrency: vi.fn(),
 }))
 
 vi.mock('@/lib/shared/audit', () => ({
@@ -58,10 +59,11 @@ vi.mock('@/lib/shared/pagination', () => ({
 import { getDealPipelineAnalytics } from '../deals'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
+import { getActiveFundWithCurrency } from '@/lib/shared/fund-access'
 
 // Typed references to the mock functions for convenience
 const mockAuth = auth as ReturnType<typeof vi.fn>
-const mockFundFindFirst = prisma.fund.findFirst as ReturnType<typeof vi.fn>
+const mockGetActiveFundWithCurrency = getActiveFundWithCurrency as ReturnType<typeof vi.fn>
 const mockDealFindMany = prisma.deal.findMany as ReturnType<typeof vi.fn>
 
 // ---------------------------------------------------------------------------
@@ -103,7 +105,7 @@ describe('getDealPipelineAnalytics', () => {
 
         expect(result).toBeNull()
         // Should not query prisma at all
-        expect(mockFundFindFirst).not.toHaveBeenCalled()
+        expect(mockGetActiveFundWithCurrency).not.toHaveBeenCalled()
         expect(mockDealFindMany).not.toHaveBeenCalled()
     })
 
@@ -112,7 +114,7 @@ describe('getDealPipelineAnalytics', () => {
     // ------------------------------------------------------------------
     it('returns null when no fund exists', async () => {
         mockAuth.mockResolvedValue({ user: { id: 'user-1' } })
-        mockFundFindFirst.mockResolvedValue(null)
+        mockGetActiveFundWithCurrency.mockRejectedValue(new Error('No fund found'))
 
         const result = await getDealPipelineAnalytics()
 
@@ -125,7 +127,7 @@ describe('getDealPipelineAnalytics', () => {
     // ------------------------------------------------------------------
     it('returns null when no deals exist', async () => {
         mockAuth.mockResolvedValue({ user: { id: 'user-1' } })
-        mockFundFindFirst.mockResolvedValue({ id: 'fund-1' })
+        mockGetActiveFundWithCurrency.mockResolvedValue({ fundId: 'fund-1', currency: 'USD' })
         mockDealFindMany.mockResolvedValue([])
 
         const result = await getDealPipelineAnalytics()
@@ -140,7 +142,7 @@ describe('getDealPipelineAnalytics', () => {
     // ------------------------------------------------------------------
     it('aggregates deals by display stage correctly', async () => {
         mockAuth.mockResolvedValue({ user: { id: 'user-1' } })
-        mockFundFindFirst.mockResolvedValue({ id: 'fund-1' })
+        mockGetActiveFundWithCurrency.mockResolvedValue({ fundId: 'fund-1', currency: 'USD' })
 
         const deals = [
             makeDeal({ stage: 'INITIAL_REVIEW', askingPrice: 500000 }),
@@ -176,7 +178,7 @@ describe('getDealPipelineAnalytics', () => {
     // ------------------------------------------------------------------
     it('computes win rate from terminal stages', async () => {
         mockAuth.mockResolvedValue({ user: { id: 'user-1' } })
-        mockFundFindFirst.mockResolvedValue({ id: 'fund-1' })
+        mockGetActiveFundWithCurrency.mockResolvedValue({ fundId: 'fund-1', currency: 'USD' })
 
         const deals = [
             makeDeal({ stage: 'CLOSED_WON', askingPrice: 2000000, actualCloseDate: new Date('2025-06-01') }),
@@ -205,7 +207,7 @@ describe('getDealPipelineAnalytics', () => {
     // ------------------------------------------------------------------
     it('returns totalValue as raw number in stage metrics', async () => {
         mockAuth.mockResolvedValue({ user: { id: 'user-1' } })
-        mockFundFindFirst.mockResolvedValue({ id: 'fund-1' })
+        mockGetActiveFundWithCurrency.mockResolvedValue({ fundId: 'fund-1', currency: 'USD' })
 
         const deals = [
             makeDeal({ stage: 'IDENTIFIED', askingPrice: 1500000 }),

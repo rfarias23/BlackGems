@@ -7,18 +7,13 @@ import { z } from 'zod'
 import { logAudit } from '@/lib/shared/audit'
 import { requireFundAccess } from '@/lib/shared/fund-access'
 import { notDeleted } from '@/lib/shared/soft-delete'
-import {
-    formatMoney as sharedFormatMoney,
-    formatMultiple as sharedFormatMultiple,
-} from '@/lib/shared/formatters'
+import { formatMoney, formatMultiple } from '@/lib/shared/formatters'
+import type { CurrencyCode } from '@/lib/shared/formatters'
 import {
     computePeriodOverPeriodChange,
     aggregatePortfolioMetrics,
     computeValuationChanges,
 } from '@/lib/shared/portfolio-monitoring-utils'
-
-const formatMoney = sharedFormatMoney
-const formatMultiple = sharedFormatMultiple
 
 // ============================================================================
 // Allowed metric names on PortfolioMetric (Decimal and Int fields only)
@@ -180,6 +175,12 @@ export async function getPortfolioMonitoringSummary(fundId: string): Promise<
     }
 
     try {
+        const fund = await prisma.fund.findUnique({
+            where: { id: fundId },
+            select: { currency: true },
+        })
+        const currency = (fund?.currency ?? 'USD') as CurrencyCode
+
         const companies = await prisma.portfolioCompany.findMany({
             where: {
                 fundId,
@@ -209,10 +210,10 @@ export async function getPortfolioMonitoringSummary(fundId: string): Promise<
         return {
             totalCompanies: aggregated.totalCompanies,
             activeCompanies: aggregated.activeCompanies,
-            totalInvested: formatMoney(aggregated.totalInvested),
-            totalCurrentValue: formatMoney(aggregated.totalCurrentValue),
-            totalRealizedValue: formatMoney(aggregated.totalRealizedValue),
-            totalUnrealizedValue: formatMoney(aggregated.totalUnrealizedValue),
+            totalInvested: formatMoney(aggregated.totalInvested, currency),
+            totalCurrentValue: formatMoney(aggregated.totalCurrentValue, currency),
+            totalRealizedValue: formatMoney(aggregated.totalRealizedValue, currency),
+            totalUnrealizedValue: formatMoney(aggregated.totalUnrealizedValue, currency),
             portfolioMoic: formatMultiple(aggregated.portfolioMoic),
         }
     } catch (error) {
@@ -325,6 +326,12 @@ export async function getValuationHistory(
             return { error: 'Access denied' }
         }
 
+        const fund = await prisma.fund.findUnique({
+            where: { id: company.fundId },
+            select: { currency: true },
+        })
+        const currency = (fund?.currency ?? 'USD') as CurrencyCode
+
         const valuations = await prisma.valuation.findMany({
             where: { companyId },
             orderBy: { date: 'asc' },
@@ -345,8 +352,8 @@ export async function getValuationHistory(
         const data = reversedValuations.map((v, i) => ({
             id: v.id,
             date: v.date,
-            value: formatMoney(v.value),
-            equityValue: v.equityValue ? formatMoney(v.equityValue) : null,
+            value: formatMoney(v.value, currency),
+            equityValue: v.equityValue ? formatMoney(v.equityValue, currency) : null,
             methodology: v.methodology,
             revenueMultiple: v.revenueMultiple
                 ? formatMultiple(v.revenueMultiple)

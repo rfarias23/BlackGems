@@ -9,6 +9,7 @@ import { InvestorType, InvestorStatus } from '@prisma/client'
 import { formatMoney } from '@/lib/shared/formatters'
 import { softDelete, notDeleted } from '@/lib/shared/soft-delete'
 import { logAudit } from '@/lib/shared/audit'
+import { getActiveFundWithCurrency } from '@/lib/shared/fund-access'
 import { PaginationParams, PaginatedResult, parsePaginationParams, paginatedResult } from '@/lib/shared/pagination'
 
 // Display mappings
@@ -172,6 +173,8 @@ export async function getInvestors(params?: PaginationParams): Promise<Paginated
         prisma.investor.count({ where }),
     ])
 
+    const { currency } = await getActiveFundWithCurrency(session.user.id!)
+
     const data = investors.map((investor) => {
         const totalCommitted = investor.commitments.reduce(
             (sum, c) => sum + Number(c.committedAmount),
@@ -184,7 +187,7 @@ export async function getInvestors(params?: PaginationParams): Promise<Paginated
             status: INVESTOR_STATUS_DISPLAY[investor.status] || investor.status,
             email: investor.email,
             contactName: investor.contactName,
-            totalCommitted: formatMoney(totalCommitted),
+            totalCommitted: formatMoney(totalCommitted, currency),
             createdAt: investor.createdAt,
         }
     })
@@ -216,6 +219,8 @@ export async function getInvestor(id: string): Promise<InvestorDetail | null> {
         return null
     }
 
+    const { currency } = await getActiveFundWithCurrency(session.user.id!)
+
     return {
         id: investor.id,
         name: investor.name,
@@ -240,7 +245,7 @@ export async function getInvestor(id: string): Promise<InvestorDetail | null> {
         kycCompletedAt: investor.kycCompletedAt,
         amlStatus: investor.amlStatus,
         amlCompletedAt: investor.amlCompletedAt,
-        investmentCapacity: formatMoney(investor.investmentCapacity),
+        investmentCapacity: formatMoney(investor.investmentCapacity, currency),
         notes: investor.notes,
         source: investor.source,
         createdAt: investor.createdAt,
@@ -249,9 +254,9 @@ export async function getInvestor(id: string): Promise<InvestorDetail | null> {
             id: c.id,
             fundId: c.fundId,
             fundName: c.fund.name,
-            committedAmount: formatMoney(c.committedAmount),
-            calledAmount: formatMoney(c.calledAmount),
-            paidAmount: formatMoney(c.paidAmount),
+            committedAmount: formatMoney(c.committedAmount, currency),
+            calledAmount: formatMoney(c.calledAmount, currency),
+            paidAmount: formatMoney(c.paidAmount, currency),
             status: c.status,
         })),
     }
@@ -569,6 +574,8 @@ export async function getInvestorsForExport(): Promise<{
         orderBy: { name: 'asc' },
     })
 
+    const { currency } = await getActiveFundWithCurrency(session.user.id!)
+
     return investors.map(inv => {
         const totalCommitted = inv.commitments.reduce((sum, c) => sum + Number(c.committedAmount), 0)
         const totalCalled = inv.commitments.reduce((sum, c) => sum + Number(c.calledAmount), 0)
@@ -581,9 +588,9 @@ export async function getInvestorsForExport(): Promise<{
             email: inv.email || '',
             contactName: inv.contactName || '',
             contactEmail: inv.contactEmail || '',
-            totalCommitted: formatMoney(totalCommitted),
-            totalCalled: formatMoney(totalCalled),
-            totalPaid: formatMoney(totalPaid),
+            totalCommitted: formatMoney(totalCommitted, currency),
+            totalCalled: formatMoney(totalCalled, currency),
+            totalPaid: formatMoney(totalPaid, currency),
             createdAt: inv.createdAt.toISOString().split('T')[0],
         }
     })

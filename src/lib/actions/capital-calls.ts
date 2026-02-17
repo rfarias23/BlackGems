@@ -7,7 +7,7 @@ import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { logAudit } from '@/lib/shared/audit'
 import { softDelete, notDeleted } from '@/lib/shared/soft-delete'
-import { requireFundAccess } from '@/lib/shared/fund-access'
+import { requireFundAccess, getActiveFundWithCurrency } from '@/lib/shared/fund-access'
 import { VALID_CALL_TRANSITIONS } from '@/lib/shared/workflow-transitions'
 import { notifyFundMembers } from '@/lib/actions/notifications'
 import { formatMoney, parseMoney } from '@/lib/shared/formatters'
@@ -136,6 +136,8 @@ export async function getCapitalCalls(params?: PaginationParams): Promise<Pagina
         prisma.capitalCall.count({ where }),
     ])
 
+    const { currency } = await getActiveFundWithCurrency(session.user.id!)
+
     const data = calls.map((call) => {
         const totalPaid = call.items.reduce(
             (sum, item) => sum + Number(item.paidAmount),
@@ -147,8 +149,8 @@ export async function getCapitalCalls(params?: PaginationParams): Promise<Pagina
             fundName: call.fund.name,
             callDate: call.callDate,
             dueDate: call.dueDate,
-            totalAmount: formatMoney(call.totalAmount),
-            paidAmount: formatMoney(totalPaid),
+            totalAmount: formatMoney(call.totalAmount, currency),
+            paidAmount: formatMoney(totalPaid, currency),
             status: CALL_STATUS_DISPLAY[call.status] || call.status,
             itemCount: call.items.length,
         }
@@ -184,6 +186,8 @@ export async function getCapitalCall(id: string): Promise<CapitalCallDetail | nu
         return null
     }
 
+    const { currency } = await getActiveFundWithCurrency(session.user.id!)
+
     return {
         id: call.id,
         callNumber: call.callNumber,
@@ -191,10 +195,10 @@ export async function getCapitalCall(id: string): Promise<CapitalCallDetail | nu
         fundName: call.fund.name,
         callDate: call.callDate,
         dueDate: call.dueDate,
-        totalAmount: formatMoney(call.totalAmount),
-        forInvestment: call.forInvestment ? formatMoney(call.forInvestment) : null,
-        forFees: call.forFees ? formatMoney(call.forFees) : null,
-        forExpenses: call.forExpenses ? formatMoney(call.forExpenses) : null,
+        totalAmount: formatMoney(call.totalAmount, currency),
+        forInvestment: call.forInvestment ? formatMoney(call.forInvestment, currency) : null,
+        forFees: call.forFees ? formatMoney(call.forFees, currency) : null,
+        forExpenses: call.forExpenses ? formatMoney(call.forExpenses, currency) : null,
         purpose: call.purpose,
         dealReference: call.dealReference,
         status: CALL_STATUS_DISPLAY[call.status] || call.status,
@@ -206,8 +210,8 @@ export async function getCapitalCall(id: string): Promise<CapitalCallDetail | nu
             id: item.id,
             investorId: item.investorId,
             investorName: item.investor.name,
-            callAmount: formatMoney(item.callAmount),
-            paidAmount: formatMoney(item.paidAmount),
+            callAmount: formatMoney(item.callAmount, currency),
+            paidAmount: formatMoney(item.paidAmount, currency),
             status: ITEM_STATUS_DISPLAY[item.status] || item.status,
             paidDate: item.paidDate,
         })),
@@ -314,7 +318,8 @@ export async function createCapitalCall(formData: FormData) {
         })
 
         // Notify fund members of new capital call
-        const formattedAmount = `$${parseMoney(data.totalAmount).toLocaleString()}`
+        const { currency } = await getActiveFundWithCurrency(session.user.id!)
+        const formattedAmount = formatMoney(parseMoney(data.totalAmount), currency)
         await notifyFundMembers({
             fundId: data.fundId,
             type: 'CAPITAL_CALL_DUE',
@@ -635,6 +640,8 @@ export async function getCapitalCallPDFData(id: string): Promise<CapitalCallPDFD
 
     if (!call) return null
 
+    const { currency } = await getActiveFundWithCurrency(session.user.id!)
+
     const totalCommitted = call.items.reduce((sum, item) => {
         const commitment = item.investor.commitments.find(c => c.fundId === call.fundId)
         return sum + (commitment ? Number(commitment.committedAmount) : 0)
@@ -646,15 +653,15 @@ export async function getCapitalCallPDFData(id: string): Promise<CapitalCallPDFD
         callDate: fmtDate(call.callDate),
         dueDate: fmtDate(call.dueDate),
         purpose: call.purpose || 'Investment & Operations',
-        totalAmount: formatMoney(call.totalAmount),
+        totalAmount: formatMoney(call.totalAmount, currency),
         items: call.items.map((item) => {
             const commitment = item.investor.commitments.find(c => c.fundId === call.fundId)
             const committed = commitment ? Number(commitment.committedAmount) : 0
             const pct = totalCommitted > 0 ? (committed / totalCommitted * 100).toFixed(1) : '0.0'
             return {
                 investorName: item.investor.name,
-                committedAmount: formatMoney(committed),
-                callAmount: formatMoney(item.callAmount),
+                committedAmount: formatMoney(committed, currency),
+                callAmount: formatMoney(item.callAmount, currency),
                 ownershipPct: `${pct}%`,
                 status: ITEM_STATUS_DISPLAY[item.status] || item.status,
             }

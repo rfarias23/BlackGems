@@ -7,15 +7,15 @@ import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { PortfolioStatus, MetricPeriodType } from '@prisma/client'
 import {
-    formatMoney as sharedFormatMoney,
-    formatPercent as sharedFormatPercent,
-    formatMultiple as sharedFormatMultiple,
-    parseMoney as sharedParseMoney,
-    parsePercent as sharedParsePercent,
+    formatMoney,
+    formatPercent,
+    formatMultiple,
+    parseMoney,
+    parsePercent,
 } from '@/lib/shared/formatters'
 import { softDelete, notDeleted } from '@/lib/shared/soft-delete'
 import { logAudit } from '@/lib/shared/audit'
-import { requireFundAccess } from '@/lib/shared/fund-access'
+import { requireFundAccess, getActiveFundWithCurrency } from '@/lib/shared/fund-access'
 import { PaginationParams, PaginatedResult, parsePaginationParams, paginatedResult } from '@/lib/shared/pagination'
 
 // Display mappings
@@ -141,11 +141,6 @@ export interface PortfolioCompanyDetail {
 
 export type MetricItem = Awaited<ReturnType<typeof getPortfolioMetrics>>[number]
 
-const formatMoney = sharedFormatMoney
-const formatPercent = sharedFormatPercent
-const formatMultiple = sharedFormatMultiple
-const parseMoney = sharedParseMoney
-const parsePercent = sharedParsePercent
 
 // Calculate holding period in months
 function calculateHoldingPeriod(acquisitionDate: Date, exitDate?: Date | null): number {
@@ -162,6 +157,7 @@ export async function getPortfolioCompanies(params?: PaginationParams): Promise<
         return paginatedResult([], 0, 1, 25)
     }
 
+    const { currency } = await getActiveFundWithCurrency(session.user.id!)
     const { page, pageSize, skip, search } = parsePaginationParams(params)
 
     const where = {
@@ -202,13 +198,13 @@ export async function getPortfolioCompanies(params?: PaginationParams): Promise<
         industry: company.industry,
         fundName: company.fund.name,
         acquisitionDate: company.acquisitionDate,
-        entryValuation: formatMoney(company.entryValuation),
+        entryValuation: formatMoney(company.entryValuation, currency),
         currentValuation: company.metrics[0]?.currentValuation
-            ? formatMoney(company.metrics[0].currentValuation)
+            ? formatMoney(company.metrics[0].currentValuation, currency)
             : company.unrealizedValue
-                ? formatMoney(company.unrealizedValue)
+                ? formatMoney(company.unrealizedValue, currency)
                 : null,
-        equityInvested: formatMoney(company.equityInvested),
+        equityInvested: formatMoney(company.equityInvested, currency),
         ownershipPct: formatPercent(company.ownershipPct),
         moic: company.moic ? formatMultiple(company.moic) : null,
         irr: company.irr ? formatPercent(company.irr) : null,
@@ -224,6 +220,8 @@ export async function getPortfolioCompany(id: string): Promise<PortfolioCompanyD
     if (!session?.user?.id) {
         return null
     }
+
+    const { currency } = await getActiveFundWithCurrency(session.user.id!)
 
     const company = await prisma.portfolioCompany.findFirst({
         where: { id, ...notDeleted },
@@ -264,21 +262,21 @@ export async function getPortfolioCompany(id: string): Promise<PortfolioCompanyD
         acquisitionDate: company.acquisitionDate,
         exitDate: company.exitDate,
         holdingPeriodMonths,
-        entryValuation: formatMoney(company.entryValuation),
-        entryRevenue: company.entryRevenue ? formatMoney(company.entryRevenue) : null,
-        entryEbitda: company.entryEbitda ? formatMoney(company.entryEbitda) : null,
+        entryValuation: formatMoney(company.entryValuation, currency),
+        entryRevenue: company.entryRevenue ? formatMoney(company.entryRevenue, currency) : null,
+        entryEbitda: company.entryEbitda ? formatMoney(company.entryEbitda, currency) : null,
         entryMultiple: company.entryMultiple ? formatMultiple(company.entryMultiple) : null,
-        equityInvested: formatMoney(company.equityInvested),
-        debtFinancing: company.debtFinancing ? formatMoney(company.debtFinancing) : null,
-        totalInvestment: formatMoney(company.totalInvestment),
+        equityInvested: formatMoney(company.equityInvested, currency),
+        debtFinancing: company.debtFinancing ? formatMoney(company.debtFinancing, currency) : null,
+        totalInvestment: formatMoney(company.totalInvestment, currency),
         ownershipPct: formatPercent(company.ownershipPct),
         status: STATUS_DISPLAY[company.status] || company.status,
-        exitValuation: company.exitValuation ? formatMoney(company.exitValuation) : null,
+        exitValuation: company.exitValuation ? formatMoney(company.exitValuation, currency) : null,
         exitType: company.exitType ? EXIT_TYPE_DISPLAY[company.exitType] || company.exitType : null,
         exitBuyer: company.exitBuyer,
-        realizedValue: company.realizedValue ? formatMoney(company.realizedValue) : null,
-        unrealizedValue: company.unrealizedValue ? formatMoney(company.unrealizedValue) : null,
-        totalValue: company.totalValue ? formatMoney(company.totalValue) : null,
+        realizedValue: company.realizedValue ? formatMoney(company.realizedValue, currency) : null,
+        unrealizedValue: company.unrealizedValue ? formatMoney(company.unrealizedValue, currency) : null,
+        totalValue: company.totalValue ? formatMoney(company.totalValue, currency) : null,
         moic: company.moic ? formatMultiple(company.moic) : null,
         irr: company.irr ? formatPercent(company.irr) : null,
         ceoName: company.ceoName,
@@ -292,12 +290,12 @@ export async function getPortfolioCompany(id: string): Promise<PortfolioCompanyD
         latestMetrics: latestMetric
             ? {
                 periodDate: latestMetric.periodDate,
-                revenue: latestMetric.revenue ? formatMoney(latestMetric.revenue) : null,
+                revenue: latestMetric.revenue ? formatMoney(latestMetric.revenue, currency) : null,
                 revenueGrowth: latestMetric.revenueGrowth ? formatPercent(latestMetric.revenueGrowth) : null,
-                ebitda: latestMetric.ebitda ? formatMoney(latestMetric.ebitda) : null,
+                ebitda: latestMetric.ebitda ? formatMoney(latestMetric.ebitda, currency) : null,
                 ebitdaMargin: latestMetric.ebitdaMargin ? formatPercent(latestMetric.ebitdaMargin) : null,
                 employeeCount: latestMetric.employeeCount,
-                currentValuation: latestMetric.currentValuation ? formatMoney(latestMetric.currentValuation) : null,
+                currentValuation: latestMetric.currentValuation ? formatMoney(latestMetric.currentValuation, currency) : null,
             }
             : null,
     }
@@ -600,6 +598,8 @@ export async function getPortfolioMetrics(companyId: string) {
         return []
     }
 
+    const { currency } = await getActiveFundWithCurrency(session.user.id!)
+
     const metrics = await prisma.portfolioMetric.findMany({
         where: { companyId },
         orderBy: { periodDate: 'desc' },
@@ -609,21 +609,21 @@ export async function getPortfolioMetrics(companyId: string) {
         id: m.id,
         periodDate: m.periodDate,
         periodType: m.periodType,
-        revenue: m.revenue ? formatMoney(m.revenue) : null,
+        revenue: m.revenue ? formatMoney(m.revenue, currency) : null,
         revenueGrowth: m.revenueGrowth ? formatPercent(m.revenueGrowth) : null,
-        grossProfit: m.grossProfit ? formatMoney(m.grossProfit) : null,
+        grossProfit: m.grossProfit ? formatMoney(m.grossProfit, currency) : null,
         grossMargin: m.grossMargin ? formatPercent(m.grossMargin) : null,
-        ebitda: m.ebitda ? formatMoney(m.ebitda) : null,
+        ebitda: m.ebitda ? formatMoney(m.ebitda, currency) : null,
         ebitdaMargin: m.ebitdaMargin ? formatPercent(m.ebitdaMargin) : null,
-        netIncome: m.netIncome ? formatMoney(m.netIncome) : null,
-        operatingCashFlow: m.operatingCashFlow ? formatMoney(m.operatingCashFlow) : null,
-        freeCashFlow: m.freeCashFlow ? formatMoney(m.freeCashFlow) : null,
-        cashBalance: m.cashBalance ? formatMoney(m.cashBalance) : null,
-        totalDebt: m.totalDebt ? formatMoney(m.totalDebt) : null,
-        netDebt: m.netDebt ? formatMoney(m.netDebt) : null,
+        netIncome: m.netIncome ? formatMoney(m.netIncome, currency) : null,
+        operatingCashFlow: m.operatingCashFlow ? formatMoney(m.operatingCashFlow, currency) : null,
+        freeCashFlow: m.freeCashFlow ? formatMoney(m.freeCashFlow, currency) : null,
+        cashBalance: m.cashBalance ? formatMoney(m.cashBalance, currency) : null,
+        totalDebt: m.totalDebt ? formatMoney(m.totalDebt, currency) : null,
+        netDebt: m.netDebt ? formatMoney(m.netDebt, currency) : null,
         employeeCount: m.employeeCount,
         customerCount: m.customerCount,
-        currentValuation: m.currentValuation ? formatMoney(m.currentValuation) : null,
+        currentValuation: m.currentValuation ? formatMoney(m.currentValuation, currency) : null,
         evEbitda: m.evEbitda ? formatMultiple(m.evEbitda) : null,
         highlights: m.highlights,
         concerns: m.concerns,
@@ -697,6 +697,8 @@ export async function getPortfolioSummary() {
         return null
     }
 
+    const { currency } = await getActiveFundWithCurrency(session.user.id!)
+
     const companies = await prisma.portfolioCompany.findMany({
         where: {
             status: { not: 'WRITTEN_OFF' },
@@ -718,10 +720,10 @@ export async function getPortfolioSummary() {
         totalCompanies: companies.length,
         activeCompanies: activeCount,
         exitedCompanies: exitedCount,
-        totalInvested: formatMoney(totalInvested),
-        totalValue: formatMoney(totalValue),
-        realizedValue: formatMoney(realizedValue),
-        unrealizedValue: formatMoney(unrealizedValue),
+        totalInvested: formatMoney(totalInvested, currency),
+        totalValue: formatMoney(totalValue, currency),
+        realizedValue: formatMoney(realizedValue, currency),
+        unrealizedValue: formatMoney(unrealizedValue, currency),
         portfolioMoic: formatMultiple(portfolioMoic),
     }
 }

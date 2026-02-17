@@ -5,6 +5,7 @@ import { auth } from '@/lib/auth'
 import { notDeleted } from '@/lib/shared/soft-delete'
 import { calculateFundIRR } from '@/lib/shared/irr'
 import { calculateWaterfall } from '@/lib/shared/waterfall'
+import { getActiveFundWithCurrency } from '@/lib/shared/fund-access'
 
 // ============================================================================
 // DASHBOARD CHART DATA
@@ -21,13 +22,12 @@ export async function getDashboardChartData(): Promise<DashboardChartData | null
   const session = await auth()
   if (!session?.user?.id) return null
 
-  const fund = await prisma.fund.findFirst()
-  if (!fund) return null
+  const { fundId } = await getActiveFundWithCurrency(session.user.id!)
 
   const [portfolioCompanies, capitalCalls, distributions, commitments] =
     await Promise.all([
       prisma.portfolioCompany.findMany({
-        where: { fundId: fund.id, ...notDeleted },
+        where: { fundId, ...notDeleted },
         select: {
           name: true,
           moic: true,
@@ -37,17 +37,17 @@ export async function getDashboardChartData(): Promise<DashboardChartData | null
         orderBy: { name: 'asc' },
       }),
       prisma.capitalCall.findMany({
-        where: { fundId: fund.id, status: 'FULLY_FUNDED', ...notDeleted },
+        where: { fundId, status: 'FULLY_FUNDED', ...notDeleted },
         select: { callDate: true, totalAmount: true },
         orderBy: { callDate: 'asc' },
       }),
       prisma.distribution.findMany({
-        where: { fundId: fund.id, status: 'COMPLETED', ...notDeleted },
+        where: { fundId, status: 'COMPLETED', ...notDeleted },
         select: { distributionDate: true, totalAmount: true },
         orderBy: { distributionDate: 'asc' },
       }),
       prisma.commitment.findMany({
-        where: { fundId: fund.id, ...notDeleted },
+        where: { fundId, ...notDeleted },
         select: { distributedAmount: true, paidAmount: true },
       }),
     ])
@@ -151,14 +151,14 @@ export async function getWaterfallChartData(
   const session = await auth()
   if (!session?.user?.id) return null
 
-  const fund = fundId
-    ? await prisma.fund.findUnique({ where: { id: fundId } })
-    : await prisma.fund.findFirst()
+  const { fundId: activeFundId } = await getActiveFundWithCurrency(session.user.id!)
+  const resolvedFundId = fundId || activeFundId
+  const fund = await prisma.fund.findUnique({ where: { id: resolvedFundId } })
 
   if (!fund) return null
 
   const commitments = await prisma.commitment.findMany({
-    where: { fundId: fund.id, ...notDeleted },
+    where: { fundId: resolvedFundId, ...notDeleted },
   })
 
   const totalPaid = commitments.reduce(
@@ -171,7 +171,7 @@ export async function getWaterfallChartData(
   )
 
   const portfolioCompanies = await prisma.portfolioCompany.findMany({
-    where: { fundId: fund.id, ...notDeleted },
+    where: { fundId: resolvedFundId, ...notDeleted },
     select: { unrealizedValue: true },
   })
 

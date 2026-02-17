@@ -6,6 +6,7 @@ import { calculateFundIRR, calculateCompanyIRR, calculateLPIRR } from '@/lib/sha
 import { calculateWaterfall, type WaterfallTier } from '@/lib/shared/waterfall'
 import { notDeleted } from '@/lib/shared/soft-delete'
 import { formatMoney, formatPercent, formatMultiple } from '@/lib/shared/formatters'
+import { getActiveFundWithCurrency } from '@/lib/shared/fund-access'
 
 
 // ============================================================================
@@ -48,17 +49,18 @@ export async function getDashboardData(): Promise<DashboardData | null> {
         return null
     }
 
-    const fund = await prisma.fund.findFirst()
+    const { fundId, currency } = await getActiveFundWithCurrency(session.user.id!)
+    const fund = await prisma.fund.findUnique({ where: { id: fundId }, select: { name: true } })
     if (!fund) {
         return null
     }
 
     // Parallel queries for performance
     const [commitments, portfolioCompanies, deals, investors, recentAuditLogs] = await Promise.all([
-        prisma.commitment.findMany({ where: { fundId: fund.id, ...notDeleted } }),
-        prisma.portfolioCompany.findMany({ where: { fundId: fund.id } }),
+        prisma.commitment.findMany({ where: { fundId, ...notDeleted } }),
+        prisma.portfolioCompany.findMany({ where: { fundId } }),
         prisma.deal.findMany({
-            where: { fundId: fund.id, deletedAt: null },
+            where: { fundId, deletedAt: null },
             orderBy: { updatedAt: 'desc' },
         }),
         prisma.investor.findMany({ where: { deletedAt: null } }),
@@ -114,9 +116,9 @@ export async function getDashboardData(): Promise<DashboardData | null> {
 
     return {
         fundName: fund.name,
-        totalAUM: formatMoney(totalValue || totalCommitments),
-        totalCommitments: formatMoney(totalCommitments),
-        capitalCalled: formatMoney(totalCalled),
+        totalAUM: formatMoney(totalValue || totalCommitments, currency),
+        totalCommitments: formatMoney(totalCommitments, currency),
+        capitalCalled: formatMoney(totalCalled, currency),
         capitalCallPct: formatPercent(totalCommitments > 0 ? totalCalled / totalCommitments : 0),
         activeDeals: activeDeals.length,
         totalDeals: deals.length,
@@ -130,7 +132,7 @@ export async function getDashboardData(): Promise<DashboardData | null> {
             id: d.id,
             name: d.name,
             stage: stageDisplay[d.stage] || d.stage,
-            askingPrice: d.askingPrice ? formatMoney(d.askingPrice) : null,
+            askingPrice: d.askingPrice ? formatMoney(d.askingPrice, currency) : null,
         })),
         recentActivity: recentAuditLogs.map(log => ({
             id: log.id,
@@ -202,10 +204,10 @@ export async function getFundPerformanceReport(fundId?: string): Promise<FundPer
         return null
     }
 
-    // Get the fund (use first if not specified)
-    const fund = fundId
-        ? await prisma.fund.findUnique({ where: { id: fundId } })
-        : await prisma.fund.findFirst()
+    // Get the fund (use active fund if not specified)
+    const { fundId: activeFundId, currency } = await getActiveFundWithCurrency(session.user.id!)
+    const resolvedFundId = fundId || activeFundId
+    const fund = await prisma.fund.findUnique({ where: { id: resolvedFundId } })
 
     if (!fund) {
         return null
@@ -291,8 +293,8 @@ export async function getFundPerformanceReport(fundId?: string): Promise<FundPer
         })
         waterfallResult = {
             tiers: wf.tiers,
-            lpTotal: formatMoney(wf.lpTotal),
-            gpTotal: formatMoney(wf.gpTotal),
+            lpTotal: formatMoney(wf.lpTotal, currency),
+            gpTotal: formatMoney(wf.gpTotal, currency),
             effectiveCarryPct: wf.effectiveCarryPct !== null
                 ? formatPercent(wf.effectiveCarryPct)
                 : null,
@@ -309,25 +311,25 @@ export async function getFundPerformanceReport(fundId?: string): Promise<FundPer
             id: fund.id,
             name: fund.name,
             vintage: fund.vintage,
-            targetSize: formatMoney(fund.targetSize),
+            targetSize: formatMoney(fund.targetSize, currency),
             status: fund.status,
         },
         capital: {
-            totalCommitments: formatMoney(totalCommitments),
-            totalCalled: formatMoney(totalCalled),
-            totalPaid: formatMoney(totalPaid),
-            totalDistributed: formatMoney(totalDistributed),
-            unfundedCommitments: formatMoney(unfundedCommitments),
+            totalCommitments: formatMoney(totalCommitments, currency),
+            totalCalled: formatMoney(totalCalled, currency),
+            totalPaid: formatMoney(totalPaid, currency),
+            totalDistributed: formatMoney(totalDistributed, currency),
+            unfundedCommitments: formatMoney(unfundedCommitments, currency),
             callPercentage: formatPercent(totalCommitments > 0 ? totalCalled / totalCommitments : 0),
         },
         portfolio: {
             totalCompanies: portfolioCompanies.length,
             activeCompanies: activeCompanies.length,
             exitedCompanies: exitedCompanies.length,
-            totalInvested: formatMoney(totalInvested),
-            totalValue: formatMoney(totalValue),
-            realizedValue: formatMoney(realizedValue),
-            unrealizedValue: formatMoney(unrealizedValue),
+            totalInvested: formatMoney(totalInvested, currency),
+            totalValue: formatMoney(totalValue, currency),
+            realizedValue: formatMoney(realizedValue, currency),
+            unrealizedValue: formatMoney(unrealizedValue, currency),
         },
         performance: {
             grossMoic: formatMultiple(grossMoic),
@@ -407,19 +409,14 @@ export async function getLPCapitalStatement(investorId: string, fundId?: string)
     }
 
     // Get the fund
-    const fund = fundId
-        ? await prisma.fund.findUnique({ where: { id: fundId } })
-        : await prisma.fund.findFirst()
-
-    if (!fund) {
-        return null
-    }
+    const { fundId: activeFundId, currency } = await getActiveFundWithCurrency(session.user.id!)
+    const resolvedFundId = fundId || activeFundId
 
     // Get commitment
     const commitment = await prisma.commitment.findFirst({
         where: {
             investorId: investorId,
-            fundId: fund.id,
+            fundId: resolvedFundId,
             ...notDeleted,
         },
     })
@@ -430,17 +427,17 @@ export async function getLPCapitalStatement(investorId: string, fundId?: string)
 
     // Get all commitments to calculate ownership %
     const allCommitments = await prisma.commitment.findMany({
-        where: { fundId: fund.id, ...notDeleted },
+        where: { fundId: resolvedFundId, ...notDeleted },
     })
     const totalCommitted = allCommitments.reduce((sum, c) => sum + Number(c.committedAmount), 0)
     const ownershipPct = totalCommitted > 0 ? Number(commitment.committedAmount) / totalCommitted : 0
 
     // Get capital call items
     const capitalCallItems = await prisma.capitalCallItem.findMany({
-    where: { 
+    where: {
         investorId: investorId,
         capitalCall: {
-            fundId: fund.id
+            fundId: resolvedFundId
         }
     },
     include: {
@@ -451,10 +448,10 @@ export async function getLPCapitalStatement(investorId: string, fundId?: string)
 
     // Get distribution items
     const distributionItems = await prisma.distributionItem.findMany({
-    where: { 
+    where: {
         investorId: investorId,
         distribution: {
-            fundId: fund.id
+            fundId: resolvedFundId
         }
     },
     include: {
@@ -494,16 +491,16 @@ export async function getLPCapitalStatement(investorId: string, fundId?: string)
             type: investor.type,
         },
         commitment: {
-            committedAmount: formatMoney(commitment.committedAmount),
-            calledAmount: formatMoney(commitment.calledAmount),
-            paidAmount: formatMoney(commitment.paidAmount),
-            distributedAmount: formatMoney(commitment.distributedAmount),
-            unfundedAmount: formatMoney(Number(commitment.committedAmount) - Number(commitment.calledAmount)),
+            committedAmount: formatMoney(commitment.committedAmount, currency),
+            calledAmount: formatMoney(commitment.calledAmount, currency),
+            paidAmount: formatMoney(commitment.paidAmount, currency),
+            distributedAmount: formatMoney(commitment.distributedAmount, currency),
+            unfundedAmount: formatMoney(Number(commitment.committedAmount) - Number(commitment.calledAmount), currency),
             ownershipPct: formatPercent(ownershipPct),
         },
         performance: {
-            netContributions: formatMoney(netContributions),
-            totalValue: formatMoney(estimatedValue + Number(commitment.distributedAmount)),
+            netContributions: formatMoney(netContributions, currency),
+            totalValue: formatMoney(estimatedValue + Number(commitment.distributedAmount), currency),
             moic: formatMultiple(moic),
             irr: lpIrr !== null ? formatPercent(lpIrr) : null,
         },
@@ -513,8 +510,8 @@ export async function getLPCapitalStatement(investorId: string, fundId?: string)
                 id: item.id,
                 callNumber: item.capitalCall!.callNumber,
                 callDate: item.capitalCall!.callDate,
-                amount: formatMoney(item.callAmount),
-                paidAmount: formatMoney(item.paidAmount),
+                amount: formatMoney(item.callAmount, currency),
+                paidAmount: formatMoney(item.paidAmount, currency),
                 status: item.status,
             })),
         distributions: distributionItems
@@ -523,8 +520,8 @@ export async function getLPCapitalStatement(investorId: string, fundId?: string)
                 id: item.id,
                 distributionNumber: item.distribution!.distributionNumber,
                 date: item.distribution!.distributionDate,
-                grossAmount: formatMoney(item.grossAmount),
-                netAmount: formatMoney(item.netAmount),
+                grossAmount: formatMoney(item.grossAmount, currency),
+                netAmount: formatMoney(item.netAmount, currency),
                 type: item.distribution!.type,
                 status: item.status,
             })),
@@ -575,7 +572,9 @@ export async function getPortfolioSummaryReport(fundId?: string): Promise<Portfo
         return null
     }
 
-    const whereClause = fundId ? { fundId } : {}
+    const { fundId: activeFundId, currency } = await getActiveFundWithCurrency(session.user.id!)
+    const resolvedFundId = fundId || activeFundId
+    const whereClause = { fundId: resolvedFundId }
 
     const companies = await prisma.portfolioCompany.findMany({
         where: whereClause,
@@ -646,8 +645,8 @@ export async function getPortfolioSummaryReport(fundId?: string): Promise<Portfo
     return {
         summary: {
             totalCompanies: companies.length,
-            totalInvested: formatMoney(totalInvested),
-            totalValue: formatMoney(totalValue),
+            totalInvested: formatMoney(totalInvested, currency),
+            totalValue: formatMoney(totalValue, currency),
             portfolioMoic: formatMultiple(portfolioMoic),
             avgHoldingPeriod: `${Math.round(avgHoldingPeriod)} months`,
         },
@@ -664,8 +663,8 @@ export async function getPortfolioSummaryReport(fundId?: string): Promise<Portfo
                 industry: c.industry,
                 acquisitionDate: c.acquisitionDate,
                 holdingPeriodMonths: holdingPeriods[index],
-                invested: formatMoney(c.equityInvested),
-                currentValue: formatMoney(c.totalValue || c.equityInvested),
+                invested: formatMoney(c.equityInvested, currency),
+                currentValue: formatMoney(c.totalValue || c.equityInvested, currency),
                 moic: formatMultiple(c.moic || 1),
                 irr: companyIrr !== null ? formatPercent(companyIrr) : null,
                 status: statusDisplay[c.status] || c.status,
@@ -674,14 +673,14 @@ export async function getPortfolioSummaryReport(fundId?: string): Promise<Portfo
         byIndustry: Array.from(industryMap.entries()).map(([industry, data]) => ({
             industry,
             count: data.count,
-            invested: formatMoney(data.invested),
-            value: formatMoney(data.value),
+            invested: formatMoney(data.invested, currency),
+            value: formatMoney(data.value, currency),
         })),
         byStatus: Array.from(statusMap.entries()).map(([status, data]) => ({
             status: statusDisplay[status] || status,
             count: data.count,
-            invested: formatMoney(data.invested),
-            value: formatMoney(data.value),
+            invested: formatMoney(data.invested, currency),
+            value: formatMoney(data.value, currency),
         })),
     }
 }
@@ -717,7 +716,9 @@ export async function getDealPipelineReport(fundId?: string): Promise<DealPipeli
         return null
     }
 
-    const whereClause = fundId ? { fundId } : {}
+    const { fundId: activeFundId, currency } = await getActiveFundWithCurrency(session.user.id!)
+    const resolvedFundId = fundId || activeFundId
+    const whereClause = { fundId: resolvedFundId }
 
     const deals = await prisma.deal.findMany({
         where: whereClause,
@@ -766,21 +767,21 @@ export async function getDealPipelineReport(fundId?: string): Promise<DealPipeli
         summary: {
             totalDeals: deals.length,
             activeDeals: activeDeals.length,
-            avgDealSize: formatMoney(avgDealSize),
+            avgDealSize: formatMoney(avgDealSize, currency),
             conversionRate: formatPercent(conversionRate),
         },
         byStage: Array.from(stageMap.entries())
             .map(([stage, data]) => ({
                 stage: stageDisplay[stage] || stage,
                 count: data.count,
-                totalValue: formatMoney(data.value),
+                totalValue: formatMoney(data.value, currency),
             }))
             .sort((a, b) => b.count - a.count),
         recentActivity: deals.slice(0, 10).map(d => ({
             id: d.id,
             name: d.name,
             stage: stageDisplay[d.stage] || d.stage,
-            askingPrice: d.askingPrice ? formatMoney(d.askingPrice) : null,
+            askingPrice: d.askingPrice ? formatMoney(d.askingPrice, currency) : null,
             lastUpdated: d.updatedAt,
         })),
     }

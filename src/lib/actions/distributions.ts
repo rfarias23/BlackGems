@@ -8,7 +8,7 @@ import { z } from 'zod'
 import { DistributionType } from '@prisma/client'
 import { logAudit } from '@/lib/shared/audit'
 import { softDelete, notDeleted } from '@/lib/shared/soft-delete'
-import { requireFundAccess } from '@/lib/shared/fund-access'
+import { requireFundAccess, getActiveFundWithCurrency } from '@/lib/shared/fund-access'
 import { VALID_DIST_TRANSITIONS } from '@/lib/shared/workflow-transitions'
 import { formatMoney, parseMoney } from '@/lib/shared/formatters'
 import { notifyFundMembers } from '@/lib/actions/notifications'
@@ -153,6 +153,8 @@ export async function getDistributions(params?: PaginationParams): Promise<Pagin
         prisma.distribution.count({ where }),
     ])
 
+    const { currency } = await getActiveFundWithCurrency(session.user.id!)
+
     const data = distributions.map((dist) => {
         const totalPaid = dist.items
             .filter((item) => item.status === 'PAID')
@@ -162,8 +164,8 @@ export async function getDistributions(params?: PaginationParams): Promise<Pagin
             distributionNumber: dist.distributionNumber,
             fundName: dist.fund.name,
             distributionDate: dist.distributionDate,
-            totalAmount: formatMoney(dist.totalAmount),
-            paidAmount: formatMoney(totalPaid),
+            totalAmount: formatMoney(dist.totalAmount, currency),
+            paidAmount: formatMoney(totalPaid, currency),
             type: DIST_TYPE_DISPLAY[dist.type] || dist.type,
             status: DIST_STATUS_DISPLAY[dist.status] || dist.status,
             itemCount: dist.items.length,
@@ -200,17 +202,19 @@ export async function getDistribution(id: string): Promise<DistributionDetail | 
         return null
     }
 
+    const { currency } = await getActiveFundWithCurrency(session.user.id!)
+
     return {
         id: dist.id,
         distributionNumber: dist.distributionNumber,
         fundId: dist.fundId,
         fundName: dist.fund.name,
         distributionDate: dist.distributionDate,
-        totalAmount: formatMoney(dist.totalAmount),
-        returnOfCapital: dist.returnOfCapital ? formatMoney(dist.returnOfCapital) : null,
-        realizedGains: dist.realizedGains ? formatMoney(dist.realizedGains) : null,
-        dividends: dist.dividends ? formatMoney(dist.dividends) : null,
-        interest: dist.interest ? formatMoney(dist.interest) : null,
+        totalAmount: formatMoney(dist.totalAmount, currency),
+        returnOfCapital: dist.returnOfCapital ? formatMoney(dist.returnOfCapital, currency) : null,
+        realizedGains: dist.realizedGains ? formatMoney(dist.realizedGains, currency) : null,
+        dividends: dist.dividends ? formatMoney(dist.dividends, currency) : null,
+        interest: dist.interest ? formatMoney(dist.interest, currency) : null,
         type: DIST_TYPE_DISPLAY[dist.type] || dist.type,
         source: dist.source,
         status: DIST_STATUS_DISPLAY[dist.status] || dist.status,
@@ -223,9 +227,9 @@ export async function getDistribution(id: string): Promise<DistributionDetail | 
             id: item.id,
             investorId: item.investorId,
             investorName: item.investor.name,
-            grossAmount: formatMoney(item.grossAmount),
-            withholdingTax: formatMoney(item.withholdingTax),
-            netAmount: formatMoney(item.netAmount),
+            grossAmount: formatMoney(item.grossAmount, currency),
+            withholdingTax: formatMoney(item.withholdingTax, currency),
+            netAmount: formatMoney(item.netAmount, currency),
             status: ITEM_STATUS_DISPLAY[item.status] || item.status,
             paidDate: item.paidDate,
         })),
@@ -339,7 +343,8 @@ export async function createDistribution(formData: FormData) {
         })
 
         // Notify fund members of new distribution
-        const formattedAmount = `$${parseMoney(data.totalAmount).toLocaleString()}`
+        const { currency } = await getActiveFundWithCurrency(session.user.id!)
+        const formattedAmount = formatMoney(parseMoney(data.totalAmount), currency)
         await notifyFundMembers({
             fundId: data.fundId,
             type: 'DISTRIBUTION_MADE',
@@ -636,6 +641,8 @@ export async function getDistributionPDFData(id: string): Promise<DistributionPD
 
     if (!dist) return null
 
+    const { currency } = await getActiveFundWithCurrency(session.user.id!)
+
     const totalCommitted = dist.items.reduce((sum, item) => {
         const commitment = item.investor.commitments.find(c => c.fundId === dist.fundId)
         return sum + (commitment ? Number(commitment.committedAmount) : 0)
@@ -645,19 +652,19 @@ export async function getDistributionPDFData(id: string): Promise<DistributionPD
         fundName: dist.fund.name,
         distributionNumber: dist.distributionNumber,
         distributionDate: fmtDate(dist.distributionDate),
-        totalAmount: formatMoney(dist.totalAmount),
-        returnOfCapital: dist.returnOfCapital ? formatMoney(dist.returnOfCapital) : '$0',
-        realizedGains: dist.realizedGains ? formatMoney(dist.realizedGains) : '$0',
-        dividends: dist.dividends ? formatMoney(dist.dividends) : '$0',
-        interest: dist.interest ? formatMoney(dist.interest) : '$0',
+        totalAmount: formatMoney(dist.totalAmount, currency),
+        returnOfCapital: dist.returnOfCapital ? formatMoney(dist.returnOfCapital, currency) : formatMoney(0, currency),
+        realizedGains: dist.realizedGains ? formatMoney(dist.realizedGains, currency) : formatMoney(0, currency),
+        dividends: dist.dividends ? formatMoney(dist.dividends, currency) : formatMoney(0, currency),
+        interest: dist.interest ? formatMoney(dist.interest, currency) : formatMoney(0, currency),
         items: dist.items.map((item) => {
             const commitment = item.investor.commitments.find(c => c.fundId === dist.fundId)
             const committed = commitment ? Number(commitment.committedAmount) : 0
             const pct = totalCommitted > 0 ? (committed / totalCommitted * 100).toFixed(1) : '0.0'
             return {
                 investorName: item.investor.name,
-                grossAmount: formatMoney(item.grossAmount),
-                netAmount: formatMoney(item.netAmount),
+                grossAmount: formatMoney(item.grossAmount, currency),
+                netAmount: formatMoney(item.netAmount, currency),
                 ownershipPct: `${pct}%`,
                 status: ITEM_STATUS_DISPLAY[item.status] || item.status,
             }
