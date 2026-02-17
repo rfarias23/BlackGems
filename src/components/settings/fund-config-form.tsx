@@ -120,6 +120,14 @@ export function FundConfigForm({ fund }: FundConfigFormProps) {
                             </div>
                         </div>
                         <div className="flex-1">
+                            <Label>Currency</Label>
+                            <div className="mt-1 h-10 flex items-center">
+                                <Badge variant="outline" className="font-mono">
+                                    {fund.currency}
+                                </Badge>
+                            </div>
+                        </div>
+                        <div className="flex-1">
                             <Label>Vintage</Label>
                             <div className="mt-1 h-10 flex items-center text-sm font-medium">
                                 {fund.vintage}
