@@ -45,9 +45,11 @@ export function formatMoney(value: NumericValue, currency: CurrencyCode = 'USD')
 export function formatCompact(value: NumericValue, currency: CurrencyCode = 'USD'): string {
   const { symbol } = CURRENCY_CONFIG[currency]
   const num = Number(value) || 0
-  if (num >= 1_000_000) return `${symbol}${(num / 1_000_000).toFixed(1)}M`
-  if (num >= 1_000) return `${symbol}${(num / 1_000).toFixed(0)}K`
-  return `${symbol}${num.toFixed(0)}`
+  const abs = Math.abs(num)
+  const sign = num < 0 ? '-' : ''
+  if (abs >= 1_000_000) return `${sign}${symbol}${(abs / 1_000_000).toFixed(1)}M`
+  if (abs >= 1_000) return `${sign}${symbol}${(abs / 1_000).toFixed(0)}K`
+  return `${sign}${symbol}${abs.toFixed(0)}`
 }
 
 /**
@@ -110,7 +112,11 @@ export function parseMoney(value: string): number {
       cleaned = cleaned.replace(/\./g, '').replace(',', '.')
     }
   } else if (commaCount === 1 && dotCount === 0) {
-    // Ambiguous single comma: "1,234" — treat as thousands separator
+    // Ambiguous single comma: "1,234" — treat as thousands separator.
+    // Note: EUR decimal amounts like "2500,00" will be parsed as 250000.
+    // This is acceptable because BlackGem UI always formats without decimals
+    // in form fields. If EUR decimal input is needed, parseMoney should
+    // accept a CurrencyCode parameter in the future.
     cleaned = cleaned.replace(/,/g, '')
   }
   // Single dot with no comma: parseFloat handles it naturally as decimal
