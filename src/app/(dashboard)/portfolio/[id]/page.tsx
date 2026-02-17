@@ -62,9 +62,10 @@ export default async function PortfolioCompanyDetailPage({ params }: { params: P
         notFound();
     }
 
-    const { currency } = session?.user?.id
+    const fundResult = session?.user?.id
         ? await getActiveFundWithCurrency(session.user.id)
-        : { currency: 'USD' as CurrencyCode };
+        : null;
+    const currency = fundResult?.currency ?? 'USD' as CurrencyCode;
 
     return (
         <ErrorBoundary module="Portfolio Detail">

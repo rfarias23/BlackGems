@@ -82,9 +82,10 @@ export default async function CapitalCallDetailPage({ params }: { params: Promis
         notFound();
     }
 
-    const { currency } = session?.user?.id
+    const fundResult = session?.user?.id
         ? await getActiveFundWithCurrency(session.user.id)
-        : { currency: 'USD' as CurrencyCode };
+        : null;
+    const currency = fundResult?.currency ?? 'USD' as CurrencyCode;
 
     const totalPaid = call.items.reduce(
         (sum, item) => sum + parseMoney(item.paidAmount),

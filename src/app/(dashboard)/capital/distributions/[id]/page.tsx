@@ -93,9 +93,10 @@ export default async function DistributionDetailPage({ params }: { params: Promi
         notFound();
     }
 
-    const { currency } = session?.user?.id
+    const fundResult = session?.user?.id
         ? await getActiveFundWithCurrency(session.user.id)
-        : { currency: 'USD' as CurrencyCode };
+        : null;
+    const currency = fundResult?.currency ?? 'USD' as CurrencyCode;
 
     const totalPaid = distribution.items
         .filter((item) => item.status === 'Paid')

@@ -37,9 +37,10 @@ export default async function InvestorDetailPage({ params }: { params: Promise<{
         notFound();
     }
 
-    const { currency } = session?.user?.id
+    const fundResult = session?.user?.id
         ? await getActiveFundWithCurrency(session.user.id)
-        : { currency: 'USD' as CurrencyCode };
+        : null;
+    const currency = fundResult?.currency ?? 'USD' as CurrencyCode;
 
     const userRole = (session?.user as { role?: string })?.role || 'LP_VIEWER';
     const canEdit = ['SUPER_ADMIN', 'FUND_ADMIN', 'INVESTMENT_MANAGER', 'ANALYST'].includes(userRole);

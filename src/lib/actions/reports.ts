@@ -49,7 +49,9 @@ export async function getDashboardData(): Promise<DashboardData | null> {
         return null
     }
 
-    const { fundId, currency } = await getActiveFundWithCurrency(session.user.id!)
+    const fundResult = await getActiveFundWithCurrency(session.user.id!)
+    if (!fundResult) return null
+    const { fundId, currency } = fundResult
     const fund = await prisma.fund.findUnique({ where: { id: fundId }, select: { name: true } })
     if (!fund) {
         return null
@@ -205,7 +207,9 @@ export async function getFundPerformanceReport(fundId?: string): Promise<FundPer
     }
 
     // Get the fund (use active fund if not specified)
-    const { fundId: activeFundId, currency } = await getActiveFundWithCurrency(session.user.id!)
+    const fundResult = await getActiveFundWithCurrency(session.user.id!)
+    if (!fundResult) return null
+    const { fundId: activeFundId, currency } = fundResult
     const resolvedFundId = fundId || activeFundId
     const fund = await prisma.fund.findUnique({ where: { id: resolvedFundId } })
 
@@ -409,7 +413,9 @@ export async function getLPCapitalStatement(investorId: string, fundId?: string)
     }
 
     // Get the fund
-    const { fundId: activeFundId, currency } = await getActiveFundWithCurrency(session.user.id!)
+    const fundResult = await getActiveFundWithCurrency(session.user.id!)
+    if (!fundResult) return null
+    const { fundId: activeFundId, currency } = fundResult
     const resolvedFundId = fundId || activeFundId
 
     // Get commitment
@@ -572,7 +578,9 @@ export async function getPortfolioSummaryReport(fundId?: string): Promise<Portfo
         return null
     }
 
-    const { fundId: activeFundId, currency } = await getActiveFundWithCurrency(session.user.id!)
+    const fundResult = await getActiveFundWithCurrency(session.user.id!)
+    if (!fundResult) return null
+    const { fundId: activeFundId, currency } = fundResult
     const resolvedFundId = fundId || activeFundId
     const whereClause = { fundId: resolvedFundId }
 
@@ -716,7 +724,9 @@ export async function getDealPipelineReport(fundId?: string): Promise<DealPipeli
         return null
     }
 
-    const { fundId: activeFundId, currency } = await getActiveFundWithCurrency(session.user.id!)
+    const fundResult = await getActiveFundWithCurrency(session.user.id!)
+    if (!fundResult) return null
+    const { fundId: activeFundId, currency } = fundResult
     const resolvedFundId = fundId || activeFundId
     const whereClause = { fundId: resolvedFundId }
 

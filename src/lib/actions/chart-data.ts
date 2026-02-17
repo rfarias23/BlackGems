@@ -22,7 +22,9 @@ export async function getDashboardChartData(): Promise<DashboardChartData | null
   const session = await auth()
   if (!session?.user?.id) return null
 
-  const { fundId } = await getActiveFundWithCurrency(session.user.id!)
+  const fundResult = await getActiveFundWithCurrency(session.user.id!)
+  if (!fundResult) return null
+  const { fundId } = fundResult
 
   const [portfolioCompanies, capitalCalls, distributions, commitments] =
     await Promise.all([
@@ -151,7 +153,9 @@ export async function getWaterfallChartData(
   const session = await auth()
   if (!session?.user?.id) return null
 
-  const { fundId: activeFundId } = await getActiveFundWithCurrency(session.user.id!)
+  const fundResult = await getActiveFundWithCurrency(session.user.id!)
+  if (!fundResult) return null
+  const { fundId: activeFundId } = fundResult
   const resolvedFundId = fundId || activeFundId
   const fund = await prisma.fund.findUnique({ where: { id: resolvedFundId } })
 

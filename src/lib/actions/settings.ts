@@ -207,7 +207,9 @@ export async function getFundConfig(): Promise<FundConfig | null> {
         return null
     }
 
-    const { fundId, currency } = await getActiveFundWithCurrency(session.user.id!)
+    const fundResult = await getActiveFundWithCurrency(session.user.id!)
+    if (!fundResult) return null
+    const { fundId, currency } = fundResult
 
     const fund = await prisma.fund.findUnique({
         where: { id: fundId },

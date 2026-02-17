@@ -9,7 +9,7 @@ import { getDistributions, getDistributionSummary } from '@/lib/actions/distribu
 import { CapitalCallsTable } from '@/components/capital/capital-calls-table';
 import { DistributionsTable } from '@/components/capital/distributions-table';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
-import { formatCompact } from '@/lib/shared/formatters';
+import { formatCompact, type CurrencyCode } from '@/lib/shared/formatters';
 import { auth } from '@/lib/auth';
 import { getActiveFundWithCurrency } from '@/lib/shared/fund-access';
 
@@ -23,9 +23,10 @@ export default async function CapitalPage({ searchParams }: CapitalPageProps) {
     const activeTab = params.tab || 'calls';
 
     const session = await auth();
-    const { currency } = session?.user?.id
+    const fundResult = session?.user?.id
         ? await getActiveFundWithCurrency(session.user.id)
-        : { currency: 'USD' as const };
+        : null;
+    const currency = fundResult?.currency ?? 'USD' as CurrencyCode;
 
     const [callsResult, distResult, callSummary, distSummary] = await Promise.all([
         getCapitalCalls({ page }),

@@ -163,23 +163,23 @@ describe('getAuthorizedFundId', () => {
     expect(mockSetActiveFundId).toHaveBeenCalledWith('fund-first')
   })
 
-  it('throws when no cookie, no memberships, and not admin', async () => {
+  it('returns null when no cookie, no memberships, and not admin', async () => {
     mockGetActiveFundId.mockResolvedValue(null)
     mockPrisma.user.findUnique.mockResolvedValue({ role: 'LP' })
     mockPrisma.fundMember.findFirst.mockResolvedValue(null)
 
-    await expect(getAuthorizedFundId('user-1'))
-      .rejects.toThrow('No fund found')
+    const result = await getAuthorizedFundId('user-1')
+    expect(result).toBeNull()
   })
 
-  it('throws when no funds exist at all', async () => {
+  it('returns null when no funds exist at all', async () => {
     mockGetActiveFundId.mockResolvedValue(null)
     mockPrisma.user.findUnique.mockResolvedValue({ role: 'SUPER_ADMIN' })
     mockPrisma.fundMember.findFirst.mockResolvedValue(null)
     mockPrisma.fund.findFirst.mockResolvedValue(null)
 
-    await expect(getAuthorizedFundId('admin-1'))
-      .rejects.toThrow('No fund found')
+    const result = await getAuthorizedFundId('admin-1')
+    expect(result).toBeNull()
   })
 })
 

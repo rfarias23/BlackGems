@@ -173,7 +173,9 @@ export async function getInvestors(params?: PaginationParams): Promise<Paginated
         prisma.investor.count({ where }),
     ])
 
-    const { currency } = await getActiveFundWithCurrency(session.user.id!)
+    const fundResult = await getActiveFundWithCurrency(session.user.id!)
+    if (!fundResult) return paginatedResult([], 0, 1, 25)
+    const { currency } = fundResult
 
     const data = investors.map((investor) => {
         const totalCommitted = investor.commitments.reduce(
@@ -219,7 +221,9 @@ export async function getInvestor(id: string): Promise<InvestorDetail | null> {
         return null
     }
 
-    const { currency } = await getActiveFundWithCurrency(session.user.id!)
+    const fundResult = await getActiveFundWithCurrency(session.user.id!)
+    if (!fundResult) return null
+    const { currency } = fundResult
 
     return {
         id: investor.id,
@@ -574,7 +578,9 @@ export async function getInvestorsForExport(): Promise<{
         orderBy: { name: 'asc' },
     })
 
-    const { currency } = await getActiveFundWithCurrency(session.user.id!)
+    const fundResult = await getActiveFundWithCurrency(session.user.id!)
+    if (!fundResult) return []
+    const { currency } = fundResult
 
     return investors.map(inv => {
         const totalCommitted = inv.commitments.reduce((sum, c) => sum + Number(c.committedAmount), 0)

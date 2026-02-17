@@ -326,7 +326,9 @@ export async function listReports(): Promise<ReportListItem[]> {
   const session = await auth()
   if (!session?.user?.id) return []
 
-  const { fundId } = await getActiveFundWithCurrency(session.user.id!)
+  const fundResult = await getActiveFundWithCurrency(session.user.id!)
+  if (!fundResult) return []
+  const { fundId } = fundResult
 
   try {
     await requireFundAccess(session.user.id, fundId)

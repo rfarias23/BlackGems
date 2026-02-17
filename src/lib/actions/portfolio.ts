@@ -157,7 +157,9 @@ export async function getPortfolioCompanies(params?: PaginationParams): Promise<
         return paginatedResult([], 0, 1, 25)
     }
 
-    const { currency } = await getActiveFundWithCurrency(session.user.id!)
+    const fundResult = await getActiveFundWithCurrency(session.user.id!)
+    if (!fundResult) return paginatedResult([], 0, 1, 25)
+    const { currency } = fundResult
     const { page, pageSize, skip, search } = parsePaginationParams(params)
 
     const where = {
@@ -221,7 +223,9 @@ export async function getPortfolioCompany(id: string): Promise<PortfolioCompanyD
         return null
     }
 
-    const { currency } = await getActiveFundWithCurrency(session.user.id!)
+    const fundResult = await getActiveFundWithCurrency(session.user.id!)
+    if (!fundResult) return null
+    const { currency } = fundResult
 
     const company = await prisma.portfolioCompany.findFirst({
         where: { id, ...notDeleted },
@@ -598,7 +602,9 @@ export async function getPortfolioMetrics(companyId: string) {
         return []
     }
 
-    const { currency } = await getActiveFundWithCurrency(session.user.id!)
+    const fundResult = await getActiveFundWithCurrency(session.user.id!)
+    if (!fundResult) return []
+    const { currency } = fundResult
 
     const metrics = await prisma.portfolioMetric.findMany({
         where: { companyId },
@@ -697,7 +703,9 @@ export async function getPortfolioSummary() {
         return null
     }
 
-    const { currency } = await getActiveFundWithCurrency(session.user.id!)
+    const fundResult = await getActiveFundWithCurrency(session.user.id!)
+    if (!fundResult) return null
+    const { currency } = fundResult
 
     const companies = await prisma.portfolioCompany.findMany({
         where: {

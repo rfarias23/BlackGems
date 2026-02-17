@@ -153,7 +153,9 @@ export async function getDistributions(params?: PaginationParams): Promise<Pagin
         prisma.distribution.count({ where }),
     ])
 
-    const { currency } = await getActiveFundWithCurrency(session.user.id!)
+    const fundResult = await getActiveFundWithCurrency(session.user.id!)
+    if (!fundResult) return paginatedResult([], 0, page, pageSize)
+    const { currency } = fundResult
 
     const data = distributions.map((dist) => {
         const totalPaid = dist.items
@@ -202,7 +204,9 @@ export async function getDistribution(id: string): Promise<DistributionDetail | 
         return null
     }
 
-    const { currency } = await getActiveFundWithCurrency(session.user.id!)
+    const fundResult = await getActiveFundWithCurrency(session.user.id!)
+    if (!fundResult) return null
+    const { currency } = fundResult
 
     return {
         id: dist.id,
@@ -343,8 +347,8 @@ export async function createDistribution(formData: FormData) {
         })
 
         // Notify fund members of new distribution
-        const { currency } = await getActiveFundWithCurrency(session.user.id!)
-        const formattedAmount = formatMoney(parseMoney(data.totalAmount), currency)
+        const fundResult = await getActiveFundWithCurrency(session.user.id!)
+        const formattedAmount = formatMoney(parseMoney(data.totalAmount), fundResult?.currency ?? 'USD')
         await notifyFundMembers({
             fundId: data.fundId,
             type: 'DISTRIBUTION_MADE',
@@ -641,7 +645,9 @@ export async function getDistributionPDFData(id: string): Promise<DistributionPD
 
     if (!dist) return null
 
-    const { currency } = await getActiveFundWithCurrency(session.user.id!)
+    const fundResult = await getActiveFundWithCurrency(session.user.id!)
+    if (!fundResult) return null
+    const { currency } = fundResult
 
     const totalCommitted = dist.items.reduce((sum, item) => {
         const commitment = item.investor.commitments.find(c => c.fundId === dist.fundId)

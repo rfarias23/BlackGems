@@ -136,7 +136,9 @@ export async function getCapitalCalls(params?: PaginationParams): Promise<Pagina
         prisma.capitalCall.count({ where }),
     ])
 
-    const { currency } = await getActiveFundWithCurrency(session.user.id!)
+    const fundResult = await getActiveFundWithCurrency(session.user.id!)
+    if (!fundResult) return paginatedResult([], 0, page, pageSize)
+    const { currency } = fundResult
 
     const data = calls.map((call) => {
         const totalPaid = call.items.reduce(
@@ -186,7 +188,9 @@ export async function getCapitalCall(id: string): Promise<CapitalCallDetail | nu
         return null
     }
 
-    const { currency } = await getActiveFundWithCurrency(session.user.id!)
+    const fundResult = await getActiveFundWithCurrency(session.user.id!)
+    if (!fundResult) return null
+    const { currency } = fundResult
 
     return {
         id: call.id,
@@ -318,8 +322,8 @@ export async function createCapitalCall(formData: FormData) {
         })
 
         // Notify fund members of new capital call
-        const { currency } = await getActiveFundWithCurrency(session.user.id!)
-        const formattedAmount = formatMoney(parseMoney(data.totalAmount), currency)
+        const fundResult = await getActiveFundWithCurrency(session.user.id!)
+        const formattedAmount = formatMoney(parseMoney(data.totalAmount), fundResult?.currency ?? 'USD')
         await notifyFundMembers({
             fundId: data.fundId,
             type: 'CAPITAL_CALL_DUE',
@@ -640,7 +644,9 @@ export async function getCapitalCallPDFData(id: string): Promise<CapitalCallPDFD
 
     if (!call) return null
 
-    const { currency } = await getActiveFundWithCurrency(session.user.id!)
+    const fundResult = await getActiveFundWithCurrency(session.user.id!)
+    if (!fundResult) return null
+    const { currency } = fundResult
 
     const totalCommitted = call.items.reduce((sum, item) => {
         const commitment = item.investor.commitments.find(c => c.fundId === call.fundId)

@@ -154,6 +154,7 @@ export async function getDeals(params?: DealFilterParams): Promise<PaginatedResu
     let currency: CurrencyCode
     try {
         const result = await getActiveFundWithCurrency(session.user.id!)
+        if (!result) return paginatedResult([], 0, 1, 25)
         fundId = result.fundId
         currency = result.currency
     } catch {
@@ -349,8 +350,8 @@ export async function getDefaultFundId(): Promise<string | null> {
     const session = await auth()
     if (!session?.user?.id) return null
     try {
-        const { fundId } = await getActiveFundWithCurrency(session.user.id!)
-        return fundId
+        const result = await getActiveFundWithCurrency(session.user.id!)
+        return result?.fundId ?? null
     } catch {
         return null
     }
@@ -363,10 +364,11 @@ export async function createDeal(formData: FormData) {
         return { error: 'Unauthorized' }
     }
 
-    // Get active fund (getActiveFundWithCurrency validates access and throws if no fund)
+    // Get active fund (getActiveFundWithCurrency validates access and returns null if no fund)
     let fundId: string
     try {
         const result = await getActiveFundWithCurrency(session.user.id!)
+        if (!result) return { error: 'No fund found. Please create a fund first.' }
         fundId = result.fundId
     } catch {
         return { error: 'No fund found. Please create a fund first.' }
@@ -1190,6 +1192,7 @@ export async function getDealPipelineAnalytics(): Promise<PipelineAnalytics | nu
     let currency: CurrencyCode
     try {
         const result = await getActiveFundWithCurrency(session.user.id!)
+        if (!result) return null
         fundId = result.fundId
         currency = result.currency
     } catch {

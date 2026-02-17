@@ -68,9 +68,10 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
         safe(() => getDealSources(), [], 'getDealSources'),
     ]);
 
-    const { currency } = session?.user?.id
+    const fundResult = session?.user?.id
         ? await getActiveFundWithCurrency(session.user.id)
-        : { currency: 'USD' as CurrencyCode };
+        : null;
+    const currency = fundResult?.currency ?? 'USD' as CurrencyCode;
 
     const userRole = (session?.user as { role?: string })?.role || 'LP_VIEWER';
     const canEdit = EDIT_ROLES.includes(userRole);
