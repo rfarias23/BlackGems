@@ -204,65 +204,71 @@ export async function getInvestor(id: string): Promise<InvestorDetail | null> {
         return null
     }
 
-    const investor = await prisma.investor.findFirst({
-        where: { id, ...notDeleted },
-        include: {
-            commitments: {
-                include: {
-                    fund: {
-                        select: { name: true },
+    try {
+        const investor = await prisma.investor.findFirst({
+            where: { id, ...notDeleted },
+            include: {
+                commitments: {
+                    where: { ...notDeleted },
+                    include: {
+                        fund: {
+                            select: { name: true },
+                        },
                     },
                 },
             },
-        },
-    })
+        })
 
-    if (!investor) {
+        if (!investor) {
+            return null
+        }
+
+        const fundResult = await getActiveFundWithCurrency(session.user.id!)
+        if (!fundResult) return null
+        const { currency } = fundResult
+
+        return {
+            id: investor.id,
+            name: investor.name,
+            type: INVESTOR_TYPE_DISPLAY[investor.type] || investor.type,
+            status: INVESTOR_STATUS_DISPLAY[investor.status] || investor.status,
+            legalName: investor.legalName,
+            taxId: investor.taxId,
+            jurisdiction: investor.jurisdiction,
+            email: investor.email,
+            phone: investor.phone,
+            address: investor.address,
+            city: investor.city,
+            state: investor.state,
+            country: investor.country,
+            postalCode: investor.postalCode,
+            contactName: investor.contactName,
+            contactEmail: investor.contactEmail,
+            contactPhone: investor.contactPhone,
+            contactTitle: investor.contactTitle,
+            accreditedStatus: investor.accreditedStatus,
+            kycStatus: investor.kycStatus,
+            kycCompletedAt: investor.kycCompletedAt,
+            amlStatus: investor.amlStatus,
+            amlCompletedAt: investor.amlCompletedAt,
+            investmentCapacity: formatMoney(investor.investmentCapacity, currency),
+            notes: investor.notes,
+            source: investor.source,
+            createdAt: investor.createdAt,
+            updatedAt: investor.updatedAt,
+            commitments: investor.commitments.map((c) => ({
+                id: c.id,
+                fundId: c.fundId,
+                fundName: c.fund.name,
+                committedAmount: formatMoney(c.committedAmount, currency),
+                calledAmount: formatMoney(c.calledAmount, currency),
+                paidAmount: formatMoney(c.paidAmount, currency),
+                status: c.status,
+            })),
+        }
+    } catch (error) {
+        console.error('getInvestor failed:', error)
         return null
-    }
-
-    const fundResult = await getActiveFundWithCurrency(session.user.id!)
-    if (!fundResult) return null
-    const { currency } = fundResult
-
-    return {
-        id: investor.id,
-        name: investor.name,
-        type: INVESTOR_TYPE_DISPLAY[investor.type] || investor.type,
-        status: INVESTOR_STATUS_DISPLAY[investor.status] || investor.status,
-        legalName: investor.legalName,
-        taxId: investor.taxId,
-        jurisdiction: investor.jurisdiction,
-        email: investor.email,
-        phone: investor.phone,
-        address: investor.address,
-        city: investor.city,
-        state: investor.state,
-        country: investor.country,
-        postalCode: investor.postalCode,
-        contactName: investor.contactName,
-        contactEmail: investor.contactEmail,
-        contactPhone: investor.contactPhone,
-        contactTitle: investor.contactTitle,
-        accreditedStatus: investor.accreditedStatus,
-        kycStatus: investor.kycStatus,
-        kycCompletedAt: investor.kycCompletedAt,
-        amlStatus: investor.amlStatus,
-        amlCompletedAt: investor.amlCompletedAt,
-        investmentCapacity: formatMoney(investor.investmentCapacity, currency),
-        notes: investor.notes,
-        source: investor.source,
-        createdAt: investor.createdAt,
-        updatedAt: investor.updatedAt,
-        commitments: investor.commitments.map((c) => ({
-            id: c.id,
-            fundId: c.fundId,
-            fundName: c.fund.name,
-            committedAmount: formatMoney(c.committedAmount, currency),
-            calledAmount: formatMoney(c.calledAmount, currency),
-            paidAmount: formatMoney(c.paidAmount, currency),
-            status: c.status,
-        })),
     }
 }
 

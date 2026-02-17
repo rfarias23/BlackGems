@@ -132,37 +132,42 @@ export async function getInvestorDocuments(investorId: string): Promise<Document
   const session = await auth()
   if (!session?.user?.id) return []
 
-  const investor = await prisma.investor.findFirst({
-    where: { id: investorId, ...notDeleted },
-  })
-  if (!investor) return []
+  try {
+    const investor = await prisma.investor.findFirst({
+      where: { id: investorId, ...notDeleted },
+    })
+    if (!investor) return []
 
-  const documents = await prisma.document.findMany({
-    where: { investorId, ...notDeleted, isLatest: true },
-    orderBy: { createdAt: 'desc' },
-  })
+    const documents = await prisma.document.findMany({
+      where: { investorId, ...notDeleted, isLatest: true },
+      orderBy: { createdAt: 'desc' },
+    })
 
-  const uploaderIds = [...new Set(documents.map(d => d.uploadedBy))]
-  const users = await prisma.user.findMany({
-    where: { id: { in: uploaderIds } },
-    select: { id: true, name: true },
-  })
-  const userMap = new Map(users.map(u => [u.id, u.name]))
+    const uploaderIds = [...new Set(documents.map(d => d.uploadedBy))]
+    const users = await prisma.user.findMany({
+      where: { id: { in: uploaderIds } },
+      select: { id: true, name: true },
+    })
+    const userMap = new Map(users.map(u => [u.id, u.name]))
 
-  return documents.map(doc => ({
-    id: doc.id,
-    name: doc.name,
-    fileName: doc.fileName,
-    fileType: doc.fileType,
-    fileSize: doc.fileSize,
-    category: doc.category,
-    categoryLabel: CATEGORY_LABELS[doc.category] || doc.category,
-    uploadedBy: doc.uploadedBy,
-    uploaderName: userMap.get(doc.uploadedBy) || null,
-    createdAt: doc.createdAt,
-    version: doc.version,
-    isLatest: doc.isLatest,
-    parentId: doc.parentId,
-    visibleToLPs: doc.visibleToLPs,
-  }))
+    return documents.map(doc => ({
+      id: doc.id,
+      name: doc.name,
+      fileName: doc.fileName,
+      fileType: doc.fileType,
+      fileSize: doc.fileSize,
+      category: doc.category,
+      categoryLabel: CATEGORY_LABELS[doc.category] || doc.category,
+      uploadedBy: doc.uploadedBy,
+      uploaderName: userMap.get(doc.uploadedBy) || null,
+      createdAt: doc.createdAt,
+      version: doc.version,
+      isLatest: doc.isLatest,
+      parentId: doc.parentId,
+      visibleToLPs: doc.visibleToLPs,
+    }))
+  } catch (error) {
+    console.error('getInvestorDocuments failed:', error)
+    return []
+  }
 }

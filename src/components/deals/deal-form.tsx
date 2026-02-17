@@ -120,10 +120,13 @@ export function DealForm({ sources }: DealFormProps) {
                             <FormItem>
                                 <FormLabel>Stage</FormLabel>
                                 <FormControl>
-                                    <DealStageSelect
-                                        value={field.value as DealStage}
-                                        onValueChange={field.onChange}
-                                    />
+                                    <>
+                                        <input type="hidden" name="stage" value={field.value || ''} />
+                                        <DealStageSelect
+                                            value={field.value as DealStage}
+                                            onValueChange={field.onChange}
+                                        />
+                                    </>
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>

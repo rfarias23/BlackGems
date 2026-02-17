@@ -210,53 +210,58 @@ export async function getCommunicationHistory(
     return { error: 'Unauthorized' }
   }
 
-  // Get investor to determine fundId for access check
-  const investor = await prisma.investor.findFirst({
-    where: { id: investorId, ...notDeleted },
-    select: {
-      id: true,
-      commitments: {
-        where: { ...notDeleted },
-        select: { fundId: true },
-        take: 1,
-      },
-    },
-  })
-
-  if (!investor) {
-    return { error: 'Investor not found' }
-  }
-
-  // Require fund access — investors without commitments are inaccessible
-  if (investor.commitments.length === 0) {
-    return { error: 'Access denied' }
-  }
   try {
-    await requireFundAccess(session.user.id, investor.commitments[0].fundId)
-  } catch {
-    return { error: 'Access denied' }
+    // Get investor to determine fundId for access check
+    const investor = await prisma.investor.findFirst({
+      where: { id: investorId, ...notDeleted },
+      select: {
+        id: true,
+        commitments: {
+          where: { ...notDeleted },
+          select: { fundId: true },
+          take: 1,
+        },
+      },
+    })
+
+    if (!investor) {
+      return { error: 'Investor not found' }
+    }
+
+    // Require fund access — investors without commitments are inaccessible
+    if (investor.commitments.length === 0) {
+      return { error: 'Access denied' }
+    }
+    try {
+      await requireFundAccess(session.user.id, investor.commitments[0].fundId)
+    } catch {
+      return { error: 'Access denied' }
+    }
+
+    const communications = await prisma.communication.findMany({
+      where: { investorId },
+      orderBy: { date: 'desc' },
+    })
+
+    const data: CommunicationItem[] = communications.map((c) => ({
+      id: c.id,
+      type: c.type,
+      direction: c.direction,
+      subject: c.subject,
+      content: c.content,
+      date: c.date,
+      contactName: c.contactName,
+      sentBy: c.sentBy,
+      followUpDate: c.followUpDate,
+      followUpDone: c.followUpDone,
+      notes: c.notes,
+    }))
+
+    return { data }
+  } catch (error) {
+    console.error('getCommunicationHistory failed:', error)
+    return { error: 'Failed to load communications' }
   }
-
-  const communications = await prisma.communication.findMany({
-    where: { investorId },
-    orderBy: { date: 'desc' },
-  })
-
-  const data: CommunicationItem[] = communications.map((c) => ({
-    id: c.id,
-    type: c.type,
-    direction: c.direction,
-    subject: c.subject,
-    content: c.content,
-    date: c.date,
-    contactName: c.contactName,
-    sentBy: c.sentBy,
-    followUpDate: c.followUpDate,
-    followUpDone: c.followUpDone,
-    notes: c.notes,
-  }))
-
-  return { data }
 }
 
 // ============================================================================

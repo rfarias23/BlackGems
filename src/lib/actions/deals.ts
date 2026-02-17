@@ -375,12 +375,12 @@ export async function createDeal(formData: FormData) {
     }
 
     const rawData = {
-        name: formData.get('name') as string,
-        companyName: formData.get('name') as string, // Use name as company name
-        stage: formData.get('stage') as string,
-        industry: formData.get('sector') as string,
-        askingPrice: formData.get('askPrice') as string | undefined,
-        description: formData.get('description') as string | undefined,
+        name: (formData.get('name') as string | null) ?? '',
+        companyName: (formData.get('name') as string | null) ?? '',
+        stage: (formData.get('stage') as string | null) ?? '',
+        industry: (formData.get('sector') as string | null) ?? '',
+        askingPrice: (formData.get('askPrice') as string | null) ?? undefined,
+        description: (formData.get('description') as string | null) ?? undefined,
         fundId,
     }
 

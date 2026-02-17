@@ -22,16 +22,26 @@ import { auth } from '@/lib/auth';
 import { formatMoney, parseMoney, type CurrencyCode } from '@/lib/shared/formatters';
 import { getActiveFundWithCurrency } from '@/lib/shared/fund-access';
 
+// Safely execute a server action, returning fallback on error
+async function safe<T>(fn: () => Promise<T>, fallback: T, label: string): Promise<T> {
+    try {
+        return await fn();
+    } catch (error) {
+        console.error(`[InvestorDetail] ${label} failed:`, error);
+        return fallback;
+    }
+}
+
 export default async function InvestorDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
     const [investor, session, documents, commResult] = await Promise.all([
-        getInvestor(id),
+        safe(() => getInvestor(id), null, 'getInvestor'),
         auth(),
-        getInvestorDocuments(id),
-        getCommunicationHistory(id),
+        safe(() => getInvestorDocuments(id), [], 'getInvestorDocuments'),
+        safe(() => getCommunicationHistory(id), { error: 'Failed to load' } as { error: string }, 'getCommunicationHistory'),
     ]);
 
-    const communications = 'data' in commResult ? commResult.data : [];
+    const communications = commResult && 'data' in commResult ? commResult.data : [];
 
     if (!investor) {
         notFound();
