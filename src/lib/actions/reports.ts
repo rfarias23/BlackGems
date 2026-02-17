@@ -585,8 +585,8 @@ export async function getPortfolioSummaryReport(fundId?: string): Promise<Portfo
         return {
             summary: {
                 totalCompanies: 0,
-                totalInvested: '$0',
-                totalValue: '$0',
+                totalInvested: formatMoney(0, currency),
+                totalValue: formatMoney(0, currency),
                 portfolioMoic: '0.00x',
                 avgHoldingPeriod: '0 months',
             },
