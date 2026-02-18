@@ -31,7 +31,7 @@ const updateCommitmentSchema = z.object({
 // Reads
 // ============================================================================
 
-export async function getFundsForCommitment(): Promise<{ id: string; name: string }[]> {
+export async function getFundsForCommitment(): Promise<{ id: string; name: string; currency: string }[]> {
     const session = await auth()
     if (!session?.user?.id) {
         return []
@@ -41,6 +41,7 @@ export async function getFundsForCommitment(): Promise<{ id: string; name: strin
         select: {
             id: true,
             name: true,
+            currency: true,
         },
         orderBy: { name: 'asc' },
     })

@@ -18,21 +18,22 @@ import { CreateFundDialog } from '@/components/layout/create-fund-dialog';
 import type { FundSummary } from '@/lib/actions/funds';
 
 const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Deals', href: '/deals', icon: Briefcase },
-    { name: 'Investors', href: '/investors', icon: Users },
-    { name: 'Portfolio', href: '/portfolio', icon: Building2 },
-    { name: 'Capital', href: '/capital', icon: Banknote },
-    { name: 'Reports', href: '/reports', icon: FileText },
+    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, permission: null },
+    { name: 'Deals', href: '/deals', icon: Briefcase, permission: 'DEALS' },
+    { name: 'Investors', href: '/investors', icon: Users, permission: 'INVESTORS' },
+    { name: 'Portfolio', href: '/portfolio', icon: Building2, permission: 'PORTFOLIO' },
+    { name: 'Capital', href: '/capital', icon: Banknote, permission: 'CAPITAL' },
+    { name: 'Reports', href: '/reports', icon: FileText, permission: 'REPORTS' },
 ];
 
 interface SidebarProps {
     userRole?: string;
     funds: FundSummary[];
     activeFundId: string;
+    permissions: string[];
 }
 
-export function Sidebar({ userRole, funds, activeFundId }: SidebarProps) {
+export function Sidebar({ userRole, funds, activeFundId, permissions }: SidebarProps) {
     const pathname = usePathname();
     const isAdmin = userRole === 'SUPER_ADMIN' || userRole === 'FUND_ADMIN';
 
@@ -48,7 +49,9 @@ export function Sidebar({ userRole, funds, activeFundId }: SidebarProps) {
             </div>
             <FundSwitcher funds={funds} activeFundId={activeFundId} userRole={userRole} />
             <nav className="flex-1 space-y-1 px-3 py-4">
-                {navigation.map((item) => {
+                {navigation
+                    .filter((item) => !item.permission || permissions.includes(item.permission))
+                    .map((item) => {
                     const isActive = pathname?.startsWith(item.href);
                     return (
                         <Link
@@ -73,8 +76,8 @@ export function Sidebar({ userRole, funds, activeFundId }: SidebarProps) {
                     );
                 })}
 
-                {/* Admin section - visible only to SUPER_ADMIN and FUND_ADMIN */}
-                {isAdmin && (
+                {/* Admin section - visible to admins or users with TEAM permission */}
+                {(isAdmin || permissions.includes('TEAM')) && (
                     <div className="pt-4">
                         <div className="text-xs font-medium text-muted-foreground px-3 pb-2 uppercase tracking-wider">
                             Administration
@@ -100,6 +103,7 @@ export function Sidebar({ userRole, funds, activeFundId }: SidebarProps) {
                     </div>
                 )}
             </nav>
+            {(isAdmin || permissions.includes('SETTINGS')) && (
             <div className="border-t border-border p-3">
                 <Link
                     href="/settings"
@@ -112,6 +116,7 @@ export function Sidebar({ userRole, funds, activeFundId }: SidebarProps) {
                     Settings
                 </Link>
             </div>
+            )}
             <CreateFundDialog />
         </div>
     );

@@ -19,7 +19,7 @@ import { DeleteInvestorButton } from '@/components/investors/delete-investor-but
 import { InvestorCommunications } from '@/components/investors/investor-communications';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { auth } from '@/lib/auth';
-import { formatMoney, parseMoney, type CurrencyCode } from '@/lib/shared/formatters';
+import { formatMoney, parseMoney, getCurrencySymbol, type CurrencyCode } from '@/lib/shared/formatters';
 import { getActiveFundWithCurrency } from '@/lib/shared/fund-access';
 
 // Safely execute a server action, returning fallback on error
@@ -51,6 +51,7 @@ export default async function InvestorDetailPage({ params }: { params: Promise<{
         ? await getActiveFundWithCurrency(session.user.id)
         : null;
     const currency = fundResult?.currency ?? 'USD' as CurrencyCode;
+    const currencySymbol = getCurrencySymbol(currency);
 
     const userRole = (session?.user as { role?: string })?.role || 'LP_VIEWER';
     const canEdit = ['SUPER_ADMIN', 'FUND_ADMIN', 'INVESTMENT_MANAGER', 'ANALYST'].includes(userRole);
@@ -146,7 +147,7 @@ export default async function InvestorDetailPage({ params }: { params: Promise<{
                     </div>
 
                     {/* Inline-editable overview */}
-                    <InvestorOverview investor={investor} userRole={userRole} />
+                    <InvestorOverview investor={investor} userRole={userRole} currencySymbol={currencySymbol} />
                 </TabsContent>
 
                 <TabsContent value="commitments" className="space-y-4">

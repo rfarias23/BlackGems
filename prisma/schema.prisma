@@ -158,8 +158,9 @@ model FundMember {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
   role      FundMemberRole
-  title     String?
-  joinedAt  DateTime @default(now())
+  title       String?
+  permissions String[]          // Module-level access control
+  joinedAt    DateTime @default(now())
   leftAt    DateTime?
   isActive  Boolean  @default(true)
 

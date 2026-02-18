@@ -9,6 +9,7 @@ import { UserRole } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 import { logAudit } from '@/lib/shared/audit'
 import { notDeleted } from '@/lib/shared/soft-delete'
+import { getActiveFundWithCurrency } from '@/lib/shared/fund-access'
 import { sendInviteEmail } from '@/lib/email'
 import crypto from 'crypto'
 
@@ -436,8 +437,16 @@ export async function getInvestorsForLinking(): Promise<{ id: string; name: stri
     const session = await auth()
     if (!session?.user?.id) return []
 
+    const fundResult = await getActiveFundWithCurrency(session.user.id)
+    if (!fundResult) return []
+    const { fundId } = fundResult
+
     const investors = await prisma.investor.findMany({
-        where: { userId: null, deletedAt: null },
+        where: {
+            userId: null,
+            deletedAt: null,
+            commitments: { some: { fundId } },
+        },
         select: { id: true, name: true },
         orderBy: { name: 'asc' },
     })

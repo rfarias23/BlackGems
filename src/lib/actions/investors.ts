@@ -9,7 +9,7 @@ import { InvestorType, InvestorStatus } from '@prisma/client'
 import { formatMoney } from '@/lib/shared/formatters'
 import { softDelete, notDeleted } from '@/lib/shared/soft-delete'
 import { logAudit } from '@/lib/shared/audit'
-import { getActiveFundWithCurrency } from '@/lib/shared/fund-access'
+import { getActiveFundWithCurrency, requireModuleAccess } from '@/lib/shared/fund-access'
 import { PaginationParams, PaginatedResult, parsePaginationParams, paginatedResult } from '@/lib/shared/pagination'
 
 // Display mappings
@@ -143,10 +143,21 @@ export async function getInvestors(params?: PaginationParams): Promise<Paginated
         return paginatedResult([], 0, 1, 25)
     }
 
+    const fundResult = await getActiveFundWithCurrency(session.user.id)
+    if (!fundResult) return paginatedResult([], 0, 1, 25)
+    const { fundId, currency } = fundResult
+
+    try {
+        await requireModuleAccess(session.user.id, fundId, 'INVESTORS')
+    } catch {
+        return paginatedResult([], 0, 1, 25)
+    }
+
     const { page, pageSize, skip, search } = parsePaginationParams(params)
 
     const where = {
         ...notDeleted,
+        commitments: { some: { fundId, ...notDeleted } },
         ...(search ? {
             OR: [
                 { name: { contains: search, mode: 'insensitive' as const } },
@@ -164,6 +175,7 @@ export async function getInvestors(params?: PaginationParams): Promise<Paginated
             take: pageSize,
             include: {
                 commitments: {
+                    where: { fundId, ...notDeleted },
                     select: {
                         committedAmount: true,
                     },
@@ -172,10 +184,6 @@ export async function getInvestors(params?: PaginationParams): Promise<Paginated
         }),
         prisma.investor.count({ where }),
     ])
-
-    const fundResult = await getActiveFundWithCurrency(session.user.id!)
-    if (!fundResult) return paginatedResult([], 0, 1, 25)
-    const { currency } = fundResult
 
     const data = investors.map((investor) => {
         const totalCommitted = investor.commitments.reduce(
@@ -204,6 +212,16 @@ export async function getInvestor(id: string): Promise<InvestorDetail | null> {
         return null
     }
 
+    const fundResult = await getActiveFundWithCurrency(session.user.id)
+    if (!fundResult) return null
+    const { fundId, currency } = fundResult
+
+    try {
+        await requireModuleAccess(session.user.id, fundId, 'INVESTORS')
+    } catch {
+        return null
+    }
+
     try {
         const investor = await prisma.investor.findFirst({
             where: { id, ...notDeleted },
@@ -223,9 +241,10 @@ export async function getInvestor(id: string): Promise<InvestorDetail | null> {
             return null
         }
 
-        const fundResult = await getActiveFundWithCurrency(session.user.id!)
-        if (!fundResult) return null
-        const { currency } = fundResult
+        // Verify investor belongs to the active fund
+        if (!investor.commitments.some(c => c.fundId === fundId)) {
+            return null
+        }
 
         return {
             id: investor.id,
@@ -279,6 +298,16 @@ export async function createInvestor(formData: FormData) {
         return { error: 'Unauthorized' }
     }
 
+    const fundResult = await getActiveFundWithCurrency(session.user.id)
+    if (!fundResult) return { error: 'No active fund' }
+    const { fundId } = fundResult
+
+    try {
+        await requireModuleAccess(session.user.id, fundId, 'INVESTORS')
+    } catch {
+        return { error: 'Access denied' }
+    }
+
     const rawData = {
         name: formData.get('name') as string,
         type: formData.get('type') as string,
@@ -303,27 +332,44 @@ export async function createInvestor(formData: FormData) {
     const dbStatus = DISPLAY_TO_STATUS[data.status || 'Prospect'] || 'PROSPECT'
 
     try {
-        const investor = await prisma.investor.create({
-            data: {
-                name: data.name,
-                type: dbType as InvestorType,
-                status: dbStatus as InvestorStatus,
-                email: data.email || null,
-                phone: data.phone || null,
-                contactName: data.contactName || null,
-                contactEmail: data.contactEmail || null,
-                city: data.city || null,
-                state: data.state || null,
-                country: data.country || 'USA',
-                notes: data.notes || null,
-            },
+        const investor = await prisma.$transaction(async (tx) => {
+            const inv = await tx.investor.create({
+                data: {
+                    name: data.name,
+                    type: dbType as InvestorType,
+                    status: dbStatus as InvestorStatus,
+                    email: data.email || null,
+                    phone: data.phone || null,
+                    contactName: data.contactName || null,
+                    contactEmail: data.contactEmail || null,
+                    city: data.city || null,
+                    state: data.state || null,
+                    country: data.country || 'USA',
+                    notes: data.notes || null,
+                },
+            })
+
+            await tx.commitment.create({
+                data: {
+                    investorId: inv.id,
+                    fundId,
+                    committedAmount: 0,
+                    calledAmount: 0,
+                    paidAmount: 0,
+                    distributedAmount: 0,
+                    status: 'PENDING',
+                },
+            })
+
+            return inv
         })
 
         await logAudit({
-            userId: session.user.id!,
+            userId: session.user.id,
             action: 'CREATE',
             entityType: 'Investor',
             entityId: investor.id,
+            changes: { fundId: { old: null, new: fundId } },
         })
 
         revalidatePath('/investors')
@@ -343,6 +389,21 @@ export async function updateInvestor(id: string, formData: FormData) {
     if (!session?.user?.id) {
         return { error: 'Unauthorized' }
     }
+
+    const fundResult = await getActiveFundWithCurrency(session.user.id)
+    if (!fundResult) return { error: 'No active fund' }
+    const { fundId } = fundResult
+
+    try {
+        await requireModuleAccess(session.user.id, fundId, 'INVESTORS')
+    } catch {
+        return { error: 'Access denied' }
+    }
+
+    const hasCommitment = await prisma.commitment.findFirst({
+        where: { investorId: id, fundId, ...notDeleted },
+    })
+    if (!hasCommitment) return { error: 'Investor not found in this fund' }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updateData: Record<string, any> = {}
@@ -576,17 +637,28 @@ export async function getInvestorsForExport(): Promise<{
         return []
     }
 
+    const fundResult = await getActiveFundWithCurrency(session.user.id)
+    if (!fundResult) return []
+    const { fundId, currency } = fundResult
+
+    try {
+        await requireModuleAccess(session.user.id, fundId, 'INVESTORS')
+    } catch {
+        return []
+    }
+
     const investors = await prisma.investor.findMany({
-        where: { ...notDeleted },
+        where: {
+            ...notDeleted,
+            commitments: { some: { fundId, ...notDeleted } },
+        },
         include: {
-            commitments: true,
+            commitments: {
+                where: { fundId, ...notDeleted },
+            },
         },
         orderBy: { name: 'asc' },
     })
-
-    const fundResult = await getActiveFundWithCurrency(session.user.id!)
-    if (!fundResult) return []
-    const { currency } = fundResult
 
     return investors.map(inv => {
         const totalCommitted = inv.commitments.reduce((sum, c) => sum + Number(c.committedAmount), 0)
@@ -614,6 +686,21 @@ export async function deleteInvestor(id: string) {
     if (!session?.user?.id) {
         return { error: 'Unauthorized' }
     }
+
+    const fundResult = await getActiveFundWithCurrency(session.user.id)
+    if (!fundResult) return { error: 'No active fund' }
+    const { fundId } = fundResult
+
+    try {
+        await requireModuleAccess(session.user.id, fundId, 'INVESTORS')
+    } catch {
+        return { error: 'Access denied' }
+    }
+
+    const hasCommitment = await prisma.commitment.findFirst({
+        where: { investorId: id, fundId, ...notDeleted },
+    })
+    if (!hasCommitment) return { error: 'Investor not found in this fund' }
 
     // Verify investor exists
     const investor = await prisma.investor.findFirst({

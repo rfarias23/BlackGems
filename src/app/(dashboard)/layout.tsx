@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth';
 import { getUnreadCount } from '@/lib/actions/notifications';
 import { getUserFunds } from '@/lib/actions/funds';
 import { getActiveFundId } from '@/lib/shared/active-fund';
+import { getUserModulePermissions } from '@/lib/shared/fund-access';
 import { redirect } from 'next/navigation';
 
 // All dashboard pages require authentication (cookies/headers), so static generation is impossible.
@@ -32,6 +33,10 @@ export default async function DashboardLayout({
         getUserFunds(session.user.id!),
         getActiveFundId(),
     ]);
+
+    const permissions = activeFundId
+        ? await getUserModulePermissions(session.user.id!, activeFundId ?? funds[0]?.id ?? '')
+        : [];
 
     return (
         <div
@@ -67,6 +72,7 @@ export default async function DashboardLayout({
                     userRole={session?.user?.role as string | undefined}
                     funds={funds}
                     activeFundId={activeFundId ?? funds[0]?.id ?? ''}
+                    permissions={permissions}
                 />
             </div>
 

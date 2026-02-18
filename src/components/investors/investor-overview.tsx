@@ -59,6 +59,7 @@ interface InvestorOverviewProps {
         createdAt: Date;
     };
     userRole: string;
+    currencySymbol?: string;
 }
 
 function formatDate(date: Date | null): string {
@@ -121,7 +122,7 @@ function InlineField({
     );
 }
 
-export function InvestorOverview({ investor, userRole }: InvestorOverviewProps) {
+export function InvestorOverview({ investor, userRole, currencySymbol = '$' }: InvestorOverviewProps) {
     const canEdit = EDIT_ROLES.includes(userRole);
     const [isEditing, setIsEditing] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
@@ -467,7 +468,7 @@ export function InvestorOverview({ investor, userRole }: InvestorOverviewProps) 
                                     onChange={setEditInvestmentCapacity}
                                     isEditing={isEditing}
                                     placeholder="5000000"
-                                    prefix="$"
+                                    prefix={currencySymbol}
                                 />
                                 <InlineField
                                     label="Source"

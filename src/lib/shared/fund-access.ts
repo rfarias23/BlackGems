@@ -2,6 +2,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getActiveFundId, setActiveFundId } from '@/lib/shared/active-fund'
 import type { CurrencyCode } from '@/lib/shared/formatters'
+import { MODULE_PERMISSIONS, type ModulePermission } from './permissions'
 
 /**
  * Verifies the current user is authenticated and returns session info.
@@ -136,4 +137,52 @@ export async function getActiveFundWithCurrency(userId: string): Promise<{
     console.error('getActiveFundWithCurrency failed:', error)
     return null
   }
+}
+
+/**
+ * Verifies the user has permission to access a specific module within the active fund.
+ * SUPER_ADMIN/FUND_ADMIN bypass permission checks but queries still filter by fundId.
+ */
+export async function requireModuleAccess(
+  userId: string,
+  fundId: string,
+  module: ModulePermission
+): Promise<void> {
+  if (await isAdminRole(userId)) {
+    return
+  }
+
+  const membership = await prisma.fundMember.findUnique({
+    where: { fundId_userId: { fundId, userId } },
+    select: { isActive: true, permissions: true },
+  })
+
+  if (!membership?.isActive) {
+    throw new Error('Access denied: no active membership in this fund')
+  }
+
+  if (!membership.permissions.includes(module)) {
+    throw new Error(`Access denied: no ${module} permission in this fund`)
+  }
+}
+
+/**
+ * Returns the module permissions for a user in a specific fund.
+ * Used by the sidebar to conditionally render navigation links.
+ */
+export async function getUserModulePermissions(
+  userId: string,
+  fundId: string
+): Promise<string[]> {
+  if (await isAdminRole(userId)) {
+    return Object.values(MODULE_PERMISSIONS)
+  }
+
+  const membership = await prisma.fundMember.findUnique({
+    where: { fundId_userId: { fundId, userId } },
+    select: { permissions: true, isActive: true },
+  })
+
+  if (!membership?.isActive) return []
+  return membership.permissions
 }

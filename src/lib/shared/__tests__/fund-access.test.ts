@@ -22,7 +22,7 @@ vi.mock('@/lib/shared/active-fund', () => ({
 
 // Must import after mock setup
 import { prisma } from '@/lib/prisma'
-import { requireFundAccess, requireAuth, getAuthorizedFundId, getActiveFundWithCurrency } from '../fund-access'
+import { requireFundAccess, requireAuth, getAuthorizedFundId, getActiveFundWithCurrency, requireModuleAccess, getUserModulePermissions } from '../fund-access'
 import { auth } from '@/lib/auth'
 import { getActiveFundId, setActiveFundId } from '@/lib/shared/active-fund'
 
@@ -209,5 +209,107 @@ describe('getActiveFundWithCurrency', () => {
 
     const result = await getActiveFundWithCurrency('admin-1')
     expect(result).toEqual({ fundId: 'fund-1', currency: 'USD' })
+  })
+})
+
+describe('requireModuleAccess', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('grants access to SUPER_ADMIN without checking membership', async () => {
+    mockPrisma.user.findUnique.mockResolvedValue({ role: 'SUPER_ADMIN' })
+    await expect(requireModuleAccess('admin-1', 'fund-1', 'INVESTORS')).resolves.toBeUndefined()
+    expect(mockPrisma.fundMember.findUnique).not.toHaveBeenCalled()
+  })
+
+  it('grants access to FUND_ADMIN without checking membership', async () => {
+    mockPrisma.user.findUnique.mockResolvedValue({ role: 'FUND_ADMIN' })
+    await expect(requireModuleAccess('admin-2', 'fund-1', 'DEALS')).resolves.toBeUndefined()
+    expect(mockPrisma.fundMember.findUnique).not.toHaveBeenCalled()
+  })
+
+  it('grants access when user has active membership with correct permission', async () => {
+    mockPrisma.user.findUnique.mockResolvedValue({ role: 'ANALYST' })
+    mockPrisma.fundMember.findUnique.mockResolvedValue({
+      isActive: true,
+      permissions: ['DEALS', 'PORTFOLIO', 'REPORTS'],
+    })
+    await expect(requireModuleAccess('user-1', 'fund-1', 'DEALS')).resolves.toBeUndefined()
+  })
+
+  it('throws when user has active membership but missing permission', async () => {
+    mockPrisma.user.findUnique.mockResolvedValue({ role: 'ANALYST' })
+    mockPrisma.fundMember.findUnique.mockResolvedValue({
+      isActive: true,
+      permissions: ['DEALS', 'PORTFOLIO', 'REPORTS'],
+    })
+    await expect(requireModuleAccess('user-1', 'fund-1', 'INVESTORS'))
+      .rejects.toThrow('Access denied: no INVESTORS permission')
+  })
+
+  it('throws when user has inactive membership', async () => {
+    mockPrisma.user.findUnique.mockResolvedValue({ role: 'ANALYST' })
+    mockPrisma.fundMember.findUnique.mockResolvedValue({
+      isActive: false,
+      permissions: ['DEALS'],
+    })
+    await expect(requireModuleAccess('user-1', 'fund-1', 'DEALS'))
+      .rejects.toThrow('Access denied: no active membership')
+  })
+
+  it('throws when user has no membership at all', async () => {
+    mockPrisma.user.findUnique.mockResolvedValue({ role: 'ANALYST' })
+    mockPrisma.fundMember.findUnique.mockResolvedValue(null)
+    await expect(requireModuleAccess('user-1', 'fund-1', 'DEALS'))
+      .rejects.toThrow('Access denied: no active membership')
+  })
+})
+
+describe('getUserModulePermissions', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('returns all modules for SUPER_ADMIN', async () => {
+    mockPrisma.user.findUnique.mockResolvedValue({ role: 'SUPER_ADMIN' })
+    const result = await getUserModulePermissions('admin-1', 'fund-1')
+    expect(result).toEqual(expect.arrayContaining([
+      'DEALS', 'INVESTORS', 'PORTFOLIO', 'CAPITAL', 'REPORTS', 'SETTINGS', 'TEAM',
+    ]))
+    expect(result).toHaveLength(7)
+  })
+
+  it('returns all modules for FUND_ADMIN', async () => {
+    mockPrisma.user.findUnique.mockResolvedValue({ role: 'FUND_ADMIN' })
+    const result = await getUserModulePermissions('admin-2', 'fund-1')
+    expect(result).toHaveLength(7)
+  })
+
+  it('returns permissions from FundMember for normal user', async () => {
+    mockPrisma.user.findUnique.mockResolvedValue({ role: 'ANALYST' })
+    mockPrisma.fundMember.findUnique.mockResolvedValue({
+      isActive: true,
+      permissions: ['DEALS', 'PORTFOLIO', 'REPORTS'],
+    })
+    const result = await getUserModulePermissions('user-1', 'fund-1')
+    expect(result).toEqual(['DEALS', 'PORTFOLIO', 'REPORTS'])
+  })
+
+  it('returns empty array for user with no membership', async () => {
+    mockPrisma.user.findUnique.mockResolvedValue({ role: 'ANALYST' })
+    mockPrisma.fundMember.findUnique.mockResolvedValue(null)
+    const result = await getUserModulePermissions('user-1', 'fund-1')
+    expect(result).toEqual([])
+  })
+
+  it('returns empty array for user with inactive membership', async () => {
+    mockPrisma.user.findUnique.mockResolvedValue({ role: 'ANALYST' })
+    mockPrisma.fundMember.findUnique.mockResolvedValue({
+      isActive: false,
+      permissions: ['DEALS', 'PORTFOLIO'],
+    })
+    const result = await getUserModulePermissions('user-1', 'fund-1')
+    expect(result).toEqual([])
   })
 })

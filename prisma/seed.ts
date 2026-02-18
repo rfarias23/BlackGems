@@ -78,6 +78,7 @@ async function main() {
                 fundId: fund.id,
                 userId: user.id,
                 role: 'PRINCIPAL',
+                permissions: ['DEALS', 'INVESTORS', 'PORTFOLIO', 'CAPITAL', 'REPORTS', 'SETTINGS', 'TEAM'],
                 isActive: true,
             },
         })
@@ -338,6 +339,22 @@ async function main() {
                     })
                     console.log('Commitment created for:', investor.name)
                 }
+            }
+
+            // Create PENDING commitment for investors without one
+            if (investorData.status !== InvestorStatus.ACTIVE && investorData.status !== InvestorStatus.COMMITTED) {
+                await prisma.commitment.create({
+                    data: {
+                        investorId: investor.id,
+                        fundId: fund.id,
+                        committedAmount: 0,
+                        calledAmount: 0,
+                        paidAmount: 0,
+                        distributedAmount: 0,
+                        status: CommitmentStatus.PENDING,
+                    },
+                })
+                console.log('PENDING Commitment created for:', investor.name)
             }
         } else {
             console.log('Investor already exists:', investorData.name)

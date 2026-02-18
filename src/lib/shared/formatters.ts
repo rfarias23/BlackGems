@@ -21,6 +21,14 @@ const CURRENCY_CONFIG: Record<CurrencyCode, { symbol: string; locale: string }> 
 }
 
 /**
+ * Returns the currency symbol for a given currency code.
+ * Useful for UI components that need the raw symbol (e.g., input prefixes).
+ */
+export function getCurrencySymbol(currency: CurrencyCode = 'USD'): string {
+  return CURRENCY_CONFIG[currency].symbol
+}
+
+/**
  * Formats a numeric value as a currency string.
  * Returns null if value is falsy.
  */

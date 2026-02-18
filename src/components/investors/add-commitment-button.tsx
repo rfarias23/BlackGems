@@ -37,12 +37,16 @@ export function AddCommitmentButton({ investorId }: AddCommitmentButtonProps) {
     const [open, setOpen] = useState(false);
     const [isPending, startTransition] = useTransition();
     const [error, setError] = useState<string | null>(null);
-    const [funds, setFunds] = useState<{ id: string; name: string }[]>([]);
+    const [funds, setFunds] = useState<{ id: string; name: string; currency: string }[]>([]);
 
     const [fundId, setFundId] = useState('');
     const [committedAmount, setCommittedAmount] = useState('');
     const [status, setStatus] = useState('PENDING');
     const [notes, setNotes] = useState('');
+
+    const CURRENCY_SYMBOLS: Record<string, string> = { USD: '$', EUR: '€', GBP: '£' };
+    const selectedFund = funds.find(f => f.id === fundId);
+    const currencySymbol = selectedFund ? (CURRENCY_SYMBOLS[selectedFund.currency] || '$') : '$';
 
     useEffect(() => {
         if (open) {
@@ -120,12 +124,17 @@ export function AddCommitmentButton({ investorId }: AddCommitmentButtonProps) {
 
                     <div className="space-y-2">
                         <label className="text-sm text-[#94A3B8]">Committed Amount *</label>
-                        <Input
-                            value={committedAmount}
-                            onChange={(e) => setCommittedAmount(e.target.value)}
-                            placeholder="1,000,000"
-                            className="bg-[#11141D] border-[#334155] text-[#F8FAFC] focus-visible:ring-[#3E5CFF]"
-                        />
+                        <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8] font-mono">
+                                {currencySymbol}
+                            </span>
+                            <Input
+                                value={committedAmount}
+                                onChange={(e) => setCommittedAmount(e.target.value)}
+                                placeholder="1,000,000"
+                                className="bg-[#11141D] border-[#334155] text-[#F8FAFC] focus-visible:ring-[#3E5CFF] pl-7 font-mono tabular-nums"
+                            />
+                        </div>
                     </div>
 
                     <div className="space-y-2">
