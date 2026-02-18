@@ -51,6 +51,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                         name: user.name,
                         role: user.role,
                         investorId: user.investor?.id ?? null,
+                        organizationId: user.organizationId ?? null,
                     }
                 } catch (error) {
                     console.error("Authorize error:", error);

@@ -56,6 +56,7 @@ export const authConfig = {
                 token.role = user.role
                 token.sub = user.id
                 token.investorId = user.investorId ?? null
+                token.organizationId = user.organizationId ?? null
             }
             return token
         },
@@ -69,6 +70,7 @@ export const authConfig = {
                 session.user.id = token.sub as string
                 session.user.role = token.role as UserRole
                 session.user.investorId = token.investorId as string | null
+                session.user.organizationId = token.organizationId as string | null
             }
             return session
         },
