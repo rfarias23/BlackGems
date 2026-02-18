@@ -8,6 +8,101 @@ datasource db {
 }
 
 // ============================================================================
+// ORGANIZATION (PE FIRM / TENANT)
+// ============================================================================
+
+model Organization {
+  id                String   @id @default(cuid())
+
+  // Identity
+  name              String
+  slug              String   @unique
+  legalName         String?
+  type              OrganizationType
+
+  // Legal
+  entityType        OrgEntityType?
+  jurisdictionOfFormation String?
+  dateOfFormation   DateTime?
+  taxId             String?
+  leiCode           String?
+  regulatoryStatus  RegulatoryStatus?
+  secFileNumber     String?
+
+  // Contact
+  primaryContactName  String?
+  primaryContactEmail String?
+  primaryContactPhone String?
+  investorRelationsEmail String?
+  websiteUrl        String?
+  logoUrl           String?
+
+  // Address
+  addressLine1      String?
+  addressLine2      String?
+  city              String?
+  state             String?
+  country           String   @default("USA")
+  postalCode        String?
+
+  // Operational
+  baseCurrency      Currency @default(USD)
+  fiscalYearEnd     String?
+  reportingFrequency ReportingFrequency?
+  baseTimeZone      String?
+
+  // Strategy (firm-level defaults)
+  firmStrategies    String[]
+  targetGeographies String[]
+  targetSectors     String[]
+
+  // Status
+  isActive          Boolean  @default(true)
+  onboardingCompleted Boolean @default(false)
+
+  // Metadata
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  funds             Fund[]
+  users             User[]
+
+  @@index([slug])
+}
+
+enum OrganizationType {
+  SEARCH_FUND
+  MICRO_PE
+  MID_PE
+  CONSOLIDATED_PE
+}
+
+enum OrgEntityType {
+  LLC
+  LP
+  C_CORP
+  S_CORP
+  SICAV
+  LTD
+  SARL
+  OTHER
+}
+
+enum RegulatoryStatus {
+  REGISTERED
+  EXEMPT
+  NON_REGISTERED
+}
+
+enum ReportingFrequency {
+  MONTHLY
+  QUARTERLY
+  SEMI_ANNUAL
+  ANNUAL
+}
+
+// ============================================================================
 // USER & AUTHENTICATION
 // ============================================================================
 
@@ -23,6 +118,10 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  // Tenant scope
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  organizationId String?
+
   // Relations
   fundMemberships FundMember[]
   activities      Activity[]
@@ -34,6 +133,8 @@ model User {
   sessions        Session[]
   accounts        Account[]
   investor        Investor?        // LP user linked to investor record
+
+  @@index([organizationId])
 }
 
 enum UserRole {
@@ -90,6 +191,11 @@ model Fund {
   id                String     @id @default(cuid())
   name              String
   slug              String?    @unique // Added per user request
+
+  // Tenant scope
+  organization      Organization? @relation(fields: [organizationId], references: [id])
+  organizationId    String?
+
   legalName         String?
   type              FundType
   status            FundStatus @default(RAISING)
@@ -106,7 +212,31 @@ model Fund {
   carriedInterest   Decimal    @db.Decimal(5, 4)
   hurdleRate        Decimal?   @db.Decimal(5, 4)
   catchUpRate       Decimal?   @db.Decimal(5, 4)
-  
+
+  // Strategy & Focus
+  strategy          String?    @db.Text
+  investmentStages  String[]
+  targetSectors     String[]
+  targetGeographies String[]
+  checkSizeMin      Decimal?   @db.Decimal(15, 2)
+  checkSizeMax      Decimal?   @db.Decimal(15, 2)
+
+  // Lifecycle Dates
+  fundLaunchDate       DateTime?
+  firstCloseDate       DateTime?
+  finalCloseDate       DateTime?
+  investmentPeriodEnd  DateTime?
+  fundTermYears        Int?
+
+  // Legal
+  fundEntityType    OrgEntityType?
+  jurisdiction      String?
+  taxId             String?
+
+  // Operational Config
+  capitalCallNoticeDays    Int?
+  distributionNoticeDays   Int?
+
   // Metadata
   description       String?    @db.Text
   
@@ -122,6 +252,8 @@ model Fund {
   distributions     Distribution[]
   portfolioCompanies PortfolioCompany[]
   reports            Report[]
+
+  @@index([organizationId])
 }
 
 enum FundType {
