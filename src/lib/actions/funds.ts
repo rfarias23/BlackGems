@@ -8,6 +8,7 @@ import { logAudit } from '@/lib/shared/audit'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import type { Currency, FundType } from '@prisma/client'
+import { canBecomeFundMember, DEFAULT_PERMISSIONS } from '@/lib/shared/permissions'
 
 // ============================================================================
 // TYPES
@@ -118,6 +119,10 @@ export async function createFund(
     return { error: 'Only fund administrators can create funds' }
   }
 
+  if (!canBecomeFundMember(user.role)) {
+    return { error: `Users with role ${user.role} cannot create funds` }
+  }
+
   const raw = {
     name: formData.get('name') as string,
     currency: formData.get('currency') as string,
@@ -160,6 +165,7 @@ export async function createFund(
           fundId: newFund.id,
           userId: session.user.id!,
           role: 'PRINCIPAL',
+          permissions: DEFAULT_PERMISSIONS.PRINCIPAL,
           isActive: true,
         },
       })
