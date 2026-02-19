@@ -6,6 +6,8 @@ import { getUserFunds } from '@/lib/actions/funds';
 import { getActiveFundId } from '@/lib/shared/active-fund';
 import { getUserModulePermissions } from '@/lib/shared/fund-access';
 import { redirect } from 'next/navigation';
+import { AICopilotProvider } from '@/components/ai/ai-copilot-provider';
+import { AICopilotPanel, AICopilotContentWrapper } from '@/components/ai/ai-copilot-layout';
 
 // All dashboard pages require authentication (cookies/headers), so static generation is impossible.
 export const dynamic = 'force-dynamic';
@@ -38,6 +40,9 @@ export default async function DashboardLayout({
         ? await getUserModulePermissions(session.user.id!, activeFundId ?? funds[0]?.id ?? '')
         : [];
 
+    const aiEnabled = !!process.env.ANTHROPIC_API_KEY;
+    const fundId = activeFundId ?? funds[0]?.id ?? '';
+
     return (
         <div
             className="min-h-screen bg-[#11141D] text-[#F9FAFB] font-sans antialiased"
@@ -66,23 +71,28 @@ export default async function DashboardLayout({
                 } as React.CSSProperties
             }
         >
-            {/* Sidebar fixed on the left */}
-            <div className="fixed inset-y-0 z-50 hidden w-64 md:flex md:flex-col">
-                <Sidebar
-                    userRole={session?.user?.role as string | undefined}
-                    funds={funds}
-                    activeFundId={activeFundId ?? funds[0]?.id ?? ''}
-                    permissions={permissions}
-                />
-            </div>
+            <AICopilotProvider isEnabled={aiEnabled} fundId={fundId}>
+                {/* Sidebar fixed on the left */}
+                <div className="fixed inset-y-0 z-50 hidden w-64 md:flex md:flex-col">
+                    <Sidebar
+                        userRole={session?.user?.role as string | undefined}
+                        funds={funds}
+                        activeFundId={fundId}
+                        permissions={permissions}
+                    />
+                </div>
 
-            {/* Main content area */}
-            <div className="md:pl-64 flex flex-col min-h-screen">
-                <Header user={session?.user} unreadCount={unreadCount} />
-                <main className="flex-1 p-8">
-                    {children}
-                </main>
-            </div>
+                {/* Main content area — padding adjusts when AI panel is open */}
+                <AICopilotContentWrapper>
+                    <Header user={session?.user} unreadCount={unreadCount} />
+                    <main className="flex-1 p-8">
+                        {children}
+                    </main>
+                </AICopilotContentWrapper>
+
+                {/* AI Copilot panel — fixed on the right */}
+                <AICopilotPanel />
+            </AICopilotProvider>
         </div>
     );
 }

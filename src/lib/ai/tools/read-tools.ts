@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { tool } from 'ai'
 import { type Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { notDeleted } from '@/lib/shared/soft-delete'
@@ -11,10 +12,10 @@ import { formatMoney, formatPercent, formatMultiple, type CurrencyCode } from '@
  */
 export function createReadTools(fundId: string, currency: CurrencyCode) {
   return {
-    getPipelineSummary: {
+    getPipelineSummary: tool({
       description:
         'Get the current deal pipeline with counts by stage, total pipeline value, and active deal count.',
-      parameters: z.object({}),
+      inputSchema: z.object({}),
       execute: async () => {
         const deals = await prisma.deal.findMany({
           where: { fundId, ...notDeleted },
@@ -45,12 +46,12 @@ export function createReadTools(fundId: string, currency: CurrencyCode) {
           totalPipelineValue: formatMoney(totalPipelineValue, currency),
         }
       },
-    },
+    }),
 
-    getDealDetails: {
+    getDealDetails: tool({
       description:
         'Get detailed information about a specific deal by name or ID. Use this when the user asks about a particular deal.',
-      parameters: z.object({
+      inputSchema: z.object({
         nameOrId: z.string().describe('The deal name (partial match supported) or deal ID'),
       }),
       execute: async ({ nameOrId }: { nameOrId: string }) => {
@@ -96,12 +97,12 @@ export function createReadTools(fundId: string, currency: CurrencyCode) {
           expectedCloseDate: deal.expectedCloseDate?.toISOString().split('T')[0] ?? null,
         }
       },
-    },
+    }),
 
-    getFundFinancials: {
+    getFundFinancials: tool({
       description:
         'Get the fund financial summary including total committed capital, called capital, distributed capital, and performance metrics.',
-      parameters: z.object({}),
+      inputSchema: z.object({}),
       execute: async () => {
         const fund = await prisma.fund.findUniqueOrThrow({
           where: { id: fundId },
@@ -160,12 +161,12 @@ export function createReadTools(fundId: string, currency: CurrencyCode) {
           totalMOIC: formatMultiple(totalMOIC),
         }
       },
-    },
+    }),
 
-    getInvestorDetails: {
+    getInvestorDetails: tool({
       description:
         'Get details about a specific investor/LP including their commitment, paid-in amount, and contact information.',
-      parameters: z.object({
+      inputSchema: z.object({
         nameOrId: z.string().describe('The investor name (partial match supported) or investor ID'),
       }),
       execute: async ({ nameOrId }: { nameOrId: string }) => {
@@ -213,12 +214,12 @@ export function createReadTools(fundId: string, currency: CurrencyCode) {
           commitmentDate: commitment.commitmentDate?.toISOString().split('T')[0] ?? null,
         }
       },
-    },
+    }),
 
-    getPortfolioMetrics: {
+    getPortfolioMetrics: tool({
       description:
         'Get portfolio company metrics including revenue, EBITDA, margins, and performance data.',
-      parameters: z.object({
+      inputSchema: z.object({
         companyName: z
           .string()
           .optional()
@@ -307,6 +308,6 @@ export function createReadTools(fundId: string, currency: CurrencyCode) {
           }
         })
       },
-    },
+    }),
   }
 }

@@ -14,6 +14,7 @@ import { Settings, LogOut, User } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { NotificationDropdown } from './notification-dropdown';
+import { AIToggle } from '@/components/ai/ai-toggle';
 
 interface HeaderProps {
     user?: {
@@ -42,6 +43,7 @@ export function Header({ user, unreadCount = 0 }: HeaderProps) {
             </div>
             <div className="flex items-center gap-4">
                 <NotificationDropdown initialCount={unreadCount} />
+                <AIToggle />
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="relative h-8 w-8 rounded-full hover:bg-[#334155]">
