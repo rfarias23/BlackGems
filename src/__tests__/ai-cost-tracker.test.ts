@@ -87,7 +87,7 @@ describe('trackAICost', () => {
         outputTokens: { old: null, new: 1000 },
         totalTokens: { old: null, new: 3000 },
         costUSD: { old: null, new: cost.totalCostUSD },
-        model: { old: null, new: process.env.AI_MODEL || 'claude-sonnet-4-6-20250929' },
+        model: { old: null, new: process.env.AI_MODEL || 'claude-sonnet-4-6' },
       },
     })
   })
