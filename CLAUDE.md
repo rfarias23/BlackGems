@@ -55,6 +55,34 @@ The interface should feel inevitable — as if no other design was possible.
 
 ---
 
+## Branch Hygiene (MANDATORY before any PR)
+
+**One branch per PR. No exceptions. No reuse after merge.**
+
+Before creating a Pull Request, you MUST ensure the branch is clean against `main`:
+
+```bash
+# ALWAYS start new work from fresh main:
+git fetch origin main
+git checkout -b fix/description origin/main
+
+# NEVER reuse a branch that already had commits merged via squash.
+# Squash merge creates new commit hashes — Git sees the old commits as
+# unmerged, causing phantom conflicts on identical content.
+```
+
+**The rule:** After a PR is merged, that branch is dead. Next fix = new branch from `origin/main`. If you have multiple commits on a branch and some were already merged via separate PRs, you MUST rebase (`git rebase origin/main`) before creating the next PR to drop already-merged commits.
+
+**Pre-PR verification:**
+```bash
+git fetch origin main
+git log --oneline origin/main..HEAD  # Only YOUR new commits should appear
+```
+
+If you see commits that were already merged in other PRs, rebase first. Do not create a PR with ghost commits.
+
+---
+
 ## Pre-Ship Checklist
 
 **Every commit and PR must satisfy ALL items.** No exceptions.
