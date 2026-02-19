@@ -133,6 +133,7 @@ model User {
   sessions        Session[]
   accounts        Account[]
   investor        Investor?        // LP user linked to investor record
+  conversations   Conversation[]
 
   @@index([organizationId])
 }
@@ -252,6 +253,7 @@ model Fund {
   distributions     Distribution[]
   portfolioCompanies PortfolioCompany[]
   reports            Report[]
+  conversations      Conversation[]
 
   @@index([organizationId])
 }
@@ -1379,4 +1381,39 @@ enum CommunicationType {
 enum CommunicationDirection {
   INBOUND
   OUTBOUND
+}
+
+// ============================================================================
+// AI COPILOT
+// ============================================================================
+
+model Conversation {
+  id         String    @id @default(cuid())
+  fund       Fund      @relation(fields: [fundId], references: [id], onDelete: Cascade)
+  fundId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  title      String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  archivedAt DateTime?
+  messages   Message[]
+
+  @@index([fundId])
+  @@index([userId])
+  @@index([updatedAt])
+}
+
+model Message {
+  id              String       @id @default(cuid())
+  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId  String
+  role            String // 'user' | 'assistant' | 'system' | 'tool'
+  content         String       @db.Text
+  toolInvocations Json?
+  tokenCount      Int?
+  createdAt       DateTime     @default(now())
+
+  @@index([conversationId])
+  @@index([createdAt])
 }
