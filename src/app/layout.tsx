@@ -10,8 +10,41 @@ import './globals.css';
 import { CookieConsent } from '@/components/landing/cookie-consent';
 
 export const metadata: Metadata = {
-    title: 'BlackGem — AI Operating Partner for Private Equity',
-    description: 'BlackGem runs your fund operations so you can focus on deals. AI-powered deal pipeline, LP management, capital operations, and investor portal for emerging fund managers.',
+    metadataBase: new URL('https://www.blackgem.ai'),
+    title: {
+        default: 'BlackGem — AI Operating Partner for Private Equity',
+        template: '%s | BlackGem',
+    },
+    description:
+        'BlackGem runs your fund operations so you can focus on deals. AI-powered deal pipeline, LP management, capital operations, and investor portal for emerging fund managers.',
+    openGraph: {
+        type: 'website',
+        locale: 'en_US',
+        siteName: 'BlackGem',
+        title: 'BlackGem — AI Operating Partner for Private Equity',
+        description:
+            'AI-powered fund management for emerging PE managers and search funds. Deal pipeline, LP portal, capital operations, quarterly reports.',
+    },
+    twitter: {
+        card: 'summary_large_image',
+        title: 'BlackGem — AI Operating Partner for Private Equity',
+        description:
+            'AI-powered fund management for emerging PE managers and search funds.',
+    },
+    robots: {
+        index: true,
+        follow: true,
+        googleBot: {
+            index: true,
+            follow: true,
+            'max-snippet': -1,
+            'max-image-preview': 'large',
+            'max-video-preview': -1,
+        },
+    },
+    alternates: {
+        canonical: '/',
+    },
 };
 
 export default function RootLayout({

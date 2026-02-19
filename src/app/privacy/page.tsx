@@ -1,4 +1,13 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
+
+export const metadata: Metadata = {
+    title: 'Privacy Policy',
+    description: 'How BlackGem handles your data.',
+    alternates: {
+        canonical: '/privacy',
+    },
+};
 
 export default function PrivacyPage() {
     return (

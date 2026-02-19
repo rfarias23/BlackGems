@@ -1,4 +1,13 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
+
+export const metadata: Metadata = {
+    title: 'Security',
+    description: 'Institutional-grade security. SOC 2 in progress.',
+    alternates: {
+        canonical: '/security',
+    },
+};
 
 export default function SecurityPage() {
     return (
