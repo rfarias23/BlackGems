@@ -155,7 +155,7 @@ Fund switch → auto-new conversation → previous fund conversations hidden unt
 
 ```
 ANTHROPIC_API_KEY=sk-ant-...          # Required for AI
-AI_MODEL=claude-sonnet-4-6-20250929   # Default model
+AI_MODEL=claude-sonnet-4-6   # Default model
 AI_RATE_LIMIT_PER_HOUR=30             # Per user per hour
 AI_RATE_LIMIT_PER_DAY=200             # Per fund per day
 AI_MONTHLY_BUDGET_USD=50              # Cost ceiling, alert at $25
@@ -532,7 +532,7 @@ export async function POST(req: Request) {
 
   // 8. Stream — cost tracking in streamText.onFinish
   const result = streamText({
-    model: anthropic(process.env.AI_MODEL || 'claude-sonnet-4-6-20250929'),
+    model: anthropic(process.env.AI_MODEL || 'claude-sonnet-4-6'),
     instructions: buildSystemPrompt(fundContext, userContext, fund),
     messages: trimmedMessages,
     tools: { ...readTools(fund.id) },

@@ -52,7 +52,7 @@ export function trackAICost(
       outputTokens: { old: null, new: usage.outputTokens },
       totalTokens: { old: null, new: usage.totalTokens },
       costUSD: { old: null, new: cost.totalCostUSD },
-      model: { old: null, new: process.env.AI_MODEL || 'claude-sonnet-4-6-20250929' },
+      model: { old: null, new: process.env.AI_MODEL || 'claude-sonnet-4-6' },
     },
   }).catch((error: unknown) => {
     console.error('Failed to track AI cost:', error)
