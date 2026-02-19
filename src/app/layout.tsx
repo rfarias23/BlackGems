@@ -26,7 +26,7 @@ export const metadata: Metadata = {
             'AI-powered fund management for emerging PE managers and search funds. Deal pipeline, LP portal, capital operations, quarterly reports.',
         images: [
             {
-                url: '/images/og-image.png',
+                url: '/images/og-image.jpg',
                 width: 1200,
                 height: 630,
                 alt: 'BlackGem — AI Operating Partner for Private Equity',
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
         title: 'BlackGem — AI Operating Partner for Private Equity',
         description:
             'AI-powered fund management for emerging PE managers and search funds.',
-        images: ['/images/og-image.png'],
+        images: ['/images/og-image.jpg'],
     },
     robots: {
         index: true,

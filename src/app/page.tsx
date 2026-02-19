@@ -31,7 +31,7 @@ export default function Home() {
                     '@type': 'Organization',
                     name: 'BlackGem',
                     url: 'https://www.blackgem.ai',
-                    logo: 'https://www.blackgem.ai/images/og-image.png',
+                    logo: 'https://www.blackgem.ai/images/og-image.jpg',
                     description:
                         'BlackGem is an AI-powered fund management platform for emerging private equity managers and search funds. It automates deal pipeline tracking, LP management, capital operations, quarterly reporting, and investor portal access.',
                     foundingDate: '2024',
