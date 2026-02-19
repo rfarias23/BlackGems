@@ -67,11 +67,11 @@ export function MobileNav() {
 
                         <div className="mt-4">
                             <Link
-                                href="#contact"
+                                href="/register"
                                 onClick={close}
                                 className="inline-flex items-center justify-center px-8 py-3.5 bg-heritage-sapphire text-white text-sm font-semibold rounded-md hover:bg-[#3350E0] transition-colors"
                             >
-                                Request Access
+                                Get Started
                             </Link>
                         </div>
                     </nav>

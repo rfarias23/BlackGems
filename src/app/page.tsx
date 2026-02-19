@@ -7,8 +7,6 @@ import {
     Wallet,
     FileText,
     Globe,
-    Linkedin,
-    Twitter,
 } from 'lucide-react';
 import { ChainPattern } from '@/components/landing/chain-pattern';
 import { MobileNav } from '@/components/landing/mobile-nav';
@@ -95,14 +93,14 @@ function HeroSection() {
                 <div className="flex flex-col gap-6">
                     <FadeIn>
                         <h1 className="font-display text-[32px] md:text-[44px] lg:text-[56px] leading-[1.1] font-normal text-white max-w-[800px]">
-                            Institutional excellence
+                            Your fund&apos;s AI
                             <br />
-                            from day one.
+                            operating partner.
                         </h1>
                     </FadeIn>
                     <FadeIn delay={150}>
                         <p className="text-base md:text-lg text-slate-400 max-w-[700px] leading-relaxed">
-                            Private equity infrastructure for emerging fund managers.
+                            BlackGem runs your fund operations so you can focus on sourcing deals and creating value.
                         </p>
                     </FadeIn>
                     <FadeIn delay={300}>
@@ -142,22 +140,22 @@ function NavItem({ label, href }: { label: string; href: string }) {
 function ProblemSection() {
     const problems = [
         {
-            stat: 'Spreadsheets',
-            label: 'still running your back office',
+            stat: 'You\u2019re the GP, the analyst, and the fund admin.',
+            label: '',
             description:
-                'Capital accounts in Excel. LP updates by email. Reports compiled manually.',
+                'A $500M fund has 15 people handling what you do alone. Capital calls, LP reports, portfolio monitoring \u2014 it\u2019s 20+ hours/week of operational drag.',
         },
         {
-            stat: 'Manual processes',
-            label: 'across every capital operation',
+            stat: 'Fund software is built for firms with full-time CFOs.',
+            label: '',
             description:
-                'Pro-rata allocations, waterfall calculations, and distribution schedules built on formulas.',
+                'The platforms that handle capital calls and LP reporting start at $18K/year and assume you have a team. You need institutional quality at emerging manager economics.',
         },
         {
-            stat: 'Fragmented access',
-            label: 'for the investors who trust you',
+            stat: 'Your LPs expect institutional reporting. Yesterday.',
+            label: '',
             description:
-                'No single source of truth. Every LP question requires a manual response.',
+                'Every email asking \u201Cwhat\u2019s my capital account balance?\u201D is a trust erosion event. Your LPs compare you to the $500M fund that sends them a portal login.',
         },
     ];
 
@@ -172,9 +170,9 @@ function ProblemSection() {
 
                 <FadeIn delay={100}>
                     <h2 className="font-display text-[28px] md:text-[34px] lg:text-[40px] leading-[1.15] font-normal text-slate-100 text-center max-w-[800px] mx-auto mb-8 md:mb-12">
-                        Fund operations are an afterthought
+                        Running a fund shouldn&apos;t require
                         <br className="hidden md:block" />
-                        {' '}until they become the bottleneck.
+                        {' '}a back office you can&apos;t afford.
                     </h2>
                 </FadeIn>
 
@@ -183,11 +181,8 @@ function ProblemSection() {
                     {problems.map((p, i) => (
                         <FadeIn key={p.stat} delay={200 + i * 120}>
                             <div className="landing-card bg-slate-800 border border-slate-700 rounded-lg p-6 md:p-8 flex flex-col gap-4 h-full">
-                                <span className="font-mono text-xl md:text-2xl font-medium text-heritage-sapphire">
+                                <span className="text-base md:text-lg font-medium text-slate-100 leading-snug">
                                     {p.stat}
-                                </span>
-                                <span className="text-sm font-medium text-slate-100">
-                                    {p.label}
                                 </span>
                                 <p className="text-sm text-slate-400 leading-relaxed">
                                     {p.description}
@@ -210,21 +205,21 @@ function PlatformSection() {
             <div className="max-w-[1200px] mx-auto">
                 <FadeIn>
                     <p className="text-xs font-medium text-heritage-sapphire tracking-[3px] uppercase text-center mb-4 md:mb-6">
-                        THE PLATFORM
+                        HOW IT WORKS
                     </p>
                 </FadeIn>
 
                 <FadeIn delay={100}>
                     <h2 className="font-display text-[28px] md:text-[34px] lg:text-[40px] leading-[1.15] font-normal text-slate-100 text-center max-w-[800px] mx-auto mb-3 md:mb-4">
-                        One platform.
+                        An AI agent that runs
                         <br />
-                        Complete fund operations.
+                        your fund operations.
                     </h2>
                 </FadeIn>
 
                 <FadeIn delay={150}>
                     <p className="text-base md:text-lg text-slate-400 text-center max-w-[700px] mx-auto mb-8 md:mb-12">
-                        Deal pipeline through LP reporting.
+                        It briefs you on what matters. It handles the rest.
                     </p>
                 </FadeIn>
 
@@ -262,12 +257,12 @@ function DualInterfaceSection() {
                 </FadeIn>
                 <FadeIn delay={100}>
                     <h3 className="font-display text-3xl md:text-4xl font-normal text-slate-100 mb-4">
-                        The Cockpit
+                        The Cockpit &mdash; Your AI Command Center
                     </h3>
                 </FadeIn>
                 <FadeIn delay={200}>
                     <p className="text-[15px] text-slate-400 leading-relaxed max-w-[500px] mb-8">
-                        Dark mode. Built for efficiency. Track deals, manage capital, monitor portfolio.
+                        AI-powered operations. Your agent manages deals, drafts LP reports, handles capital calls, and monitors your portfolio &mdash; surfacing what needs attention.
                     </p>
                 </FadeIn>
                 <FadeIn delay={300}>
@@ -301,7 +296,7 @@ function DualInterfaceSection() {
                 </FadeIn>
                 <FadeIn delay={200}>
                     <p className="text-[15px] text-slate-600 leading-relaxed max-w-[500px] mb-8">
-                        Clean portal. Documents, reports, and capital accounts — 24/7 self-service.
+                        Institutional-grade LP portal. Capital accounts, quarterly reports, and documents &mdash; always current, always accessible.
                     </p>
                 </FadeIn>
                 <FadeIn delay={300}>
@@ -327,37 +322,37 @@ function FeaturesSection() {
             icon: TrendingUp,
             title: 'Deal Pipeline',
             description:
-                'Track acquisitions from review to close. 18 stages, DD tracker, contacts.',
+                'From target screening to close. Your AI tracks 18 stages, flags stalled deals, and surfaces what needs your attention this week.',
         },
         {
             icon: Users,
             title: 'LP Management',
             description:
-                'Commitments, communications, portal access. Structured from the start.',
+                'Commitments, communications, and portal access. Your AI drafts LP updates and tracks engagement so no relationship goes cold.',
         },
         {
             icon: Building2,
             title: 'Portfolio',
             description:
-                'KPIs, financials, company performance. Everything post-acquisition.',
+                'KPIs, financials, company performance. Real-time monitoring with AI-flagged anomalies.',
         },
         {
             icon: Wallet,
             title: 'Capital Operations',
             description:
-                'Capital calls, distributions, waterfall. Automated and accurate.',
+                'Capital calls, distributions, waterfall calculations. Zero-error precision, automated execution, full audit trail.',
         },
         {
             icon: FileText,
             title: 'Quarterly Reports',
             description:
-                'Quarterly reports. Auto-populated, formatted, distributed.',
+                'Your AI drafts quarterly reports from live fund data. Review in 4 minutes. Distribute to LPs with one click.',
         },
         {
             icon: Globe,
             title: 'LP Portal',
             description:
-                'Documents, statements, reports. Self-service access for your LPs.',
+                'Documents, statements, reports. Institutional self-service access for your LPs \u2014 24/7.',
         },
     ];
 
@@ -372,7 +367,7 @@ function FeaturesSection() {
 
                 <FadeIn delay={100}>
                     <h2 className="font-display text-[28px] md:text-[34px] lg:text-[40px] leading-[1.15] font-normal text-slate-100 text-center max-w-[800px] mx-auto mb-8 md:mb-12">
-                        Built for how funds actually work.
+                        Every fund operation, handled.
                     </h2>
                 </FadeIn>
 
@@ -407,7 +402,7 @@ function SocialProofSection() {
             <div className="max-w-[1200px] mx-auto">
                 <FadeIn>
                     <p className="font-display text-[22px] md:text-[28px] lg:text-[32px] text-slate-400 text-center leading-relaxed">
-                        Built by fund operators. For fund operators.
+                        Built by fund operators who got tired of building Excel models at 2am.
                     </p>
                 </FadeIn>
             </div>
@@ -425,7 +420,7 @@ function FinalCtaSection() {
             <div className="max-w-[800px] mx-auto text-center relative z-10">
                 <FadeIn>
                     <h2 className="font-display text-[28px] md:text-[36px] lg:text-[44px] leading-[1.15] font-normal text-white mb-6 md:mb-8">
-                        Ready when you are.
+                        Your operations, handled.
                     </h2>
                 </FadeIn>
 
@@ -446,16 +441,25 @@ function FinalCtaSection() {
 function FooterSection() {
     const columns = [
         {
-            title: 'Platform',
-            links: ['Deals', 'Investors', 'Portfolio', 'Capital', 'Reports'],
+            title: 'Product',
+            links: [
+                { label: 'Pricing', href: '/pricing' },
+                { label: 'Login', href: '/login' },
+            ],
         },
         {
             title: 'Company',
-            links: ['About', 'Pricing', 'Blog', 'Contact'],
+            links: [
+                { label: 'Contact', href: 'mailto:contact@blackgem.ai' },
+            ],
         },
         {
             title: 'Legal',
-            links: ['Privacy', 'Terms', 'Security'],
+            links: [
+                { label: 'Privacy', href: '/privacy' },
+                { label: 'Terms', href: '/terms' },
+                { label: 'Security', href: '/security' },
+            ],
         },
     ];
 
@@ -486,11 +490,11 @@ function FooterSection() {
                                 </span>
                                 {col.links.map((link) => (
                                     <Link
-                                        key={link}
-                                        href="#"
+                                        key={link.label}
+                                        href={link.href}
                                         className="text-[13px] text-slate-400 hover:text-heritage-sapphire transition-colors"
                                     >
-                                        {link}
+                                        {link.label}
                                     </Link>
                                 ))}
                             </div>
@@ -506,14 +510,6 @@ function FooterSection() {
                     <span className="text-xs text-slate-600">
                         &copy; 2026 NIRO Group LLC. All rights reserved.
                     </span>
-                    <div className="flex items-center gap-4">
-                        <Link href="#" className="text-slate-600 hover:text-slate-400 transition-colors">
-                            <Linkedin className="w-4 h-4" />
-                        </Link>
-                        <Link href="#" className="text-slate-600 hover:text-slate-400 transition-colors">
-                            <Twitter className="w-4 h-4" />
-                        </Link>
-                    </div>
                 </div>
             </div>
         </footer>
