@@ -70,7 +70,7 @@ export function AICopilotProvider({
   }, [])
 
   const refreshConversations = useCallback(async () => {
-    if (!isEnabled) return
+    if (!isEnabled || !fundId) return
     try {
       const result = await getConversations(fundId)
       setConversations(result)

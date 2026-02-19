@@ -1,8 +1,6 @@
 'use client'
 
 import { useEffect } from 'react'
-import { MessageSquare } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { useAICopilot } from './ai-copilot-provider'
 
 export function AIToggle() {
@@ -23,16 +21,19 @@ export function AIToggle() {
   if (!isEnabled) return null
 
   return (
-    <Button
-      variant="ghost"
-      size="icon"
+    <button
       onClick={() => setIsOpen(!isOpen)}
-      className={`hidden lg:flex h-8 w-8 hover:bg-[#334155] ${
-        isOpen ? 'text-[#3E5CFF]' : 'text-[#94A3B8]'
+      className={`hidden lg:flex items-center h-8 px-2 rounded-md transition-colors hover:bg-[#334155] ${
+        isOpen ? 'opacity-100' : 'opacity-60 hover:opacity-100'
       }`}
-      aria-label="Toggle AI copilot"
+      aria-label="Toggle Gema AI"
     >
-      <MessageSquare className="h-4 w-4" />
-    </Button>
+      <span
+        className="font-serif text-[15px] tracking-tight select-none"
+        style={{ color: isOpen ? '#3E5CFF' : '#F8FAFC' }}
+      >
+        <span className="font-semibold">Gema</span>
+      </span>
+    </button>
   )
 }

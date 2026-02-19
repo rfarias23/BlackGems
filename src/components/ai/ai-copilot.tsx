@@ -38,6 +38,7 @@ export function AICopilot() {
 
   const [initialMessages, setInitialMessages] = useState<UIMessage[]>([])
   const [inputValue, setInputValue] = useState('')
+  const [sendError, setSendError] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const conversationIdRef = useRef(currentConversationId)
@@ -120,6 +121,7 @@ export function AICopilot() {
   const handleTextareaChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       setInputValue(e.target.value)
+      setSendError(null)
       const el = e.target
       el.style.height = 'auto'
       el.style.height = `${Math.min(el.scrollHeight, 120)}px`
@@ -133,6 +135,11 @@ export function AICopilot() {
     if (!text) return
     if (status !== 'ready') return
 
+    if (!fundId) {
+      setSendError('No fund configured. Go to Settings to set up your fund.')
+      return
+    }
+
     // If no conversation exists, create one first
     let conversationId = currentConversationId
     if (!conversationId) {
@@ -143,11 +150,13 @@ export function AICopilot() {
         setCurrentConversationId(conversationId)
       } catch (err) {
         console.error('Failed to create conversation:', err)
+        setSendError('Failed to start conversation. Please try again.')
         return
       }
     }
 
     setInputValue('')
+    setSendError(null)
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto'
     }
@@ -179,12 +188,14 @@ export function AICopilot() {
     setInitialMessages([])
     setMessages([])
     setInputValue('')
+    setSendError(null)
   }, [setCurrentConversationId, setMessages])
 
   // Switch conversation
   const handleSwitchConversation = useCallback(
     (id: string) => {
       setCurrentConversationId(id)
+      setSendError(null)
     },
     [setCurrentConversationId]
   )
@@ -286,7 +297,13 @@ export function AICopilot() {
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center px-6">
+            <span className="font-serif text-[32px] font-semibold tracking-tight text-[#F8FAFC] mb-3 select-none">
+              Gema
+            </span>
             <p className="text-sm text-[#64748B]">
+              Your AI operating partner.
+            </p>
+            <p className="text-xs text-[#475569] mt-1">
               Ask about your fund, pipeline, investors, or portfolio.
             </p>
           </div>
@@ -326,6 +343,9 @@ export function AICopilot() {
 
       {/* Input */}
       <div className="shrink-0 px-4 pb-4 pt-2">
+        {sendError && (
+          <p className="text-xs text-red-400 mb-2 px-1">{sendError}</p>
+        )}
         <div className="flex items-end gap-2 bg-[#0F1218] border border-[#1E293B] rounded-lg px-3 py-2 focus-within:border-[#3E5CFF] transition-colors">
           <textarea
             ref={textareaRef}
