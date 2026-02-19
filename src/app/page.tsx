@@ -107,12 +107,12 @@ function HeroSection() {
                     </FadeIn>
                     <FadeIn delay={300}>
                         <div className="pt-2">
-                            <SmoothScrollLink
-                                href="#contact"
+                            <Link
+                                href="/register"
                                 className="inline-flex items-center justify-center px-8 py-3.5 bg-heritage-sapphire text-white text-sm font-semibold rounded-md hover:bg-[#3350E0] transition-all hover:shadow-[0_0_24px_rgba(62,92,255,0.3)]"
                             >
-                                Request Access
-                            </SmoothScrollLink>
+                                Get Started
+                            </Link>
                         </div>
                     </FadeIn>
                 </div>
@@ -430,12 +430,12 @@ function FinalCtaSection() {
                 </FadeIn>
 
                 <FadeIn delay={200}>
-                    <SmoothScrollLink
-                        href="#contact"
+                    <Link
+                        href="/register"
                         className="inline-flex items-center justify-center px-8 py-3.5 md:px-10 md:py-4 bg-heritage-sapphire text-white text-sm md:text-[15px] font-semibold rounded-md hover:bg-[#3350E0] transition-all hover:shadow-[0_0_32px_rgba(62,92,255,0.3)]"
                     >
-                        Request Access
-                    </SmoothScrollLink>
+                        Get Started
+                    </Link>
                 </FadeIn>
             </div>
         </section>

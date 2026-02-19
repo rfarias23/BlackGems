@@ -54,7 +54,7 @@ const createUserSchema = z.object({
     name: z.string().min(1, 'Name is required'),
     email: z.string().email('Invalid email address'),
     role: z.string(),
-    password: z.string().min(6, 'Password must be at least 6 characters'),
+    password: z.string().min(8, 'Password must be at least 8 characters'),
     investorId: z.string().optional(),
 })
 
@@ -358,8 +358,8 @@ export async function resetUserPassword(id: string, formData: FormData) {
 
     const newPassword = formData.get('newPassword') as string
 
-    if (!newPassword || newPassword.length < 6) {
-        return { error: 'Password must be at least 6 characters' }
+    if (!newPassword || newPassword.length < 8) {
+        return { error: 'Password must be at least 8 characters' }
     }
 
     try {
@@ -568,8 +568,8 @@ export async function acceptInvitation(token: string, name: string, password: st
         return { error: 'All fields are required' }
     }
 
-    if (password.length < 6) {
-        return { error: 'Password must be at least 6 characters' }
+    if (password.length < 8) {
+        return { error: 'Password must be at least 8 characters' }
     }
 
     // Find and validate token

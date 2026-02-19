@@ -10,7 +10,7 @@ export const authConfig = {
     callbacks: {
         authorized({ auth, request: { nextUrl } }) {
             const isLoggedIn = !!auth?.user
-            const isAuthPage = nextUrl.pathname.startsWith('/login')
+            const isAuthPage = nextUrl.pathname.startsWith('/login') || nextUrl.pathname.startsWith('/register')
             const role = auth?.user?.role as UserRole | undefined
 
             // Dashboard (Cockpit) protected routes

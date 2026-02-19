@@ -13,6 +13,7 @@ export default function PricingPage() {
                 '2 users, 5GB storage',
             ],
             cta: 'Get Started',
+            href: '/register?type=search',
             highlighted: false,
         },
         {
@@ -26,6 +27,7 @@ export default function PricingPage() {
                 '5 users, 25GB storage',
             ],
             cta: 'Get Started',
+            href: '/register?type=pe',
             highlighted: true,
         },
         {
@@ -39,6 +41,7 @@ export default function PricingPage() {
                 'Unlimited users & storage',
             ],
             cta: 'Contact Sales',
+            href: '/register?type=pe',
             highlighted: false,
         },
     ];
@@ -109,15 +112,16 @@ export default function PricingPage() {
                                     ))}
                                 </ul>
 
-                                <button
-                                    className={`w-full py-3 rounded-md text-sm font-medium transition-all ${
+                                <Link
+                                    href={tier.href}
+                                    className={`w-full py-3 rounded-md text-sm font-medium transition-all text-center block ${
                                         tier.highlighted
                                             ? 'bg-heritage-sapphire text-white hover:bg-[#3350E0] hover:shadow-[0_0_20px_rgba(62,92,255,0.25)]'
                                             : 'bg-transparent border border-slate-700 text-slate-100 hover:border-slate-500'
                                     }`}
                                 >
                                     {tier.cta}
-                                </button>
+                                </Link>
                             </div>
                         ))}
                     </div>
