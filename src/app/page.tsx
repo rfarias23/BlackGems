@@ -13,6 +13,7 @@ import { MobileNav } from '@/components/landing/mobile-nav';
 import { FadeIn } from '@/components/landing/fade-in';
 import { SectionTransition } from '@/components/landing/section-transition';
 import { SmoothScrollLink } from '@/components/landing/smooth-scroll-link';
+import { JsonLd } from '@/lib/shared/json-ld';
 
 /* =============================================
    BLACKGEM LANDING PAGE — Responsive + Animated
@@ -25,6 +26,122 @@ import { SmoothScrollLink } from '@/components/landing/smooth-scroll-link';
 export default function Home() {
     return (
         <main className="bg-midnight-ink text-slate-100">
+            <JsonLd
+                data={{
+                    '@type': 'Organization',
+                    name: 'BlackGem',
+                    url: 'https://www.blackgem.ai',
+                    logo: 'https://www.blackgem.ai/images/logo.png',
+                    description:
+                        'BlackGem is an AI-powered fund management platform for emerging private equity managers and search funds. It automates deal pipeline tracking, LP management, capital operations, quarterly reporting, and investor portal access.',
+                    foundingDate: '2024',
+                    parentOrganization: {
+                        '@type': 'Organization',
+                        name: 'NIRO Group LLC',
+                    },
+                    contactPoint: {
+                        '@type': 'ContactPoint',
+                        email: 'contact@blackgem.ai',
+                        contactType: 'sales',
+                    },
+                }}
+            />
+            <JsonLd
+                data={{
+                    '@type': 'SoftwareApplication',
+                    name: 'BlackGem',
+                    url: 'https://www.blackgem.ai',
+                    applicationCategory: 'BusinessApplication',
+                    operatingSystem: 'Web',
+                    description:
+                        'AI operating partner for private equity fund operations. Handles deal pipeline management, LP communications, capital calls, distributions, waterfall calculations, quarterly report generation, and institutional-grade investor portal — purpose-built for emerging managers and search funds.',
+                    offers: [
+                        {
+                            '@type': 'Offer',
+                            name: 'Search',
+                            price: '59',
+                            priceCurrency: 'USD',
+                            priceSpecification: {
+                                '@type': 'UnitPriceSpecification',
+                                price: '59',
+                                priceCurrency: 'USD',
+                                billingDuration: 'P1M',
+                            },
+                            description:
+                                'AI copilot for solo searchers, pre-acquisition. Includes deal pipeline, DD automation, deal scoring, contact management.',
+                        },
+                        {
+                            '@type': 'Offer',
+                            name: 'Operate',
+                            price: '179',
+                            priceCurrency: 'USD',
+                            priceSpecification: {
+                                '@type': 'UnitPriceSpecification',
+                                price: '179',
+                                priceCurrency: 'USD',
+                                billingDuration: 'P1M',
+                            },
+                            description:
+                                'AI agent for post-acquisition fund management. Includes LP portal, AI-drafted communications, capital operations, waterfall engine, quarterly reports.',
+                        },
+                        {
+                            '@type': 'Offer',
+                            name: 'Scale',
+                            price: '349',
+                            priceCurrency: 'USD',
+                            priceSpecification: {
+                                '@type': 'UnitPriceSpecification',
+                                price: '349',
+                                priceCurrency: 'USD',
+                                billingDuration: 'P1M',
+                            },
+                            description:
+                                'Full AI operating partner for multi-fund operations. Includes priority model access, advanced analytics, API access, unlimited team members.',
+                        },
+                    ],
+                    featureList: [
+                        'AI-Powered Deal Pipeline',
+                        'LP Management & Communications',
+                        'Capital Operations & Waterfall Engine',
+                        'Quarterly Report Generation',
+                        'Institutional LP Portal',
+                        'AI Copilot & Agent',
+                        'Portfolio Monitoring',
+                    ],
+                    screenshot: 'https://www.blackgem.ai/images/cockpit-preview.png',
+                }}
+            />
+            <JsonLd
+                data={{
+                    '@type': 'FAQPage',
+                    mainEntity: [
+                        {
+                            '@type': 'Question',
+                            name: 'How do emerging PE managers handle fund operations without a back office?',
+                            acceptedAnswer: {
+                                '@type': 'Answer',
+                                text: 'BlackGem provides an AI operating partner that handles capital calls, LP reports, portfolio monitoring, and quarterly reporting — replacing the 20+ hours/week of operational work that solo GPs typically manage manually. Plans start at $59/month.',
+                            },
+                        },
+                        {
+                            '@type': 'Question',
+                            name: 'What fund management software works for search funds and micro-PE?',
+                            acceptedAnswer: {
+                                '@type': 'Answer',
+                                text: 'BlackGem is purpose-built for emerging managers and search funds. Plans start at $59/month (vs enterprise platforms at $18K+/year). It includes an AI-powered deal pipeline, LP portal, capital operations with waterfall calculations, and automated quarterly reports.',
+                            },
+                        },
+                        {
+                            '@type': 'Question',
+                            name: "How does BlackGem's AI agent work for fund management?",
+                            acceptedAnswer: {
+                                '@type': 'Answer',
+                                text: "BlackGem's AI agent proactively manages fund operations: it tracks deal pipeline stages and flags stalled deals, drafts LP communications and quarterly reports from live fund data, handles capital call calculations with zero-error precision, and monitors portfolio KPIs for anomalies — surfacing what needs the GP's attention.",
+                            },
+                        },
+                    ],
+                }}
+            />
             <HeroSection />
             <SectionTransition variant="hero-to-problem" />
             <ProblemSection />
