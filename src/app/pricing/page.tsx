@@ -4,44 +4,50 @@ import { Check } from 'lucide-react';
 export default function PricingPage() {
     const tiers = [
         {
-            name: 'Searcher',
-            price: '49',
-            description: 'For search fund principals in the acquisition phase.',
+            name: 'Search',
+            price: '59',
+            description: 'AI copilot for solo searchers, pre-acquisition.',
             features: [
-                'Deal pipeline & DD tracker',
+                'AI copilot (read queries)',
+                'Deal pipeline & DD automation',
+                'Deal scoring & target prioritization',
                 'Contact management',
-                '2 users, 5GB storage',
+                '2 team members',
             ],
             cta: 'Get Started',
             href: '/register?type=search',
             highlighted: false,
         },
         {
-            name: 'Operator',
-            price: '199',
-            description: 'For operating search funds with LP investors.',
+            name: 'Operate',
+            price: '179',
+            description: 'AI agent for post-acquisition, active fund management.',
             features: [
-                'Everything in Searcher',
-                'LP Portal & communications',
-                'Capital ops & reports',
-                '5 users, 25GB storage',
+                'Everything in Search',
+                'AI agent (read + write with approval)',
+                'LP portal & AI-drafted communications',
+                'Capital operations & waterfall engine',
+                'Quarterly reports (AI-drafted)',
+                '5 team members',
             ],
             cta: 'Get Started',
             href: '/register?type=pe',
             highlighted: true,
         },
         {
-            name: 'Fund Manager',
-            price: '399',
-            description: 'For established funds with multiple vehicles.',
+            name: 'Scale',
+            price: '349',
+            description: 'Full AI operating partner for multi-fund, full LP operations.',
             features: [
-                'Everything in Operator',
-                'Multi-fund management',
-                'White-label portal & API',
-                'Unlimited users & storage',
+                'Everything in Operate',
+                'Full AI agent + priority model access',
+                'Multi-fund support',
+                'Advanced analytics & export flows',
+                'API access',
+                'Unlimited team members',
             ],
-            cta: 'Contact Sales',
-            href: '/register?type=pe',
+            cta: 'Contact Us',
+            href: 'mailto:contact@blackgem.ai',
             highlighted: false,
         },
     ];
@@ -92,7 +98,7 @@ export default function PricingPage() {
 
                                 <div className="flex items-baseline gap-1 mb-3">
                                     <span className="font-mono text-3xl md:text-4xl font-medium text-slate-100">
-                                        &euro;{tier.price}
+                                        ${tier.price}
                                     </span>
                                     <span className="text-sm text-slate-600">/mo</span>
                                 </div>
@@ -134,12 +140,11 @@ export default function PricingPage() {
                     <span className="text-xs text-slate-600">
                         BlackGem is a product of NIRO Group LLC. &copy; 2026 All rights reserved.
                     </span>
-                    <Link
-                        href="/"
-                        className="text-[13px] text-slate-400 hover:text-heritage-sapphire transition-colors"
-                    >
-                        Back to Home
-                    </Link>
+                    <div className="flex items-center gap-4">
+                        <Link href="/privacy" className="text-[13px] text-slate-400 hover:text-heritage-sapphire transition-colors">Privacy</Link>
+                        <Link href="/terms" className="text-[13px] text-slate-400 hover:text-heritage-sapphire transition-colors">Terms</Link>
+                        <Link href="/" className="text-[13px] text-slate-400 hover:text-heritage-sapphire transition-colors">Back to Home</Link>
+                    </div>
                 </div>
             </footer>
         </main>
