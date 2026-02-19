@@ -43,12 +43,44 @@ async function getFundSlugFromHeaders(): Promise<string | null> {
 }
 
 /**
+ * Validates that a user and fund belong to the same organization.
+ * Returns true if:
+ * - Both orgIds match
+ * - Either orgId is null (pre-migration or platform admin)
+ * Returns false only when both are non-null and differ.
+ */
+export function validateOrganizationBoundary(
+  userOrgId: string | null | undefined,
+  fundOrgId: string | null | undefined
+): boolean {
+  if (!userOrgId || !fundOrgId) return true
+  return userOrgId === fundOrgId
+}
+
+/**
  * Verifies the current user has access to the specified fund.
  * Checks that the user is either a SUPER_ADMIN/FUND_ADMIN or has an active
  * FundMember record for the given fund.
  */
 export async function requireFundAccess(userId: string, fundId: string) {
-  if (await isAdminRole(userId)) {
+  // Organization boundary check
+  const [user, fund] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true, organizationId: true },
+    }),
+    prisma.fund.findUnique({
+      where: { id: fundId },
+      select: { organizationId: true },
+    }),
+  ])
+
+  if (!validateOrganizationBoundary(user?.organizationId ?? null, fund?.organizationId ?? null)) {
+    throw new Error('Access denied: fund belongs to a different organization')
+  }
+
+  // Admin bypass (already fetched the role above)
+  if (user?.role === 'SUPER_ADMIN' || user?.role === 'FUND_ADMIN') {
     return true
   }
 
