@@ -48,3 +48,6 @@ next-env.d.ts
 
 # uploaded files (local storage)
 /uploads
+
+# git worktrees
+.worktrees
