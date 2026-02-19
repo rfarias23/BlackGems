@@ -265,6 +265,7 @@ export async function persistMessages(
 
     await prisma.message.createMany({
       data: dbRecords,
+      skipDuplicates: true,
     })
 
     // Update conversation's updatedAt
