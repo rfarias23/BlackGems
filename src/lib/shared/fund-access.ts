@@ -2,6 +2,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getActiveFundId, setActiveFundId } from '@/lib/shared/active-fund'
 import type { CurrencyCode } from '@/lib/shared/formatters'
+import { headers } from 'next/headers'
 import { MODULE_PERMISSIONS, type ModulePermission } from './permissions'
 
 /**
@@ -25,6 +26,20 @@ async function isAdminRole(userId: string): Promise<boolean> {
     select: { role: true },
   })
   return user?.role === 'SUPER_ADMIN' || user?.role === 'FUND_ADMIN'
+}
+
+/**
+ * Reads the fund slug injected by middleware from the request headers.
+ * Returns null if no subdomain was detected.
+ */
+async function getFundSlugFromHeaders(): Promise<string | null> {
+  try {
+    const headersList = await headers()
+    return headersList.get('x-fund-slug')
+  } catch {
+    // headers() may throw outside of request context (e.g., in tests)
+    return null
+  }
 }
 
 /**
@@ -55,22 +70,47 @@ export async function requireFundAccess(userId: string, fundId: string) {
  * Returns the active fund ID for the current user.
  *
  * Resolution order:
- * 1. Cookie value (if user still has access)
- * 2. First fund the user has membership in
- * 3. First fund in DB (for admins with no memberships)
- * 4. Returns null if no fund exists (never throws)
+ * 1. Subdomain-resolved fund (from x-fund-slug header → find Fund by slug → verify access)
+ * 2. Cookie value (if user still has access)
+ * 3. First fund the user has membership in
+ * 4. First fund in DB (for admins with no memberships)
+ * 5. Returns null if no fund exists (never throws)
  */
 export async function getAuthorizedFundId(userId: string): Promise<string | null> {
   try {
-    // 1. Try cookie
+    // 1. Try subdomain-resolved fund (from middleware header)
+    const fundSlug = await getFundSlugFromHeaders()
+    if (fundSlug) {
+      const fund = await prisma.fund.findUnique({
+        where: { slug: fundSlug },
+        select: { id: true },
+      })
+      if (fund) {
+        // Verify user has access to this fund
+        const isAdmin = await isAdminRole(userId)
+        if (isAdmin) {
+          await setActiveFundId(fund.id)
+          return fund.id
+        }
+        const membership = await prisma.fundMember.findUnique({
+          where: { fundId_userId: { fundId: fund.id, userId } },
+          select: { isActive: true },
+        })
+        if (membership?.isActive) {
+          await setActiveFundId(fund.id)
+          return fund.id
+        }
+        // User doesn't have access to this fund — fall through to cookie
+      }
+    }
+
+    // 2. Try cookie
     const cookieFundId = await getActiveFundId()
 
     if (cookieFundId) {
-      // Validate user still has access to this fund
       const isAdmin = await isAdminRole(userId)
 
       if (isAdmin) {
-        // Verify fund exists
         const fundExists = await prisma.fund.findUnique({
           where: { id: cookieFundId },
           select: { id: true },
@@ -85,7 +125,7 @@ export async function getAuthorizedFundId(userId: string): Promise<string | null
       }
     }
 
-    // 2. Fallback: first fund user has membership in
+    // 3. Fallback: first fund user has membership in
     const membership = await prisma.fundMember.findFirst({
       where: { userId, isActive: true },
       select: { fundId: true },
@@ -97,7 +137,7 @@ export async function getAuthorizedFundId(userId: string): Promise<string | null
       return membership.fundId
     }
 
-    // 3. Fallback for admins with no memberships: first fund in DB
+    // 4. Fallback for admins with no memberships: first fund in DB
     if (await isAdminRole(userId)) {
       const fund = await prisma.fund.findFirst({
         select: { id: true },

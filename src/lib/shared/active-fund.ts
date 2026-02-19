@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers'
 
 const ACTIVE_FUND_COOKIE = 'blackgem-active-fund'
+const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN || undefined
 
 /**
  * Reads the active fund ID from the httpOnly cookie.
@@ -13,6 +14,7 @@ export async function getActiveFundId(): Promise<string | null> {
 
 /**
  * Sets the active fund ID in an httpOnly cookie.
+ * In production, cookie domain is .blackgem.ai for cross-subdomain support.
  * Persists for 1 year. Secure in production.
  */
 export async function setActiveFundId(fundId: string): Promise<void> {
@@ -23,6 +25,7 @@ export async function setActiveFundId(fundId: string): Promise<void> {
     sameSite: 'lax',
     path: '/',
     maxAge: 60 * 60 * 24 * 365, // 1 year
+    ...(COOKIE_DOMAIN ? { domain: COOKIE_DOMAIN } : {}),
   })
 }
 
