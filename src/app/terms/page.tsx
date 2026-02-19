@@ -1,4 +1,13 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
+
+export const metadata: Metadata = {
+    title: 'Terms of Service',
+    description: 'BlackGem terms of service.',
+    alternates: {
+        canonical: '/terms',
+    },
+};
 
 export default function TermsPage() {
     return (

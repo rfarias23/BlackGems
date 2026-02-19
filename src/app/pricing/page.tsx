@@ -1,5 +1,16 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Check } from 'lucide-react';
+import { JsonLd } from '@/lib/shared/json-ld';
+
+export const metadata: Metadata = {
+    title: 'Pricing',
+    description:
+        'AI fund management from $59/mo. Deal pipeline, LP portal, capital ops. No AUM fees.',
+    alternates: {
+        canonical: '/pricing',
+    },
+};
 
 export default function PricingPage() {
     const tiers = [
@@ -54,6 +65,67 @@ export default function PricingPage() {
 
     return (
         <main className="bg-midnight-ink text-slate-100 min-h-screen">
+            <JsonLd
+                data={{
+                    '@type': 'WebPage',
+                    name: 'BlackGem Pricing',
+                    description:
+                        'AI fund management from $59/mo. Deal pipeline, LP portal, capital ops. No AUM fees.',
+                    url: 'https://www.blackgem.ai/pricing',
+                }}
+            />
+            <JsonLd
+                data={{
+                    '@type': 'SoftwareApplication',
+                    name: 'BlackGem',
+                    applicationCategory: 'BusinessApplication',
+                    operatingSystem: 'Web',
+                    offers: [
+                        {
+                            '@type': 'Offer',
+                            name: 'Search',
+                            description:
+                                'AI copilot for solo searchers, pre-acquisition. Includes deal pipeline, DD automation, deal scoring, contact management, and 2 team members.',
+                            price: '59.00',
+                            priceCurrency: 'USD',
+                            priceSpecification: {
+                                '@type': 'UnitPriceSpecification',
+                                price: '59.00',
+                                priceCurrency: 'USD',
+                                billingDuration: 'P1M',
+                            },
+                        },
+                        {
+                            '@type': 'Offer',
+                            name: 'Operate',
+                            description:
+                                'AI agent for post-acquisition fund management. Includes LP portal, AI-drafted communications, capital operations, waterfall engine, quarterly reports, and 5 team members.',
+                            price: '179.00',
+                            priceCurrency: 'USD',
+                            priceSpecification: {
+                                '@type': 'UnitPriceSpecification',
+                                price: '179.00',
+                                priceCurrency: 'USD',
+                                billingDuration: 'P1M',
+                            },
+                        },
+                        {
+                            '@type': 'Offer',
+                            name: 'Scale',
+                            description:
+                                'Full AI operating partner for multi-fund operations. Includes priority model access, multi-fund support, advanced analytics, API access, and unlimited team members.',
+                            price: '349.00',
+                            priceCurrency: 'USD',
+                            priceSpecification: {
+                                '@type': 'UnitPriceSpecification',
+                                price: '349.00',
+                                priceCurrency: 'USD',
+                                billingDuration: 'P1M',
+                            },
+                        },
+                    ],
+                }}
+            />
             {/* Header */}
             <div className="pt-8 pl-6 md:pt-12 md:pl-12 lg:pl-[100px]">
                 <Link href="/" className="flex items-baseline gap-0">

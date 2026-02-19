@@ -1,4 +1,13 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
+
+export const metadata: Metadata = {
+    title: 'Cookie Notice',
+    description: 'BlackGem cookie practices.',
+    alternates: {
+        canonical: '/cookies',
+    },
+};
 
 export default function CookiesPage() {
     return (

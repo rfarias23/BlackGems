@@ -278,7 +278,7 @@ function ProblemSection() {
 
     return (
         <section id="problem" className="bg-deep-surface pt-8 pb-16 px-6 md:pt-10 md:pb-20 md:px-12 lg:pt-[60px] lg:pb-[100px] lg:px-[120px]">
-            <div className="max-w-[1200px] mx-auto">
+            <article className="max-w-[1200px] mx-auto">
                 <FadeIn>
                     <p className="text-xs font-medium text-heritage-sapphire tracking-[3px] uppercase text-center mb-4 md:mb-6">
                         THE PROBLEM
@@ -308,7 +308,7 @@ function ProblemSection() {
                         </FadeIn>
                     ))}
                 </div>
-            </div>
+            </article>
         </section>
     );
 }
