@@ -74,7 +74,12 @@ export function AICopilot() {
       refreshConversations()
     },
     onError: (err: Error) => {
-      console.error('AI chat error:', err)
+      console.error('[AI:DIAG:CLIENT] Chat error:', {
+        message: err.message,
+        name: err.name,
+        cause: (err as Record<string, unknown>).cause,
+        stack: err.stack?.split('\n').slice(0, 3).join('\n'),
+      })
     },
   })
 
@@ -162,6 +167,11 @@ export function AICopilot() {
     }
 
     sendMessage({ text })
+    console.log('[AI:DIAG:CLIENT] Message sent', {
+      conversationId: conversationIdRef.current,
+      fundId,
+      textLength: text.length,
+    })
   }, [
     inputValue,
     status,
