@@ -2,6 +2,7 @@ import { createAnthropic } from '@ai-sdk/anthropic'
 
 export const AI_CONFIG = {
   model: process.env.AI_MODEL || 'claude-sonnet-4-6',
+  titleModel: 'claude-haiku-4-5-20251001',
   rateLimitPerHour: Number(process.env.AI_RATE_LIMIT_PER_HOUR) || 30,
   rateLimitPerDay: Number(process.env.AI_RATE_LIMIT_PER_DAY) || 200,
   monthlyBudgetUSD: Number(process.env.AI_MONTHLY_BUDGET_USD) || 50,
