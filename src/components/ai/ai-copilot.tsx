@@ -77,7 +77,7 @@ export function AICopilot() {
       console.error('[AI:DIAG:CLIENT] Chat error:', {
         message: err.message,
         name: err.name,
-        cause: (err as Record<string, unknown>).cause,
+        cause: (err as unknown as Record<string, unknown>).cause,
         stack: err.stack?.split('\n').slice(0, 3).join('\n'),
       })
     },
