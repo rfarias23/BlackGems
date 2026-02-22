@@ -199,6 +199,7 @@ export function AICopilot() {
 
   // Create new conversation
   const handleNewConversation = useCallback(() => {
+    pendingConversationIdRef.current = null
     setCurrentConversationId(null)
     setInitialMessages([])
     setMessages([])
@@ -209,6 +210,7 @@ export function AICopilot() {
   // Switch conversation
   const handleSwitchConversation = useCallback(
     (id: string) => {
+      pendingConversationIdRef.current = null
       setCurrentConversationId(id)
       setSendError(null)
     },
