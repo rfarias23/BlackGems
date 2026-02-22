@@ -26,13 +26,13 @@ export function AIToggle() {
       className={`hidden lg:flex items-center h-8 px-2 rounded-md transition-colors hover:bg-[#334155] ${
         isOpen ? 'opacity-100' : 'opacity-60 hover:opacity-100'
       }`}
-      aria-label="Toggle Gema AI"
+      aria-label="Toggle Emma AI"
     >
       <span
         className="font-serif text-[15px] tracking-tight select-none"
         style={{ color: isOpen ? '#3E5CFF' : '#F8FAFC' }}
       >
-        <span className="font-semibold">Gema</span>
+        <span className="font-semibold">Emma</span>
       </span>
     </button>
   )
