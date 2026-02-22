@@ -74,12 +74,7 @@ export function AICopilot() {
       refreshConversations()
     },
     onError: (err: Error) => {
-      console.error('[AI:DIAG:CLIENT] Chat error:', {
-        message: err.message,
-        name: err.name,
-        cause: (err as unknown as Record<string, unknown>).cause,
-        stack: err.stack?.split('\n').slice(0, 3).join('\n'),
-      })
+      console.error('Emma chat error:', err.message)
     },
   })
 
@@ -167,11 +162,6 @@ export function AICopilot() {
     }
 
     sendMessage({ text })
-    console.log('[AI:DIAG:CLIENT] Message sent', {
-      conversationId: conversationIdRef.current,
-      fundId,
-      textLength: text.length,
-    })
   }, [
     inputValue,
     status,
@@ -308,7 +298,7 @@ export function AICopilot() {
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center px-6">
             <span className="font-serif text-[32px] font-semibold tracking-tight text-[#F8FAFC] mb-3 select-none">
-              Gema
+              Emma
             </span>
             <p className="text-sm text-[#64748B]">
               Your AI operating partner.
@@ -324,10 +314,9 @@ export function AICopilot() {
         ))}
 
         {status === 'submitted' && (
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-[#64748B] animate-pulse">
-              Thinking...
-            </span>
+          <div className="flex flex-col gap-2 max-w-[95%] animate-pulse">
+            <div className="h-3 w-3/4 rounded bg-[#1E293B]" />
+            <div className="h-3 w-1/2 rounded bg-[#1E293B]" />
           </div>
         )}
 

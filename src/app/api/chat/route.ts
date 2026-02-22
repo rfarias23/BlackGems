@@ -24,13 +24,11 @@ export async function POST(req: Request) {
   // 1. Auth
   const session = await auth()
   if (!session?.user?.id) {
-    console.log('[AI:DIAG] Auth failed: no session.user.id')
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   // 2. Check AI is enabled
   if (!AI_CONFIG.isEnabled) {
-    console.log('[AI:DIAG] AI not enabled: ANTHROPIC_API_KEY missing')
     return NextResponse.json(
       { error: 'AI copilot is not configured' },
       { status: 503 }
@@ -40,7 +38,6 @@ export async function POST(req: Request) {
   // 3. Fund resolution
   const activeFund = await getActiveFundWithCurrency(session.user.id)
   if (!activeFund) {
-    console.log('[AI:DIAG] No active fund for user:', session.user.id)
     return NextResponse.json(
       { error: 'No active fund found' },
       { status: 400 }
@@ -51,7 +48,6 @@ export async function POST(req: Request) {
   try {
     await requireFundAccess(session.user.id, activeFund.fundId)
   } catch {
-    console.log('[AI:DIAG] Fund access denied:', { userId: session.user.id, fundId: activeFund.fundId })
     return NextResponse.json(
       { error: 'Access denied to this fund' },
       { status: 403 }
@@ -65,7 +61,6 @@ export async function POST(req: Request) {
     3_600_000
   )
   if (!rateLimitResult.success) {
-    console.log('[AI:DIAG] Rate limited:', { userId: session.user.id, resetAt: rateLimitResult.resetAt })
     return NextResponse.json(
       { error: 'Rate limit exceeded. Please wait before sending another message.' },
       { status: 429, headers: { 'Retry-After': String(Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000)) } }
@@ -80,7 +75,6 @@ export async function POST(req: Request) {
   }
 
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
-    console.log('[AI:DIAG] No messages in request body')
     return NextResponse.json(
       { error: 'Messages are required' },
       { status: 400 }
@@ -102,7 +96,6 @@ export async function POST(req: Request) {
   }
 
   // 8. Trim UIMessages if over budget, then convert to model messages.
-  // The trimmer needs { role, content } — we extract text from UIMessage parts.
   const messagesForTrimmer = messages.map(m => ({
     ...m,
     role: m.role,
@@ -123,7 +116,7 @@ export async function POST(req: Request) {
   ])
 
   const userContext = assembleUserContext(session)
-  const isFirstTime = conversations.length <= 1 // Current conversation may be the first
+  const isFirstTime = conversations.length <= 1
 
   const systemPrompt = buildSystemPrompt(
     fundContext,
@@ -135,14 +128,6 @@ export async function POST(req: Request) {
   // 10. Stream response
   const anthropic = getAnthropicProvider()
 
-  console.log('[AI:DIAG] Calling streamText', {
-    model: AI_CONFIG.model,
-    systemPromptLength: systemPrompt.length,
-    messageCount: modelMessages.length,
-    toolCount: Object.keys(createReadTools(activeFund.fundId, activeFund.currency)).length,
-    conversationId,
-  })
-
   let result
   try {
     result = streamText({
@@ -151,12 +136,6 @@ export async function POST(req: Request) {
       messages: modelMessages,
       tools: createReadTools(activeFund.fundId, activeFund.currency),
       onFinish: ({ usage }) => {
-        console.log('[AI:DIAG] streamText.onFinish', {
-          inputTokens: usage.inputTokens,
-          outputTokens: usage.outputTokens,
-          conversationId,
-        })
-        // Fire-and-forget: track cost to audit log
         const inputTokens = usage.inputTokens ?? 0
         const outputTokens = usage.outputTokens ?? 0
         trackAICost(session.user!.id!, activeFund.fundId, {
@@ -167,7 +146,7 @@ export async function POST(req: Request) {
       },
     })
   } catch (streamError) {
-    console.error('[AI:DIAG] streamText threw synchronously:', streamError)
+    console.error('AI streaming failed to initialize:', streamError)
     return NextResponse.json(
       { error: 'AI streaming failed to initialize' },
       { status: 500 }
@@ -175,17 +154,11 @@ export async function POST(req: Request) {
   }
 
   // 11. Return streaming response with persistence on finish
-  console.log('[AI:DIAG] Returning toUIMessageStreamResponse')
   return result.toUIMessageStreamResponse({
     originalMessages: messages,
     onFinish: ({ messages: allMessages }) => {
-      console.log('[AI:DIAG] toUIMessageStreamResponse.onFinish', {
-        messageCount: allMessages.length,
-        conversationId,
-      })
-      // Fire-and-forget: persist all messages to DB
       persistMessages(conversationId, allMessages).catch((error: unknown) => {
-        console.error('[AI:DIAG] persistMessages failed:', error)
+        console.error('Failed to persist AI messages:', error)
       })
     },
     headers: {
