@@ -14,7 +14,8 @@ import {
   persistMessages,
   getConversations,
 } from '@/lib/actions/ai-conversations'
-import { streamText, convertToModelMessages, type UIMessage } from 'ai'
+import { prisma } from '@/lib/prisma'
+import { streamText, generateText, convertToModelMessages, type UIMessage } from 'ai'
 import { NextResponse } from 'next/server'
 
 // Allow streaming responses up to 5 minutes
@@ -135,6 +136,7 @@ export async function POST(req: Request) {
       system: systemPrompt,
       messages: modelMessages,
       tools: createReadTools(activeFund.fundId, activeFund.currency),
+      abortSignal: req.signal,
       onFinish: ({ usage }) => {
         const inputTokens = usage.inputTokens ?? 0
         const outputTokens = usage.outputTokens ?? 0
@@ -153,16 +155,71 @@ export async function POST(req: Request) {
     )
   }
 
-  // 11. Return streaming response with persistence on finish
+  // 11. Return streaming response with persistence + title generation on finish
+  const isNewConversation = !reqConversationId
   return result.toUIMessageStreamResponse({
     originalMessages: messages,
     onFinish: ({ messages: allMessages }) => {
       persistMessages(conversationId, allMessages).catch((error: unknown) => {
         console.error('Failed to persist AI messages:', error)
       })
+
+      // Generate a descriptive title for new conversations after first exchange
+      if (isNewConversation && allMessages.length >= 2) {
+        generateConversationTitle(conversationId, allMessages, anthropic).catch(
+          (error: unknown) => {
+            console.error('Failed to generate conversation title:', error)
+          }
+        )
+      }
     },
     headers: {
       'X-Conversation-Id': conversationId,
     },
+  })
+}
+
+// ---------------------------------------------------------------------------
+// Title generation — fire-and-forget after first assistant response
+// ---------------------------------------------------------------------------
+
+function extractText(msg: UIMessage): string {
+  return msg.parts
+    .filter(
+      (p): p is Extract<UIMessage['parts'][number], { type: 'text' }> =>
+        p.type === 'text'
+    )
+    .map((p) => p.text)
+    .join(' ')
+}
+
+async function generateConversationTitle(
+  conversationId: string,
+  allMessages: UIMessage[],
+  anthropic: ReturnType<typeof getAnthropicProvider>
+): Promise<void> {
+  const userMsg = allMessages.find((m) => m.role === 'user')
+  const assistantMsg = allMessages.find((m) => m.role === 'assistant')
+  if (!userMsg || !assistantMsg) return
+
+  const userText = extractText(userMsg).slice(0, 200)
+  const assistantText = extractText(assistantMsg).slice(0, 300)
+
+  const { text: title } = await generateText({
+    model: anthropic(AI_CONFIG.titleModel),
+    prompt: `Generate a concise 4-6 word title for this conversation. No quotes, no ending punctuation. Examples: "Pipeline deal flow analysis", "Fund performance Q4 review", "Investor commitment breakdown".
+
+User: ${userText}
+Assistant: ${assistantText}
+
+Title:`,
+  })
+
+  const cleaned = title.trim().replace(/^["']|["']$/g, '').slice(0, 60)
+  if (!cleaned) return
+
+  await prisma.conversation.update({
+    where: { id: conversationId },
+    data: { title: cleaned },
   })
 }

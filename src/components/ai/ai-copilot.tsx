@@ -10,7 +10,7 @@ import {
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
 import type { UIMessage } from 'ai'
-import { ChevronDown, Plus, Send, X, RotateCcw } from 'lucide-react'
+import { ChevronDown, Plus, Send, Square, X, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -24,6 +24,25 @@ import {
   createConversation,
   getConversationMessages,
 } from '@/lib/actions/ai-conversations'
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function formatRelativeTime(date: Date | string): string {
+  const now = Date.now()
+  const then = new Date(date).getTime()
+  const diffMs = now - then
+  const diffMin = Math.floor(diffMs / 60_000)
+  if (diffMin < 1) return 'Just now'
+  if (diffMin < 60) return `${diffMin}m ago`
+  const diffHr = Math.floor(diffMin / 60)
+  if (diffHr < 24) return `${diffHr}h ago`
+  const diffDays = Math.floor(diffHr / 24)
+  if (diffDays === 1) return 'Yesterday'
+  if (diffDays < 7) return `${diffDays}d ago`
+  return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
 
 // ---------------------------------------------------------------------------
 // AICopilot — Wrapper that owns conversation state and renders ChatSession
@@ -105,8 +124,13 @@ export function AICopilot() {
     }
   }, [inputValue, fundId, currentConversationId, setCurrentConversationId])
 
-  // Ref to ChatSession's send function for existing conversations
+  // Refs to ChatSession's send and stop functions
   const sendRequestRef = useRef<((text: string) => void) | null>(null)
+  const stopRequestRef = useRef<(() => void) | null>(null)
+
+  const handleStop = useCallback(() => {
+    stopRequestRef.current?.()
+  }, [])
 
   // Handle keyboard: Enter to send, Shift+Enter for newline
   const handleKeyDown = useCallback(
@@ -185,9 +209,14 @@ export function AICopilot() {
                         : 'text-[#F8FAFC]'
                     }`}
                   >
-                    <span className="truncate">
-                      {conv.title ?? 'Untitled'}
-                    </span>
+                    <div className="flex items-center justify-between w-full gap-2">
+                      <span className="truncate">
+                        {conv.title ?? 'Untitled'}
+                      </span>
+                      <span className="text-[10px] text-[#64748B] shrink-0">
+                        {formatRelativeTime(conv.updatedAt)}
+                      </span>
+                    </div>
                   </DropdownMenuItem>
                 ))
               )}
@@ -227,6 +256,7 @@ export function AICopilot() {
         onStreamingChange={handleStreamingChange}
         onRefreshConversations={refreshConversations}
         sendRequestRef={sendRequestRef}
+        stopRequestRef={stopRequestRef}
       />
 
       {/* Input */}
@@ -244,16 +274,28 @@ export function AICopilot() {
             rows={1}
             className="flex-1 bg-transparent text-sm text-[#F8FAFC] placeholder:text-[#475569] resize-none outline-none max-h-[120px]"
           />
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleSend}
-            disabled={!inputValue.trim() || isStreaming}
-            className="h-7 w-7 shrink-0 bg-[#3E5CFF] text-white hover:bg-[#3E5CFF]/90 disabled:opacity-30 disabled:bg-[#3E5CFF]/50"
-            aria-label="Send message"
-          >
-            <Send className="h-3.5 w-3.5" />
-          </Button>
+          {isStreaming ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleStop}
+              className="h-7 w-7 shrink-0 bg-[#334155] text-[#F8FAFC] hover:bg-[#475569]"
+              aria-label="Stop generating"
+            >
+              <Square className="h-3 w-3 fill-current" />
+            </Button>
+          ) : (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleSend}
+              disabled={!inputValue.trim()}
+              className="h-7 w-7 shrink-0 bg-[#3E5CFF] text-white hover:bg-[#3E5CFF]/90 disabled:opacity-30 disabled:bg-[#3E5CFF]/50"
+              aria-label="Send message"
+            >
+              <Send className="h-3.5 w-3.5" />
+            </Button>
+          )}
         </div>
       </div>
     </div>
@@ -274,6 +316,7 @@ interface ChatSessionProps {
   onStreamingChange: (streaming: boolean) => void
   onRefreshConversations: () => Promise<void>
   sendRequestRef: React.MutableRefObject<((text: string) => void) | null>
+  stopRequestRef: React.MutableRefObject<(() => void) | null>
 }
 
 function ChatSession({
@@ -284,6 +327,7 @@ function ChatSession({
   onStreamingChange,
   onRefreshConversations,
   sendRequestRef,
+  stopRequestRef,
 }: ChatSessionProps) {
   const [initialMessages, setInitialMessages] = useState<UIMessage[]>([])
   const [messagesLoaded, setMessagesLoaded] = useState(!conversationId)
@@ -302,6 +346,7 @@ function ChatSession({
   const {
     messages,
     sendMessage,
+    stop,
     status,
     error,
     setMessages,
@@ -326,15 +371,17 @@ function ChatSession({
     onStreamingChange(isStreaming)
   }, [isStreaming, onStreamingChange])
 
-  // Expose send function to parent for existing-conversation sends
+  // Expose send and stop functions to parent
   useEffect(() => {
     sendRequestRef.current = (text: string) => {
       sendMessage({ text })
     }
+    stopRequestRef.current = stop
     return () => {
       sendRequestRef.current = null
+      stopRequestRef.current = null
     }
-  }, [sendRequestRef, sendMessage])
+  }, [sendRequestRef, stopRequestRef, sendMessage, stop])
 
   // Load messages for existing conversations
   useEffect(() => {
