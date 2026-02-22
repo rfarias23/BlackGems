@@ -59,6 +59,9 @@ export function AICopilot() {
     [fundId]
   )
 
+  // Track whether we need to sync conversationId after streaming finishes
+  const pendingConversationIdRef = useRef<string | null>(null)
+
   const {
     messages,
     sendMessage,
@@ -71,10 +74,20 @@ export function AICopilot() {
     messages: initialMessages,
     transport,
     onFinish: () => {
+      // Sync conversationId state AFTER stream completes to avoid re-render mid-stream
+      if (pendingConversationIdRef.current) {
+        setCurrentConversationId(pendingConversationIdRef.current)
+        pendingConversationIdRef.current = null
+      }
       refreshConversations()
     },
     onError: (err: Error) => {
       console.error('Emma chat error:', err.message)
+      // Still sync conversationId on error so retry works
+      if (pendingConversationIdRef.current) {
+        setCurrentConversationId(pendingConversationIdRef.current)
+        pendingConversationIdRef.current = null
+      }
     },
   })
 
@@ -141,13 +154,16 @@ export function AICopilot() {
     }
 
     // If no conversation exists, create one first
+    // IMPORTANT: Only update the ref here, NOT the state. Changing currentConversationId
+    // triggers a re-render that reinitializes useChat and kills the active stream.
+    // The state is synced in onFinish after the stream completes.
     let conversationId = currentConversationId
     if (!conversationId) {
       try {
         const conv = await createConversation(fundId)
         conversationId = conv.id
         conversationIdRef.current = conversationId
-        setCurrentConversationId(conversationId)
+        pendingConversationIdRef.current = conversationId
       } catch (err) {
         console.error('Failed to create conversation:', err)
         setSendError('Failed to start conversation. Please try again.')
@@ -167,7 +183,6 @@ export function AICopilot() {
     status,
     currentConversationId,
     fundId,
-    setCurrentConversationId,
     sendMessage,
   ])
 
