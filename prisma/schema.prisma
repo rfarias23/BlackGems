@@ -904,6 +904,7 @@ model Commitment {
   @@unique([investorId, fundId])
   @@index([fundId])
   @@index([investorId])
+  @@index([deletedAt])
 }
 
 enum CommitmentStatus {

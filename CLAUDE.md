@@ -136,7 +136,7 @@ docker run --rm -e DATABASE_URL="$DB_URL" postgres:15-alpine sh -c 'psql "$DATAB
 - [ ] Data model is correct and normalized (no stored derived data)
 - [ ] Session guard: `!session?.user?.id` (NOT `!session?.user`)
 - [ ] Fund access: `requireFundAccess()` called on all mutations touching fund-scoped data
-- [ ] Soft deletes: never hard delete Deal, Investor, PortfolioCompany, Document, CapitalCall, Distribution
+- [ ] Soft deletes: never hard delete Deal, Investor, PortfolioCompany, Document, CapitalCall, Distribution, Commitment
 - [ ] Zod validation on all user inputs before DB operations
 - [ ] Schema changes have a Prisma migration (`prisma migrate dev --name <description>`)
 
