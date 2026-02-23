@@ -83,6 +83,46 @@ If you see commits that were already merged in other PRs, rebase first. Do not c
 
 ---
 
+## Database & Migrations (MANDATORY)
+
+### Infrastructure
+| Environment | Database | Host | Access |
+|-------------|----------|------|--------|
+| Development | PostgreSQL (Neon) | `ep-dark-voice-...neon.tech` | Direct via `DATABASE_URL` in `.env` |
+| Production | PostgreSQL (AWS RDS) | `blackgem-prod...rds.amazonaws.com` | EC2 only (Security Group restricted) |
+
+Production runs on **AWS EC2** (Docker Compose + nginx), NOT Vercel. Deployed via GitHub Actions → ECR → SSH to EC2.
+
+### Prisma is the single source of truth
+- **All schema changes** go through `prisma migrate dev --name <description>`
+- **Deploy to production** via `prisma migrate deploy` from EC2
+- **Never write raw SQL** for schema changes — no `CREATE TABLE`, `ALTER TABLE`, `ADD COLUMN` scripts
+- **Never modify production DB directly** without a Prisma migration
+
+### Schema change workflow
+```bash
+# 1. Edit prisma/schema.prisma
+# 2. Generate migration (creates SQL + applies to dev DB)
+npx prisma migrate dev --name <description>
+# 3. Verify
+npx prisma migrate status
+# 4. Commit the migration file with your PR
+# 5. After merge, deploy to production:
+ssh -i ~/.ssh/blackgem-ec2.pem ec2-user@3.223.165.121
+cd /opt/blackgem && npx prisma migrate deploy
+```
+
+### Production access (read-only queries only)
+```bash
+ssh -i ~/.ssh/blackgem-ec2.pem ec2-user@3.223.165.121
+DB_URL=$(grep '^DATABASE_URL=' /opt/blackgem/.env | cut -d= -f2-)
+docker run --rm -e DATABASE_URL="$DB_URL" postgres:15-alpine sh -c 'psql "$DATABASE_URL" -c "SELECT ..."'
+```
+
+**Note:** `psql` is not installed on EC2 — use Docker `postgres:15-alpine` image. The `.env` file cannot be `source`d due to `<>` in `RESEND_FROM_EMAIL` — use `grep + cut` pattern above.
+
+---
+
 ## Pre-Ship Checklist
 
 **Every commit and PR must satisfy ALL items.** No exceptions.
@@ -98,6 +138,7 @@ If you see commits that were already merged in other PRs, rebase first. Do not c
 - [ ] Fund access: `requireFundAccess()` called on all mutations touching fund-scoped data
 - [ ] Soft deletes: never hard delete Deal, Investor, PortfolioCompany, Document, CapitalCall, Distribution
 - [ ] Zod validation on all user inputs before DB operations
+- [ ] Schema changes have a Prisma migration (`prisma migrate dev --name <description>`)
 
 ### Institutional Craftsmanship
 - [ ] TypeScript strict — zero `any` types, zero `@ts-ignore`
@@ -183,6 +224,7 @@ function getClient() { if (!_client) _client = new Client(key); return _client }
 - Spinners, loading text, emojis, illustrations in UI
 - Bright/saturated colors except Heritage Sapphire for CTAs
 - `!session?.user` guard (must be `!session?.user?.id`)
+- Manual SQL migrations outside Prisma (no `production-migration-*.sql` files)
 
 ---
 
