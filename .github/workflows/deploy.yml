@@ -48,5 +48,6 @@ jobs:
           script: |
             cd /opt/blackgem
             docker compose pull
+            docker compose run --rm app npx prisma migrate deploy
             docker compose up -d --remove-orphans
             docker image prune -f
