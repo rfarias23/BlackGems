@@ -116,6 +116,9 @@ export const onboardingSchema = z.object({
   userEmail: z.string().email(),
   password: z.string().min(8),
   confirmPassword: z.string(),
+
+  // Beta code (optional)
+  code: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'Passwords do not match',
   path: ['confirmPassword'],

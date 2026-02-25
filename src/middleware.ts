@@ -45,6 +45,6 @@ export const config = {
      * - favicon.ico, icon.png (browser icons)
      * - api/auth (NextAuth handles its own routing)
      */
-    '/((?!_next/static|_next/image|favicon\\.ico|icon\\.png|api/auth).*)',
+    '/((?!_next/static|_next/image|favicon\\.ico|icon\\.png|api/auth|api/stripe).*)',
   ],
 }
