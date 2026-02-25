@@ -15,8 +15,15 @@ import type { Currency, FundType, OrgEntityType } from '@prisma/client'
 // ============================================================================
 
 type OnboardingResult =
-  | { success: true; fundSlug: string }
+  | { success: true; fundSlug: string; skipPayment: boolean }
   | { error: string }
+
+// Beta codes: extend trial and skip payment step
+const BETA_CODES: Record<string, { trialDays: number; skipPayment: boolean }> = {
+  BETA2026: { trialDays: 60, skipPayment: true },
+}
+
+const DEFAULT_TRIAL_DAYS = 14
 
 // ============================================================================
 // VALID ENTITY TYPE VALUES (must match Prisma enum)
@@ -111,6 +118,11 @@ export async function registerWithOnboarding(
 
     const orgType = isSearchFund ? 'SEARCH_FUND' : 'MID_PE'
 
+    // Resolve beta code
+    const betaConfig = data.code ? BETA_CODES[data.code] : null
+    const trialDays = betaConfig?.trialDays ?? DEFAULT_TRIAL_DAYS
+    const skipPayment = betaConfig?.skipPayment ?? false
+
     const result = await prisma.$transaction(async (tx) => {
       // Create Organization
       const org = await tx.organization.create({
@@ -124,6 +136,8 @@ export async function registerWithOnboarding(
           country: 'USA',
           baseCurrency: data.currency as Currency,
           onboardingCompleted: true,
+          subscriptionStatus: 'TRIALING',
+          trialEndsAt: new Date(Date.now() + trialDays * 86400000),
         },
       })
 
@@ -207,7 +221,7 @@ export async function registerWithOnboarding(
       fundSlug,
     }).catch((err) => console.error('Welcome email failed:', err))
 
-    return { success: true, fundSlug }
+    return { success: true, fundSlug, skipPayment }
   } catch (error) {
     // Handle Prisma unique constraint violation (race condition)
     if (

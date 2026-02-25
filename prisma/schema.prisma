@@ -60,6 +60,13 @@ model Organization {
   isActive          Boolean  @default(true)
   onboardingCompleted Boolean @default(false)
 
+  // Billing
+  subscriptionTier     SubscriptionTier?
+  subscriptionStatus   SubscriptionStatus?
+  stripeCustomerId     String?    @unique
+  stripeSubscriptionId String?    @unique
+  trialEndsAt          DateTime?
+
   // Metadata
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -100,6 +107,20 @@ enum ReportingFrequency {
   QUARTERLY
   SEMI_ANNUAL
   ANNUAL
+}
+
+enum SubscriptionTier {
+  SEARCH
+  OPERATE
+  SCALE
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  UNPAID
 }
 
 // ============================================================================

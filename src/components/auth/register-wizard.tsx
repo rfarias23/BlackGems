@@ -6,6 +6,7 @@ import { signIn } from 'next-auth/react'
 import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle, Building2, Search } from 'lucide-react'
 import { registerWithOnboarding } from '@/lib/actions/onboarding'
 import { generateSlug, validateSlug } from '@/lib/shared/slug-utils'
+import { PaymentStep } from '@/components/billing/payment-step'
 import {
   vehicleTypeSchema,
   searchFundStepSchema,
@@ -135,6 +136,8 @@ export function RegisterWizard() {
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const [success, setSuccess] = useState(false)
+  const [skipPayment, setSkipPayment] = useState(false)
+  const [fundSlug, setFundSlug] = useState<string | null>(null)
 
   // Pre-select vehicle type from query param (?type=search or ?type=pe)
   useEffect(() => {
@@ -166,8 +169,8 @@ export function RegisterWizard() {
   // Step configuration by vehicle type
   const isSearchFund = state.vehicleType === 'SEARCH_FUND'
   const stepLabels = isSearchFund
-    ? ['Type', 'Fund', 'Done']
-    : ['Type', 'Firm', 'Fund', 'Account', 'Done']
+    ? (skipPayment ? ['Type', 'Fund', 'Done'] : ['Type', 'Fund', 'Plan', 'Done'])
+    : (skipPayment ? ['Type', 'Firm', 'Fund', 'Account', 'Done'] : ['Type', 'Firm', 'Fund', 'Account', 'Plan', 'Done'])
   const totalSteps = stepLabels.length
 
   // --------
@@ -272,10 +275,30 @@ export function RegisterWizard() {
   // SUBMIT
   // --------
 
+  function redirectToDashboard(slug: string) {
+    const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'blackgem.ai'
+    const isLocal = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+    const dashboardUrl = isLocal
+      ? `/dashboard?fund=${slug}`
+      : `https://${slug}.${rootDomain}/dashboard`
+
+    setTimeout(() => {
+      window.location.href = dashboardUrl
+    }, 1500)
+  }
+
+  function handlePaymentComplete() {
+    setSuccess(true)
+    setStep(totalSteps - 1)
+    if (fundSlug) redirectToDashboard(fundSlug)
+  }
+
   function submitRegistration() {
     if (!state.vehicleType) { setError('Please select a vehicle type.'); return }
 
     const targetNum = parseFloat(state.targetSize.replace(/[$€£,]/g, ''))
+
+    const code = searchParams.get('code') || undefined
 
     const input: OnboardingInput = {
       vehicleType: state.vehicleType,
@@ -295,6 +318,7 @@ export function RegisterWizard() {
       userEmail: state.userEmail,
       password: state.password,
       confirmPassword: state.confirmPassword,
+      code,
     }
 
     startTransition(async () => {
@@ -306,31 +330,28 @@ export function RegisterWizard() {
         return
       }
 
-      // Success — show success step, then auto-login
-      setSuccess(true)
-      setStep(totalSteps - 1)
-
-      // Auto-login
+      // Auto-login first
       try {
-        const signInResult = await signIn('credentials', {
+        await signIn('credentials', {
           email: state.userEmail,
           password: state.password,
           redirect: false,
         })
-
-        if (signInResult?.ok) {
-          const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'blackgem.ai'
-          const isLocal = typeof window !== 'undefined' && window.location.hostname === 'localhost'
-          const dashboardUrl = isLocal
-            ? `/dashboard?fund=${result.fundSlug}`
-            : `https://${result.fundSlug}.${rootDomain}/dashboard`
-
-          setTimeout(() => {
-            window.location.href = dashboardUrl
-          }, 1500)
-        }
       } catch {
         // signIn failed — user can still log in manually
+      }
+
+      setFundSlug(result.fundSlug)
+      setSkipPayment(result.skipPayment)
+
+      if (result.skipPayment) {
+        // Beta user — skip payment, go to Done
+        setSuccess(true)
+        setStep(totalSteps - 1)
+        redirectToDashboard(result.fundSlug)
+      } else {
+        // Regular user — advance to Plan step
+        setStep(s => s + 1)
       }
     })
   }
@@ -616,8 +637,19 @@ export function RegisterWizard() {
         </div>
       )}
 
+      {/* PLAN STEP (payment) — shown after account creation for non-beta users */}
+      {!skipPayment && !success && (
+        (isSearchFund ? step === 2 : step === 4)
+      ) && (
+        <div>
+          <PaymentStep
+            onComplete={handlePaymentComplete}
+          />
+        </div>
+      )}
+
       {/* Bottom link */}
-      {step < totalSteps - 1 && (
+      {step < totalSteps - 1 && !success && (
         <p className="mt-8 text-center text-[13px] text-slate-600">
           Already have an account?{' '}
           <a href="/login" className="text-slate-400 hover:text-[#3E5CFF] transition-colors">

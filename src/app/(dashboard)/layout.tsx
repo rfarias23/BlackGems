@@ -8,6 +8,10 @@ import { getUserModulePermissions } from '@/lib/shared/fund-access';
 import { redirect } from 'next/navigation';
 import { AICopilotProvider } from '@/components/ai/ai-copilot-provider';
 import { AICopilotPanel, AICopilotContentWrapper } from '@/components/ai/ai-copilot-layout';
+import { prisma } from '@/lib/prisma';
+import { checkSubscriptionAccess } from '@/lib/shared/subscription-access';
+import { TrialBanner } from '@/components/billing/trial-banner';
+import { BlockModal } from '@/components/billing/block-modal';
 
 // All dashboard pages require authentication (cookies/headers), so static generation is impossible.
 export const dynamic = 'force-dynamic';
@@ -39,6 +43,33 @@ export default async function DashboardLayout({
     const permissions = activeFundId
         ? await getUserModulePermissions(session.user.id!, activeFundId ?? funds[0]?.id ?? '')
         : [];
+
+    // Check subscription access
+    const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { organizationId: true },
+    });
+
+    let subscriptionAccess: { allowed: boolean; reason?: string; daysRemaining?: number } = { allowed: true };
+
+    if (user?.organizationId) {
+        const org = await prisma.organization.findUnique({
+            where: { id: user.organizationId },
+            select: {
+                subscriptionStatus: true,
+                trialEndsAt: true,
+                stripeSubscriptionId: true,
+            },
+        });
+
+        if (org) {
+            subscriptionAccess = checkSubscriptionAccess({
+                subscriptionStatus: org.subscriptionStatus,
+                trialEndsAt: org.trialEndsAt,
+                stripeSubscriptionId: org.stripeSubscriptionId,
+            });
+        }
+    }
 
     const aiEnabled = !!process.env.ANTHROPIC_API_KEY;
     const fundId = activeFundId ?? funds[0]?.id ?? '';
@@ -84,11 +115,19 @@ export default async function DashboardLayout({
 
                 {/* Main content area — padding adjusts when AI panel is open */}
                 <AICopilotContentWrapper>
+                    {subscriptionAccess.daysRemaining !== undefined && subscriptionAccess.allowed && (
+                        <TrialBanner daysRemaining={subscriptionAccess.daysRemaining} />
+                    )}
                     <Header user={session?.user} unreadCount={unreadCount} />
                     <main className="flex-1 p-8">
                         {children}
                     </main>
                 </AICopilotContentWrapper>
+
+                {/* Subscription block modal — hard gate */}
+                {!subscriptionAccess.allowed && (
+                    <BlockModal reason={subscriptionAccess.reason ?? 'Subscription required'} />
+                )}
 
                 {/* AI Copilot panel — fixed on the right */}
                 <AICopilotPanel />
