@@ -323,35 +323,40 @@ export function RegisterWizard() {
 
     startTransition(async () => {
       setError(null)
-      const result = await registerWithOnboarding(input)
 
-      if ('error' in result) {
-        setError(result.error)
-        return
-      }
-
-      // Auto-login first
       try {
-        await signIn('credentials', {
-          email: state.userEmail,
-          password: state.password,
-          redirect: false,
-        })
+        const result = await registerWithOnboarding(input)
+
+        if ('error' in result) {
+          setError(result.error)
+          return
+        }
+
+        // Auto-login first
+        try {
+          await signIn('credentials', {
+            email: state.userEmail,
+            password: state.password,
+            redirect: false,
+          })
+        } catch {
+          // signIn failed — user can still log in manually
+        }
+
+        setFundSlug(result.fundSlug)
+        setSkipPayment(result.skipPayment)
+
+        if (result.skipPayment) {
+          // Beta user — skip payment, go to Done
+          setSuccess(true)
+          setStep(totalSteps - 1)
+          redirectToDashboard(result.fundSlug)
+        } else {
+          // Regular user — advance to Plan step
+          setStep(s => s + 1)
+        }
       } catch {
-        // signIn failed — user can still log in manually
-      }
-
-      setFundSlug(result.fundSlug)
-      setSkipPayment(result.skipPayment)
-
-      if (result.skipPayment) {
-        // Beta user — skip payment, go to Done
-        setSuccess(true)
-        setStep(totalSteps - 1)
-        redirectToDashboard(result.fundSlug)
-      } else {
-        // Regular user — advance to Plan step
-        setStep(s => s + 1)
+        setError('Something went wrong. Please try again.')
       }
     })
   }
