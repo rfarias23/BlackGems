@@ -110,7 +110,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
 
   // Audit log
   const adminUser = await prisma.user.findFirst({
-    where: { organizationId: org.id, role: 'SUPER_ADMIN' },
+    where: { organizationId: org.id, role: { in: ['SUPER_ADMIN', 'FUND_ADMIN'] } },
     select: { id: true },
   })
 

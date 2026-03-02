@@ -153,6 +153,31 @@ describe('registerWithOnboarding', () => {
       })
       expect(result).toEqual({ success: true, fundSlug: 'martha-fund', skipPayment: false })
     })
+
+    it('assigns FUND_ADMIN role (not SUPER_ADMIN) to registered users', async () => {
+      let capturedUserData: Record<string, unknown> | null = null
+
+      vi.mocked(prisma.$transaction).mockImplementation(async (fn) => {
+        const tx = {
+          organization: { create: vi.fn().mockResolvedValue({ id: 'org_1', name: 'Martha Fund', slug: 'martha-fund' }) },
+          user: { create: vi.fn().mockImplementation(async (args: { data: Record<string, unknown> }) => {
+            capturedUserData = args.data
+            return { id: 'user_1', email: 'martha@fund.com', name: 'Martha Smith' }
+          }) },
+          fund: { create: vi.fn().mockResolvedValue({ id: 'fund_1', name: 'Martha Fund', slug: 'martha-fund' }) },
+          fundMember: { create: vi.fn().mockResolvedValue({ id: 'fm_1' }) },
+        }
+        if (typeof fn === 'function') {
+          return (fn as (tx: typeof prisma) => Promise<unknown>)(tx as unknown as typeof prisma)
+        }
+        return undefined
+      })
+
+      const result = await registerWithOnboarding(searchFundInput)
+      expect(result).toEqual({ success: true, fundSlug: 'martha-fund', skipPayment: false })
+      expect(capturedUserData).not.toBeNull()
+      expect(capturedUserData!.role).toBe('FUND_ADMIN')
+    })
   })
 
   // Rate limiting

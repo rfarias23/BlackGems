@@ -46,17 +46,26 @@ const createFundSchema = z.object({
 
 /**
  * Returns all funds the user has access to.
- * SUPER_ADMIN and FUND_ADMIN see all funds.
+ * SUPER_ADMIN sees all funds globally (platform admin).
+ * FUND_ADMIN sees all funds within their organization.
  * Other users see only funds with active FundMember records.
  */
 export async function getUserFunds(userId: string): Promise<FundSummary[]> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { role: true },
+    select: { role: true, organizationId: true },
   })
 
-  if (user?.role === 'SUPER_ADMIN' || user?.role === 'FUND_ADMIN') {
+  if (user?.role === 'SUPER_ADMIN') {
     return prisma.fund.findMany({
+      select: { id: true, name: true, currency: true, status: true },
+      orderBy: { createdAt: 'asc' },
+    })
+  }
+
+  if (user?.role === 'FUND_ADMIN') {
+    return prisma.fund.findMany({
+      where: { organizationId: user.organizationId ?? undefined },
       select: { id: true, name: true, currency: true, status: true },
       orderBy: { createdAt: 'asc' },
     })
