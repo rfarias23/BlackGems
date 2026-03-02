@@ -12,6 +12,7 @@ import {
     FileText,
     Settings,
     Shield,
+    Clock,
 } from 'lucide-react';
 import { FundSwitcher } from '@/components/layout/fund-switcher';
 import { CreateFundDialog } from '@/components/layout/create-fund-dialog';
@@ -31,9 +32,10 @@ interface SidebarProps {
     funds: FundSummary[];
     activeFundId: string;
     permissions: string[];
+    trialDaysRemaining?: number;
 }
 
-export function Sidebar({ userRole, funds, activeFundId, permissions }: SidebarProps) {
+export function Sidebar({ userRole, funds, activeFundId, permissions, trialDaysRemaining }: SidebarProps) {
     const pathname = usePathname();
     const isAdmin = userRole === 'SUPER_ADMIN' || userRole === 'FUND_ADMIN';
 
@@ -103,8 +105,20 @@ export function Sidebar({ userRole, funds, activeFundId, permissions }: SidebarP
                     </div>
                 )}
             </nav>
-            {(isAdmin || permissions.includes('SETTINGS')) && (
             <div className="border-t border-border p-3">
+                {trialDaysRemaining !== undefined && (
+                    <Link
+                        href="/settings?tab=billing"
+                        className="flex items-center gap-2 px-3 py-2 mb-1 rounded-md hover:bg-muted transition-colors"
+                    >
+                        <Clock className="h-4 w-4 flex-shrink-0 text-[#D97706]" aria-hidden="true" />
+                        <span className="text-[12px] text-[#D97706]">
+                            <span className="font-mono">{trialDaysRemaining}</span>
+                            {' '}day{trialDaysRemaining !== 1 ? 's' : ''} left in trial
+                        </span>
+                    </Link>
+                )}
+                {(isAdmin || permissions.includes('SETTINGS')) && (
                 <Link
                     href="/settings"
                     className={cn(
@@ -115,8 +129,8 @@ export function Sidebar({ userRole, funds, activeFundId, permissions }: SidebarP
                     <Settings className="mr-3 h-5 w-5 flex-shrink-0" />
                     Settings
                 </Link>
+                )}
             </div>
-            )}
             <CreateFundDialog />
         </div>
     );
