@@ -111,8 +111,8 @@ export function Sidebar({ userRole, funds, activeFundId, permissions, trialDaysR
                         href="/settings?tab=billing"
                         className="flex items-center gap-2 px-3 py-2 mb-1 rounded-md hover:bg-muted transition-colors"
                     >
-                        <Clock className="h-4 w-4 flex-shrink-0 text-[#D97706]" aria-hidden="true" />
-                        <span className="text-[12px] text-[#D97706]">
+                        <Clock className="h-4 w-4 flex-shrink-0 text-amber-400" aria-hidden="true" />
+                        <span className="text-[12px] text-amber-400">
                             <span className="font-mono">{trialDaysRemaining}</span>
                             {' '}day{trialDaysRemaining !== 1 ? 's' : ''} left in trial
                         </span>
