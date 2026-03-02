@@ -2,6 +2,9 @@
 
 import type { UIMessage, DynamicToolUIPart } from 'ai'
 import { AIToolResult } from './ai-tool-result'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import type { Components } from 'react-markdown'
 
 interface AIMessageProps {
   message: UIMessage
@@ -56,8 +59,10 @@ function AssistantMessage({ message }: { message: UIMessage }) {
         if (part.type === 'text') {
           if (!part.text) return null
           return (
-            <div key={index} className="text-sm text-[#E2E8F0] whitespace-pre-wrap break-words">
-              <FormattedText text={part.text} />
+            <div key={index} className="ai-markdown text-sm text-[#E2E8F0] break-words">
+              <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                {part.text}
+              </ReactMarkdown>
             </div>
           )
         }
@@ -79,82 +84,61 @@ function AssistantMessage({ message }: { message: UIMessage }) {
 }
 
 // ---------------------------------------------------------------------------
-// Simple text formatter for financial values
+// Markdown component overrides — dark theme, institutional styling
 // ---------------------------------------------------------------------------
 
-const CURRENCY_REGEX = /\$[\d,]+(?:\.\d{1,2})?(?:[KMB])?/g
-const PERCENT_REGEX = /\d+(?:\.\d{1,2})?%/g
-const MULTIPLE_REGEX = /\d+(?:\.\d{1,2})?x\b/g
-
-function FormattedText({ text }: { text: string }) {
-  // Split text into segments, wrapping financial values in monospace spans
-  const parts: Array<{ key: string; content: string; isMono: boolean }> = []
-  let lastIndex = 0
-
-  const allMatches: Array<{ start: number; end: number; text: string }> = []
-
-  for (const regex of [CURRENCY_REGEX, PERCENT_REGEX, MULTIPLE_REGEX]) {
-    regex.lastIndex = 0
-    let match: RegExpExecArray | null = regex.exec(text)
-    while (match !== null) {
-      allMatches.push({
-        start: match.index,
-        end: match.index + match[0].length,
-        text: match[0],
-      })
-      match = regex.exec(text)
+const markdownComponents: Components = {
+  p: ({ children }) => <p className="mb-3 last:mb-0 leading-relaxed">{children}</p>,
+  strong: ({ children }) => <strong className="font-semibold text-[#F8FAFC]">{children}</strong>,
+  em: ({ children }) => <em className="italic text-[#CBD5E1]">{children}</em>,
+  h1: ({ children }) => <h1 className="text-base font-semibold text-[#F8FAFC] mt-4 mb-2">{children}</h1>,
+  h2: ({ children }) => <h2 className="text-sm font-semibold text-[#F8FAFC] mt-4 mb-2">{children}</h2>,
+  h3: ({ children }) => <h3 className="text-sm font-semibold text-[#F8FAFC] mt-3 mb-1">{children}</h3>,
+  ul: ({ children }) => <ul className="mb-3 last:mb-0 space-y-1 pl-4">{children}</ul>,
+  ol: ({ children }) => <ol className="mb-3 last:mb-0 space-y-1 pl-4 list-decimal">{children}</ol>,
+  li: ({ children }) => (
+    <li className="relative pl-2 before:content-['–'] before:absolute before:-left-3 before:text-[#64748B]">
+      {children}
+    </li>
+  ),
+  code: ({ children, className }) => {
+    const isBlock = className?.includes('language-')
+    if (isBlock) {
+      return (
+        <code className={`block bg-[#0D1117] rounded px-3 py-2 text-[12px] font-mono text-[#E2E8F0] overflow-x-auto ${className ?? ''}`}>
+          {children}
+        </code>
+      )
     }
-  }
-
-  // Sort by position and remove overlaps
-  allMatches.sort((a, b) => a.start - b.start)
-  const filtered: typeof allMatches = []
-  for (const m of allMatches) {
-    const prev = filtered[filtered.length - 1]
-    if (!prev || m.start >= prev.end) {
-      filtered.push(m)
-    }
-  }
-
-  for (const m of filtered) {
-    if (m.start > lastIndex) {
-      parts.push({
-        key: `text-${lastIndex}`,
-        content: text.slice(lastIndex, m.start),
-        isMono: false,
-      })
-    }
-    parts.push({
-      key: `mono-${m.start}`,
-      content: m.text,
-      isMono: true,
-    })
-    lastIndex = m.end
-  }
-
-  if (lastIndex < text.length) {
-    parts.push({
-      key: `text-${lastIndex}`,
-      content: text.slice(lastIndex),
-      isMono: false,
-    })
-  }
-
-  if (parts.length === 0) {
-    return <>{text}</>
-  }
-
-  return (
-    <>
-      {parts.map((p) =>
-        p.isMono ? (
-          <span key={p.key} className="font-mono tabular-nums text-[#F8FAFC]">
-            {p.content}
-          </span>
-        ) : (
-          <span key={p.key}>{p.content}</span>
-        )
-      )}
-    </>
-  )
+    return (
+      <code className="font-mono tabular-nums text-[#F8FAFC] bg-[#1E293B] px-1 py-0.5 rounded text-[12px]">
+        {children}
+      </code>
+    )
+  },
+  pre: ({ children }) => <pre className="mb-3 last:mb-0 overflow-x-auto">{children}</pre>,
+  table: ({ children }) => (
+    <div className="mb-3 last:mb-0 overflow-x-auto rounded border border-[#334155]">
+      <table className="w-full text-[12px]">{children}</table>
+    </div>
+  ),
+  thead: ({ children }) => <thead className="border-b border-[#334155] bg-[#1E293B]/50">{children}</thead>,
+  th: ({ children }) => (
+    <th className="px-3 py-2 text-left text-[11px] font-medium text-[#94A3B8] uppercase tracking-wider">
+      {children}
+    </th>
+  ),
+  td: ({ children }) => <td className="px-3 py-2 text-[#E2E8F0] border-b border-[#334155]/50">{children}</td>,
+  tr: ({ children }) => <tr className="hover:bg-[#1E293B]/30">{children}</tr>,
+  hr: () => <hr className="my-3 border-[#334155]" />,
+  a: ({ children, href }) => (
+    <a href={href} className="text-[#3E5CFF] hover:text-[#3350E0] underline underline-offset-2" target="_blank" rel="noopener noreferrer">
+      {children}
+    </a>
+  ),
+  blockquote: ({ children }) => (
+    <blockquote className="mb-3 last:mb-0 border-l-2 border-[#334155] pl-3 text-[#94A3B8] italic">
+      {children}
+    </blockquote>
+  ),
 }
