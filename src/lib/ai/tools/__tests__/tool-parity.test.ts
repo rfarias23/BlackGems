@@ -75,7 +75,7 @@ describe('tool-parity: new ITool registry matches old createReadTools', () => {
     for (const old of OLD_TOOL_METADATA) {
       expect(sdkTools).toHaveProperty(old.name)
       expect(sdkTools[old.name]).toHaveProperty('description')
-      expect(sdkTools[old.name]).toHaveProperty('parameters')
+      expect(sdkTools[old.name]).toHaveProperty('inputSchema')
       expect(sdkTools[old.name]).toHaveProperty('execute')
     }
   })

@@ -63,7 +63,7 @@ describe('ToolRegistry', () => {
 
     expect(sdkTools).toHaveProperty('getPipeline')
     expect(sdkTools.getPipeline).toHaveProperty('description')
-    expect(sdkTools.getPipeline).toHaveProperty('parameters')
+    expect(sdkTools.getPipeline).toHaveProperty('inputSchema')
     expect(sdkTools.getPipeline).toHaveProperty('execute')
   })
 })

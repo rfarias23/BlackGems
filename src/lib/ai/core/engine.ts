@@ -16,6 +16,7 @@ import { createDefaultRegistry } from '../tools/create-default-registry'
 import type { ToolContext } from './types'
 import type { CurrencyCode } from '@/lib/shared/formatters'
 import { getConversations } from '@/lib/actions/ai-conversations'
+import type { ToolSet } from 'ai'
 
 // Singleton registry — tool objects are statically defined (metadata + Zod schemas
 // don't change between requests). Per-request ToolContext is bound in toSDKTools().
@@ -31,7 +32,7 @@ export interface EngineInput {
 
 export interface EngineOutput {
   systemPrompt: string
-  tools: Record<string, unknown>
+  tools: ToolSet
   toolContext: ToolContext
   fundContext: FundContext
   userContext: UserContext
