@@ -10,7 +10,6 @@ import { AICopilotProvider } from '@/components/ai/ai-copilot-provider';
 import { AICopilotPanel, AICopilotContentWrapper } from '@/components/ai/ai-copilot-layout';
 import { prisma } from '@/lib/prisma';
 import { checkSubscriptionAccess } from '@/lib/shared/subscription-access';
-import { TrialBanner } from '@/components/billing/trial-banner';
 import { BlockModal } from '@/components/billing/block-modal';
 
 // All dashboard pages require authentication (cookies/headers), so static generation is impossible.
@@ -110,14 +109,12 @@ export default async function DashboardLayout({
                         funds={funds}
                         activeFundId={fundId}
                         permissions={permissions}
+                        trialDaysRemaining={subscriptionAccess.allowed ? subscriptionAccess.daysRemaining : undefined}
                     />
                 </div>
 
                 {/* Main content area — padding adjusts when AI panel is open */}
                 <AICopilotContentWrapper>
-                    {subscriptionAccess.daysRemaining !== undefined && subscriptionAccess.allowed && (
-                        <TrialBanner daysRemaining={subscriptionAccess.daysRemaining} />
-                    )}
                     <Header user={session?.user} unreadCount={unreadCount} />
                     <main className="flex-1 p-8">
                         {children}
