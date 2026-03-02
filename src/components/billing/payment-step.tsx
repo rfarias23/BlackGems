@@ -1,12 +1,11 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useCallback } from 'react'
 import { Check, AlertCircle } from 'lucide-react'
-import { StripeProvider } from './stripe-provider'
+import { stripePromise } from './stripe-provider'
 import {
-  PaymentElement,
-  useStripe,
-  useElements,
+  EmbeddedCheckoutProvider,
+  EmbeddedCheckout,
 } from '@stripe/react-stripe-js'
 
 const TIERS = [
@@ -53,35 +52,31 @@ interface PaymentStepProps {
 
 export function PaymentStep({ onComplete }: PaymentStepProps) {
   const [selectedTier, setSelectedTier] = useState<Tier | null>(null)
-  const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [isPending, startTransition] = useTransition()
 
   function selectTier(tier: Tier) {
-    setSelectedTier(tier)
     setError(null)
-
-    startTransition(async () => {
-      try {
-        const res = await fetch('/api/stripe/checkout', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ tier }),
-        })
-
-        const data = await res.json()
-
-        if (!res.ok) {
-          setError(data.error || 'Failed to create checkout session')
-          return
-        }
-
-        setClientSecret(data.clientSecret)
-      } catch {
-        setError('Something went wrong. Please try again.')
-      }
-    })
+    setSelectedTier(tier)
   }
+
+  const fetchClientSecret = useCallback(async () => {
+    if (!selectedTier) throw new Error('No tier selected')
+
+    const res = await fetch('/api/stripe/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tier: selectedTier }),
+    })
+
+    const data = await res.json()
+
+    if (!res.ok) {
+      setError(data.error || 'Failed to create checkout session')
+      throw new Error(data.error || 'Failed to create checkout session')
+    }
+
+    return data.clientSecret as string
+  }, [selectedTier])
 
   return (
     <div>
@@ -89,7 +84,7 @@ export function PaymentStep({ onComplete }: PaymentStepProps) {
         Choose your plan
       </h1>
       <p className="text-[14px] text-slate-400 mb-8">
-        Your 14-day trial is active. Choose a plan to continue after the trial.
+        Your trial is active. Choose a plan to continue after the trial.
       </p>
 
       {/* Tier selection */}
@@ -99,14 +94,13 @@ export function PaymentStep({ onComplete }: PaymentStepProps) {
             key={tier.id}
             type="button"
             onClick={() => selectTier(tier.id)}
-            disabled={isPending}
             className={`w-full text-left rounded-lg border p-5 transition-all ${
               selectedTier === tier.id
                 ? 'border-[#3E5CFF] bg-[#3E5CFF]/5'
                 : tier.highlighted
                   ? 'border-[#3E5CFF]/30 bg-[#1E2432] hover:border-[#3E5CFF]/60'
                   : 'border-[#334155] bg-[#1E2432] hover:border-slate-500'
-            } ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
+            }`}
           >
             <div className="flex items-center justify-between mb-2">
               <span className="text-[15px] font-medium text-[#F8FAFC]">{tier.name}</span>
@@ -126,11 +120,16 @@ export function PaymentStep({ onComplete }: PaymentStepProps) {
         ))}
       </div>
 
-      {/* Payment form */}
-      {clientSecret && selectedTier && (
-        <StripeProvider clientSecret={clientSecret}>
-          <CheckoutForm onComplete={onComplete} />
-        </StripeProvider>
+      {/* Embedded Checkout */}
+      {selectedTier && (
+        <div className="mb-6 rounded-lg overflow-hidden border border-[#334155]" key={selectedTier}>
+          <EmbeddedCheckoutProvider
+            stripe={stripePromise}
+            options={{ fetchClientSecret, onComplete }}
+          >
+            <EmbeddedCheckout />
+          </EmbeddedCheckoutProvider>
+        </div>
       )}
 
       {/* Skip option */}
@@ -149,65 +148,5 @@ export function PaymentStep({ onComplete }: PaymentStepProps) {
         </div>
       )}
     </div>
-  )
-}
-
-function CheckoutForm({ onComplete }: { onComplete: () => void }) {
-  const stripe = useStripe()
-  const elements = useElements()
-  const [error, setError] = useState<string | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-
-    if (!stripe || !elements) return
-
-    setIsSubmitting(true)
-    setError(null)
-
-    const { error: submitError } = await elements.submit()
-    if (submitError) {
-      setError(submitError.message ?? 'Payment failed')
-      setIsSubmitting(false)
-      return
-    }
-
-    const { error: confirmError } = await stripe.confirmPayment({
-      elements,
-      confirmParams: {
-        return_url: `${window.location.origin}/dashboard?billing=success`,
-      },
-      redirect: 'if_required',
-    })
-
-    if (confirmError) {
-      setError(confirmError.message ?? 'Payment failed')
-      setIsSubmitting(false)
-      return
-    }
-
-    onComplete()
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <PaymentElement />
-
-      <button
-        type="submit"
-        disabled={!stripe || isSubmitting}
-        className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#3E5CFF] px-4 py-3 text-[14px] font-medium text-white transition-colors hover:bg-[#3350E0] disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {isSubmitting ? 'Processing...' : 'Subscribe'}
-      </button>
-
-      {error && (
-        <div className="flex items-center gap-2 text-sm text-red-400" aria-live="polite">
-          <AlertCircle className="h-4 w-4 shrink-0" />
-          <p>{error}</p>
-        </div>
-      )}
-    </form>
   )
 }
