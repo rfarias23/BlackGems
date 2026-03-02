@@ -15,7 +15,7 @@ export async function POST() {
     select: { role: true, organizationId: true },
   })
 
-  if (!user?.organizationId || user.role !== 'SUPER_ADMIN') {
+  if (!user?.organizationId || (user.role !== 'SUPER_ADMIN' && user.role !== 'FUND_ADMIN')) {
     return NextResponse.json({ error: 'Only administrators can manage billing' }, { status: 403 })
   }
 

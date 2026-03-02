@@ -147,7 +147,7 @@ export async function registerWithOnboarding(
           email: normalizedEmail,
           name: data.userName,
           passwordHash,
-          role: 'SUPER_ADMIN',
+          role: 'FUND_ADMIN',
           organizationId: org.id,
           isActive: true,
         },

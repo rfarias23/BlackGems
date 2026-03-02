@@ -19,6 +19,8 @@ export async function requireAuth() {
 
 /**
  * Returns true if the user role is SUPER_ADMIN or FUND_ADMIN.
+ * Used for permission checks (e.g., module access) where both roles
+ * have elevated privileges within their scope.
  */
 async function isAdminRole(userId: string): Promise<boolean> {
   const user = await prisma.user.findUnique({
@@ -110,50 +112,50 @@ export async function requireFundAccess(userId: string, fundId: string) {
  */
 export async function getAuthorizedFundId(userId: string): Promise<string | null> {
   try {
+    // Fetch user role + org once to avoid repeated DB queries
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true, organizationId: true },
+    })
+    if (!user) return null
+
+    const isSuperAdmin = user.role === 'SUPER_ADMIN'
+    const isFundAdmin = user.role === 'FUND_ADMIN'
+    const userOrgId = user.organizationId
+
+    /** Check if user can access a fund based on role + org boundary */
+    const canAccessFund = async (fundId: string, fundOrgId: string | null): Promise<boolean> => {
+      if (isSuperAdmin) return true
+      if (isFundAdmin && userOrgId && fundOrgId === userOrgId) return true
+      const m = await prisma.fundMember.findUnique({
+        where: { fundId_userId: { fundId, userId } },
+        select: { isActive: true },
+      })
+      return m?.isActive === true
+    }
+
     // 1. Try subdomain-resolved fund (from middleware header)
     const fundSlug = await getFundSlugFromHeaders()
     if (fundSlug) {
       const fund = await prisma.fund.findUnique({
         where: { slug: fundSlug },
-        select: { id: true },
+        select: { id: true, organizationId: true },
       })
-      if (fund) {
-        // Verify user has access to this fund
-        const isAdmin = await isAdminRole(userId)
-        if (isAdmin) {
-          await setActiveFundId(fund.id)
-          return fund.id
-        }
-        const membership = await prisma.fundMember.findUnique({
-          where: { fundId_userId: { fundId: fund.id, userId } },
-          select: { isActive: true },
-        })
-        if (membership?.isActive) {
-          await setActiveFundId(fund.id)
-          return fund.id
-        }
-        // User doesn't have access to this fund — fall through to cookie
+      if (fund && await canAccessFund(fund.id, fund.organizationId)) {
+        await setActiveFundId(fund.id)
+        return fund.id
       }
     }
 
     // 2. Try cookie
     const cookieFundId = await getActiveFundId()
-
     if (cookieFundId) {
-      const isAdmin = await isAdminRole(userId)
-
-      if (isAdmin) {
-        const fundExists = await prisma.fund.findUnique({
-          where: { id: cookieFundId },
-          select: { id: true },
-        })
-        if (fundExists) return cookieFundId
-      } else {
-        const membership = await prisma.fundMember.findUnique({
-          where: { fundId_userId: { fundId: cookieFundId, userId } },
-          select: { isActive: true },
-        })
-        if (membership?.isActive) return cookieFundId
+      const fund = await prisma.fund.findUnique({
+        where: { id: cookieFundId },
+        select: { id: true, organizationId: true },
+      })
+      if (fund && await canAccessFund(fund.id, fund.organizationId)) {
+        return cookieFundId
       }
     }
 
@@ -169,9 +171,19 @@ export async function getAuthorizedFundId(userId: string): Promise<string | null
       return membership.fundId
     }
 
-    // 4. Fallback for admins with no memberships: first fund in DB
-    if (await isAdminRole(userId)) {
+    // 4. Fallback for admins with no memberships
+    if (isSuperAdmin) {
       const fund = await prisma.fund.findFirst({
+        select: { id: true },
+        orderBy: { createdAt: 'asc' },
+      })
+      if (fund) {
+        await setActiveFundId(fund.id)
+        return fund.id
+      }
+    } else if (isFundAdmin && userOrgId) {
+      const fund = await prisma.fund.findFirst({
+        where: { organizationId: userOrgId },
         select: { id: true },
         orderBy: { createdAt: 'asc' },
       })
