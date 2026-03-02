@@ -181,7 +181,7 @@ export function AICopilot() {
   return (
     <div className="flex flex-col h-full w-[400px] bg-[#080A0F] border-l border-[#1E293B]">
       {/* Header */}
-      <div className="flex items-center justify-between h-14 px-4 border-b border-[#1E293B] shrink-0">
+      <div className="flex items-center justify-between h-16 px-4 border-b border-[#1E293B] shrink-0">
         <div className="flex items-center gap-2 min-w-0">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
