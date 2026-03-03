@@ -3,7 +3,7 @@
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { requireFundAccess } from '@/lib/shared/fund-access'
-import { logAudit } from '@/lib/shared/audit'
+import { logAudit, computeChanges } from '@/lib/shared/audit'
 import type { UIMessage } from 'ai'
 
 // ---------------------------------------------------------------------------
@@ -226,7 +226,7 @@ export async function updateConversationTitle(
       id: conversationId,
       userId: session.user.id,
     },
-    select: { id: true, fundId: true },
+    select: { id: true, fundId: true, title: true },
   })
 
   if (!conversation) throw new Error('Conversation not found')
@@ -237,6 +237,19 @@ export async function updateConversationTitle(
     where: { id: conversationId },
     data: { title: trimmed.slice(0, 100) },
     select: { id: true, title: true },
+  })
+
+  const changes = computeChanges(
+    { title: conversation.title },
+    { title: trimmed }
+  )
+
+  await logAudit({
+    userId: session.user.id,
+    action: 'UPDATE',
+    entityType: 'Conversation',
+    entityId: conversationId,
+    changes,
   })
 
   return { id: updated.id, title: updated.title ?? trimmed }

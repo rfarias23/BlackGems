@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Plus, ChevronDown, LogOut } from 'lucide-react'
 import { signOut } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
@@ -19,6 +19,12 @@ export function MobileEmmaShell() {
     currentConversationId,
     conversations,
   } = useAICopilot()
+
+  // Toggle html class for scoped iOS overscroll lock
+  useEffect(() => {
+    document.documentElement.classList.add('mobile-emma-active')
+    return () => document.documentElement.classList.remove('mobile-emma-active')
+  }, [])
 
   // Handlers owned by AICopilot (includes state resets + title editing)
   const handlersRef = useRef<AICopilotHandlers | null>(null)

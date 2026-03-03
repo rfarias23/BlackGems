@@ -350,15 +350,15 @@ body {
 
 /* ============================================
    MOBILE EMMA — Prevent iOS Safari overscroll
-   Locks html/body on phone viewports so only the
-   Emma message list scrolls, not the page itself.
+   Scoped via .mobile-emma-active on <html> so only
+   the Emma route locks, not landing/login pages.
    ============================================ */
 @media (max-width: 767px) {
-    html {
+    html.mobile-emma-active {
         overflow: hidden;
         height: -webkit-fill-available;
     }
-    body {
+    html.mobile-emma-active body {
         overflow: hidden;
         height: 100dvh;
     }
