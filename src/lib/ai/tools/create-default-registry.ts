@@ -9,6 +9,9 @@ import { getCapitalCallDetails } from './capital/get-capital-call-details'
 import { getOverdueCallItems } from './capital/get-overdue-call-items'
 import { getDistributionSummary } from './capital/get-distribution-summary'
 import { getDistributionDetails } from './capital/get-distribution-details'
+import { getDDOverview } from './deals/get-dd-overview'
+import { getDealDDItems } from './deals/get-deal-dd-items'
+import { getDealContacts } from './deals/get-deal-contacts'
 
 /**
  * Creates a ToolRegistry pre-loaded with all Phase 1 + Phase 1.5 read-only tools.
@@ -31,6 +34,11 @@ export function createDefaultRegistry(): ToolRegistry {
   registry.register(getOverdueCallItems)
   registry.register(getDistributionSummary)
   registry.register(getDistributionDetails)
+
+  // Phase 1.5 Batch 2: Due diligence & contact tools
+  registry.register(getDDOverview)
+  registry.register(getDealDDItems)
+  registry.register(getDealContacts)
 
   return registry
 }

@@ -59,13 +59,29 @@ const EXPECTED_TOOL_METADATA = [
     description: 'Get detailed information about a specific distribution including per-investor payment amounts, withholding tax, net amounts, and payment status.',
     category: 'capital',
   },
+  // Phase 1.5 Batch 2
+  {
+    name: 'getDDOverview',
+    description: 'Get the due diligence status across all active deals in the fund. Shows completion progress, red flags, and category breakdown for deals in DUE_DILIGENCE, FINAL_NEGOTIATION, and CLOSING stages.',
+    category: 'deals',
+  },
+  {
+    name: 'getDealDDItems',
+    description: 'Get all due diligence items for a specific deal, grouped by category. Includes status, priority, findings, and red flags for each item. Use this when the user asks about DD status for a particular deal.',
+    category: 'deals',
+  },
+  {
+    name: 'getDealContacts',
+    description: 'Get all contacts associated with a specific deal including names, roles, titles, and contact information. Use this when the user asks about who is involved in a deal or needs someone\'s contact details.',
+    category: 'deals',
+  },
 ] as const
 
 describe('tool-parity: registry contains all expected tools', () => {
   const registry = createDefaultRegistry()
 
-  it('has exactly 10 tools', () => {
-    expect(registry.getAll()).toHaveLength(10)
+  it('has exactly 13 tools', () => {
+    expect(registry.getAll()).toHaveLength(13)
   })
 
   it('all expected tool names are present', () => {
@@ -94,7 +110,11 @@ describe('tool-parity: registry contains all expected tools', () => {
     expect(registry.getByCategory('capital')).toHaveLength(6)
   })
 
-  it('toSDKTools produces all 10 tools with expected shape', () => {
+  it('deals category has 5 tools (2 existing + 3 new)', () => {
+    expect(registry.getByCategory('deals')).toHaveLength(5)
+  })
+
+  it('toSDKTools produces all 13 tools with expected shape', () => {
     const ctx = { fundId: 'test-fund', currency: 'USD' as const, userId: 'test-user' }
     const sdkTools = registry.toSDKTools(ctx)
 
