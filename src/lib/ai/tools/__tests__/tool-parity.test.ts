@@ -51,7 +51,7 @@ const EXPECTED_TOOL_METADATA = [
   },
   {
     name: 'getDistributionSummary',
-    description: 'Get a summary of all distributions for the fund including total distributed by type (return of capital, profit, dividends), status breakdown, and recent distribution history.',
+    description: 'Get a summary of all distributions for the fund including total distributed, breakdown by distribution type and status, component totals (return of capital, realized gains, dividends, interest), and recent distribution history.',
     category: 'capital',
   },
   {

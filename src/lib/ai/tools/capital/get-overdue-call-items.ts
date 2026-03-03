@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
+import { notDeleted } from '@/lib/shared/soft-delete'
 import { formatMoney } from '@/lib/shared/formatters'
 import type { ITool } from '../../core/types'
 
@@ -14,12 +15,12 @@ export const getOverdueCallItems: ITool = {
   async execute(_input: unknown, ctx) {
     const now = new Date()
 
-    // Signal 1: date-based — call issued and past due, item not paid
     const overdueItems = await prisma.capitalCallItem.findMany({
       where: {
         status: { notIn: ['PAID'] },
         capitalCall: {
           fundId: ctx.fundId,
+          ...notDeleted,
           status: { in: ['SENT', 'PARTIALLY_FUNDED'] },
           dueDate: { lt: now },
         },
@@ -49,13 +50,13 @@ export const getOverdueCallItems: ITool = {
       },
     })
 
-    // Signal 2: status-based — item explicitly flagged as OVERDUE or DEFAULTED
     const flaggedItems = await prisma.capitalCallItem.findMany({
       where: {
         status: { in: ['OVERDUE', 'DEFAULTED'] },
         capitalCall: {
           fundId: ctx.fundId,
-          status: { notIn: ['DRAFT', 'CANCELLED', 'FULLY_FUNDED'] },
+          ...notDeleted,
+          status: { in: ['SENT', 'PARTIALLY_FUNDED'] },
         },
       },
       include: {
@@ -80,7 +81,6 @@ export const getOverdueCallItems: ITool = {
       },
     })
 
-    // Merge both signals, deduplicate by item id
     const itemMap = new Map<string, (typeof overdueItems)[number]>()
     for (const item of [...overdueItems, ...flaggedItems]) {
       itemMap.set(item.id, item)
@@ -97,7 +97,6 @@ export const getOverdueCallItems: ITool = {
       }
     }
 
-    // Group by parent call
     const callGroups = new Map<
       string,
       {
@@ -133,7 +132,7 @@ export const getOverdueCallItems: ITool = {
         const items = group.items.map((item) => {
           const callAmt = Number(item.callAmount)
           const paidAmt = Number(item.paidAmount)
-          const outstanding = callAmt - paidAmt
+          const outstanding = Math.max(0, callAmt - paidAmt)
           totalOverdueAmount += outstanding
 
           return {

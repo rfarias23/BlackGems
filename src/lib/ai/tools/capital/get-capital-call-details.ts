@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
+import { notDeleted } from '@/lib/shared/soft-delete'
 import { formatMoney, formatPercent } from '@/lib/shared/formatters'
 import type { ITool } from '../../core/types'
 
@@ -22,6 +23,7 @@ export const getCapitalCallDetails: ITool = {
     const call = await prisma.capitalCall.findFirst({
       where: {
         fundId: ctx.fundId,
+        ...notDeleted,
         OR: [
           ...(Number.isFinite(parsed) ? [{ callNumber: parsed }] : []),
           { id: callNumberOrId },
@@ -71,7 +73,7 @@ export const getCapitalCallDetails: ITool = {
         investorType: item.investor.type,
         callAmount: formatMoney(callAmt, ctx.currency),
         paidAmount: formatMoney(paidAmt, ctx.currency),
-        outstandingAmount: formatMoney(callAmt - paidAmt, ctx.currency),
+        outstandingAmount: formatMoney(Math.max(0, callAmt - paidAmt), ctx.currency),
         status: item.status,
         paidDate: item.paidDate?.toISOString().split('T')[0] ?? null,
       }
@@ -85,18 +87,15 @@ export const getCapitalCallDetails: ITool = {
       noticeDate: call.noticeDate?.toISOString().split('T')[0] ?? null,
       completedDate: call.completedDate?.toISOString().split('T')[0] ?? null,
       totalAmount: formatMoney(totalAmount, ctx.currency),
-      forInvestment: formatMoney(
-        call.forInvestment ? Number(call.forInvestment) : null,
-        ctx.currency
-      ),
-      forFees: formatMoney(
-        call.forFees ? Number(call.forFees) : null,
-        ctx.currency
-      ),
-      forExpenses: formatMoney(
-        call.forExpenses ? Number(call.forExpenses) : null,
-        ctx.currency
-      ),
+      forInvestment: call.forInvestment
+        ? formatMoney(Number(call.forInvestment), ctx.currency)
+        : null,
+      forFees: call.forFees
+        ? formatMoney(Number(call.forFees), ctx.currency)
+        : null,
+      forExpenses: call.forExpenses
+        ? formatMoney(Number(call.forExpenses), ctx.currency)
+        : null,
       purpose: call.purpose,
       dealReference: call.dealReference,
       collectedAmount: formatMoney(collectedAmount, ctx.currency),

@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
+import { notDeleted } from '@/lib/shared/soft-delete'
 import { formatMoney, formatPercent } from '@/lib/shared/formatters'
 import type { ITool } from '../../core/types'
 
@@ -15,6 +16,7 @@ export const getCapitalCallSummary: ITool = {
     const calls = await prisma.capitalCall.findMany({
       where: {
         fundId: ctx.fundId,
+        ...notDeleted,
         status: { notIn: ['DRAFT', 'CANCELLED'] },
       },
       include: {

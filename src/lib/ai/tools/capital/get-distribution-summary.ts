@@ -8,7 +8,7 @@ export const getDistributionSummary: ITool = {
   metadata: {
     name: 'getDistributionSummary',
     description:
-      'Get a summary of all distributions for the fund including total distributed by type (return of capital, profit, dividends), status breakdown, and recent distribution history.',
+      'Get a summary of all distributions for the fund including total distributed, breakdown by distribution type and status, component totals (return of capital, realized gains, dividends, interest), and recent distribution history.',
     category: 'capital',
   },
   inputSchema: z.object({}),
