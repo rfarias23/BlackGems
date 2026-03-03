@@ -24,6 +24,7 @@ import { AIMessage } from './ai-message'
 import {
   createConversation,
   getConversationMessages,
+  updateConversationTitle,
 } from '@/lib/actions/ai-conversations'
 
 // ---------------------------------------------------------------------------
@@ -50,14 +51,22 @@ export function formatRelativeTime(date: Date | string): string {
 // with a React key so useChat always receives a STATIC id prop.
 // ---------------------------------------------------------------------------
 
+export interface AICopilotHandlers {
+  handleNewConversation: () => void
+  handleSwitchConversation: (id: string) => void
+  handleStartEditTitle: () => void
+  handleSaveTitle: () => Promise<void>
+  handleCancelEditTitle: () => void
+  isEditingTitle: boolean
+  editTitleValue: string
+  setEditTitleValue: (v: string) => void
+  handleTitleKeyDown: (e: React.KeyboardEvent) => void
+  titleInputRef: React.RefObject<HTMLInputElement | null>
+}
+
 interface AICopilotProps {
   variant?: 'desktop' | 'mobile'
-  onNewConversation?: () => void
-  onSwitchConversation?: (id: string) => void
-  exposeHandlers?: (handlers: {
-    handleNewConversation: () => void
-    handleSwitchConversation: (id: string) => void
-  }) => void
+  exposeHandlers?: (handlers: AICopilotHandlers) => void
 }
 
 export function AICopilot({ variant = 'desktop', exposeHandlers }: AICopilotProps) {
@@ -172,16 +181,70 @@ export function AICopilot({ variant = 'desktop', exposeHandlers }: AICopilotProp
     [setCurrentConversationId]
   )
 
-  // Expose handlers to parent (for MobileEmmaShell)
-  useEffect(() => {
-    exposeHandlers?.({ handleNewConversation, handleSwitchConversation })
-  }, [exposeHandlers, handleNewConversation, handleSwitchConversation])
-
   // Current conversation title
   const currentTitle = currentConversationId
     ? conversations.find((c) => c.id === currentConversationId)?.title ??
       'New Conversation'
     : 'New Conversation'
+
+  // Inline title editing
+  const [isEditingTitle, setIsEditingTitle] = useState(false)
+  const [editTitleValue, setEditTitleValue] = useState('')
+  const titleInputRef = useRef<HTMLInputElement>(null)
+
+  const handleStartEditTitle = useCallback(() => {
+    if (!currentConversationId) return
+    setEditTitleValue(currentTitle)
+    setIsEditingTitle(true)
+    setTimeout(() => titleInputRef.current?.focus(), 0)
+  }, [currentConversationId, currentTitle])
+
+  const handleSaveTitle = useCallback(async () => {
+    if (!currentConversationId) return
+    const trimmed = editTitleValue.trim()
+    if (!trimmed || trimmed === currentTitle) {
+      setIsEditingTitle(false)
+      return
+    }
+    try {
+      await updateConversationTitle(currentConversationId, trimmed)
+      await refreshConversations()
+      setIsEditingTitle(false)
+    } catch (err) {
+      console.error('Failed to update title:', err)
+      setIsEditingTitle(false)
+    }
+  }, [currentConversationId, editTitleValue, currentTitle, refreshConversations])
+
+  const handleCancelEditTitle = useCallback(() => {
+    setIsEditingTitle(false)
+  }, [])
+
+  const handleTitleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      handleSaveTitle()
+    }
+    if (e.key === 'Escape') {
+      handleCancelEditTitle()
+    }
+  }, [handleSaveTitle, handleCancelEditTitle])
+
+  // Expose handlers to parent (for MobileEmmaShell)
+  useEffect(() => {
+    exposeHandlers?.({
+      handleNewConversation,
+      handleSwitchConversation,
+      handleStartEditTitle,
+      handleSaveTitle,
+      handleCancelEditTitle,
+      isEditingTitle,
+      editTitleValue,
+      setEditTitleValue,
+      handleTitleKeyDown,
+      titleInputRef,
+    })
+  }, [exposeHandlers, handleNewConversation, handleSwitchConversation, handleStartEditTitle, handleSaveTitle, handleCancelEditTitle, isEditingTitle, editTitleValue, handleTitleKeyDown])
 
   // Callback when ChatSession streaming status changes (for disabling send button)
   const [isStreaming, setIsStreaming] = useState(false)
@@ -202,7 +265,19 @@ export function AICopilot({ variant = 'desktop', exposeHandlers }: AICopilotProp
       {/* Header — desktop only (mobile has its own shell header) */}
       {variant === 'desktop' && (
       <div className="flex items-center justify-between h-16 px-4 border-b border-[#1E293B] shrink-0">
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex items-center gap-1 min-w-0">
+          {isEditingTitle ? (
+            <input
+              ref={titleInputRef}
+              type="text"
+              value={editTitleValue}
+              onChange={(e) => setEditTitleValue(e.target.value)}
+              onBlur={() => handleSaveTitle()}
+              onKeyDown={handleTitleKeyDown}
+              maxLength={100}
+              className="text-sm text-[#F8FAFC] bg-[#1E293B] border border-[#3E5CFF] rounded px-2 py-1 outline-none w-full max-w-[240px]"
+            />
+          ) : (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="flex items-center gap-1 text-sm text-[#F8FAFC] hover:text-white truncate max-w-[240px]">
@@ -240,8 +315,17 @@ export function AICopilot({ variant = 'desktop', exposeHandlers }: AICopilotProp
                   </DropdownMenuItem>
                 ))
               )}
+              {currentConversationId && (
+                <DropdownMenuItem
+                  onClick={handleStartEditTitle}
+                  className="focus:bg-[#334155] focus:text-[#F8FAFC] cursor-pointer text-xs text-[#64748B] border-t border-[#334155] mt-1 pt-2"
+                >
+                  Rename conversation
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
+          )}
         </div>
 
         <div className="flex items-center gap-1 shrink-0">
@@ -303,7 +387,10 @@ export function AICopilot({ variant = 'desktop', exposeHandlers }: AICopilotProp
               variant="ghost"
               size="icon"
               onClick={handleStop}
-              className="h-7 w-7 shrink-0 bg-[#334155] text-[#F8FAFC] hover:bg-[#475569]"
+              className={cn(
+                'shrink-0 bg-[#334155] text-[#F8FAFC] hover:bg-[#475569]',
+                variant === 'mobile' ? 'h-9 w-9' : 'h-7 w-7'
+              )}
               aria-label="Stop generating"
             >
               <Square className="h-3 w-3 fill-current" />
@@ -314,7 +401,10 @@ export function AICopilot({ variant = 'desktop', exposeHandlers }: AICopilotProp
               size="icon"
               onClick={handleSend}
               disabled={!inputValue.trim()}
-              className="h-7 w-7 shrink-0 bg-[#3E5CFF] text-white hover:bg-[#3E5CFF]/90 disabled:opacity-30 disabled:bg-[#3E5CFF]/50"
+              className={cn(
+                'shrink-0 bg-[#3E5CFF] text-white hover:bg-[#3E5CFF]/90 disabled:opacity-30 disabled:bg-[#3E5CFF]/50',
+                variant === 'mobile' ? 'h-9 w-9' : 'h-7 w-7'
+              )}
               aria-label="Send message"
             >
               <Send className="h-3.5 w-3.5" />

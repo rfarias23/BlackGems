@@ -3,7 +3,7 @@
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { requireFundAccess } from '@/lib/shared/fund-access'
-import { logAudit } from '@/lib/shared/audit'
+import { logAudit, computeChanges } from '@/lib/shared/audit'
 import type { UIMessage } from 'ai'
 
 // ---------------------------------------------------------------------------
@@ -206,26 +206,53 @@ export async function archiveConversation(
 }
 
 /**
- * Updates the title of a conversation (auto-generated from first user message).
+ * Updates the title of a conversation.
+ * Used both by auto-title generation (AI route) and user manual edits.
  */
 export async function updateConversationTitle(
   conversationId: string,
   title: string
-): Promise<void> {
+): Promise<{ id: string; title: string }> {
   const session = await auth()
-  if (!session?.user?.id) return
+  if (!session?.user?.id) throw new Error('Unauthorized')
 
-  const conversation = await prisma.conversation.findUnique({
-    where: { id: conversationId },
-    select: { userId: true },
+  const trimmed = title.trim()
+  if (!trimmed || trimmed.length > 100) {
+    throw new Error('Title must be between 1 and 100 characters')
+  }
+
+  const conversation = await prisma.conversation.findFirst({
+    where: {
+      id: conversationId,
+      userId: session.user.id,
+    },
+    select: { id: true, fundId: true, title: true },
   })
 
-  if (!conversation || conversation.userId !== session.user.id) return
+  if (!conversation) throw new Error('Conversation not found')
 
-  await prisma.conversation.update({
+  await requireFundAccess(session.user.id, conversation.fundId)
+
+  const updated = await prisma.conversation.update({
     where: { id: conversationId },
-    data: { title: title.slice(0, 60) },
+    data: { title: trimmed.slice(0, 100) },
+    select: { id: true, title: true },
   })
+
+  const changes = computeChanges(
+    { title: conversation.title },
+    { title: trimmed }
+  )
+
+  await logAudit({
+    userId: session.user.id,
+    action: 'UPDATE',
+    entityType: 'Conversation',
+    entityId: conversationId,
+    changes,
+  })
+
+  return { id: updated.id, title: updated.title ?? trimmed }
 }
 
 /**
