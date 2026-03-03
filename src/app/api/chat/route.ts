@@ -1,18 +1,14 @@
 import { auth } from '@/lib/auth'
-import { getActiveFundWithCurrency } from '@/lib/shared/fund-access'
-import { requireFundAccess } from '@/lib/shared/fund-access'
+import { getActiveFundWithCurrency, requireFundAccess } from '@/lib/shared/fund-access'
 import { rateLimit } from '@/lib/shared/rate-limit'
 import { AI_CONFIG, getAnthropicProvider } from '@/lib/ai/ai-config'
 import { trackAICost } from '@/lib/ai/cost-tracker'
 import { trimConversation } from '@/lib/ai/conversation-trimmer'
-import { assembleFundContext } from '@/lib/ai/context/fund-context'
-import { assembleUserContext } from '@/lib/ai/context/user-context'
-import { buildSystemPrompt } from '@/lib/ai/system-prompt'
-import { createReadTools } from '@/lib/ai/tools'
+import { checkBudget } from '@/lib/ai/budget/budget-guard'
+import { assembleEngine } from '@/lib/ai/core/engine'
 import {
   createConversation,
   persistMessages,
-  getConversations,
 } from '@/lib/actions/ai-conversations'
 import { prisma } from '@/lib/prisma'
 import { streamText, generateText, convertToModelMessages, type UIMessage } from 'ai'
@@ -22,53 +18,68 @@ import { NextResponse } from 'next/server'
 export const maxDuration = 300
 
 export async function POST(req: Request) {
-  // 1. Auth
+  // --- Auth ---
   const session = await auth()
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // 2. Check AI is enabled
   if (!AI_CONFIG.isEnabled) {
-    return NextResponse.json(
-      { error: 'AI copilot is not configured' },
-      { status: 503 }
-    )
+    return NextResponse.json({ error: 'AI copilot is not configured' }, { status: 503 })
   }
 
-  // 3. Fund resolution
+  // --- Fund resolution & access ---
   const activeFund = await getActiveFundWithCurrency(session.user.id)
   if (!activeFund) {
-    return NextResponse.json(
-      { error: 'No active fund found' },
-      { status: 400 }
-    )
+    return NextResponse.json({ error: 'No active fund found' }, { status: 400 })
   }
 
-  // 4. Fund access verification (defense-in-depth)
   try {
     await requireFundAccess(session.user.id, activeFund.fundId)
   } catch {
-    return NextResponse.json(
-      { error: 'Access denied to this fund' },
-      { status: 403 }
-    )
+    return NextResponse.json({ error: 'Access denied to this fund' }, { status: 403 })
   }
 
-  // 5. Rate limiting
-  const rateLimitResult = rateLimit(
+  // --- Rate limiting (per-hour + per-day, Marcus Correction 4) ---
+  const hourlyLimit = rateLimit(
     `ai:${session.user.id}`,
     AI_CONFIG.rateLimitPerHour,
     3_600_000
   )
-  if (!rateLimitResult.success) {
+  if (!hourlyLimit.success) {
     return NextResponse.json(
       { error: 'Rate limit exceeded. Please wait before sending another message.' },
-      { status: 429, headers: { 'Retry-After': String(Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000)) } }
+      { status: 429, headers: { 'Retry-After': String(Math.ceil((hourlyLimit.resetAt - Date.now()) / 1000)) } }
     )
   }
 
-  // 6. Parse request body
+  const dailyLimit = rateLimit(
+    `ai-daily:${session.user.id}`,
+    AI_CONFIG.rateLimitPerDay,
+    86_400_000
+  )
+  if (!dailyLimit.success) {
+    return NextResponse.json(
+      { error: 'Daily message limit reached. Please try again tomorrow.' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil((dailyLimit.resetAt - Date.now()) / 1000)) } }
+    )
+  }
+
+  // --- Budget guard (per-user, Marcus Correction 2) ---
+  try {
+    const budget = await checkBudget(session.user.id, AI_CONFIG.monthlyBudgetUSD)
+    if (!budget.allowed) {
+      return NextResponse.json(
+        { error: `Monthly AI budget exceeded (${budget.usedUSD.toFixed(2)}/${budget.budgetUSD} USD). Please contact your administrator.` },
+        { status: 429 }
+      )
+    }
+  } catch (err) {
+    // Budget check is non-blocking — log and continue
+    console.error('Budget check failed, allowing request:', err)
+  }
+
+  // --- Parse request ---
   const body = await req.json()
   const { messages, conversationId: reqConversationId } = body as {
     messages: UIMessage[]
@@ -76,13 +87,10 @@ export async function POST(req: Request) {
   }
 
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
-    return NextResponse.json(
-      { error: 'Messages are required' },
-      { status: 400 }
-    )
+    return NextResponse.json({ error: 'Messages are required' }, { status: 400 })
   }
 
-  // 7. Conversation resolution (create if needed)
+  // --- Conversation resolution ---
   let conversationId = reqConversationId
   if (!conversationId) {
     const firstUserMsg = messages.find(m => m.role === 'user')
@@ -96,7 +104,7 @@ export async function POST(req: Request) {
     conversationId = conversation.id
   }
 
-  // 8. Trim UIMessages if over budget, then convert to model messages.
+  // --- Message trimming ---
   const messagesForTrimmer = messages.map(m => ({
     ...m,
     role: m.role,
@@ -106,36 +114,26 @@ export async function POST(req: Request) {
       .join('\n'),
   }))
   const trimmedUIMessages = trimConversation(messagesForTrimmer, AI_CONFIG.tokenBudget)
-
-  // Convert trimmed UIMessages → model messages for the LLM
   const modelMessages = await convertToModelMessages(trimmedUIMessages)
 
-  // 9. Assemble context
-  const [fundContext, conversations] = await Promise.all([
-    assembleFundContext(activeFund.fundId),
-    getConversations(activeFund.fundId),
-  ])
+  // --- Engine: context + tools + prompt ---
+  const engine = await assembleEngine({
+    userId: session.user.id,
+    fundId: activeFund.fundId,
+    currency: activeFund.currency,
+    session,
+  })
 
-  const userContext = assembleUserContext(session)
-  const isFirstTime = conversations.length <= 1
-
-  const systemPrompt = buildSystemPrompt(
-    fundContext,
-    userContext,
-    activeFund.currency,
-    isFirstTime
-  )
-
-  // 10. Stream response
+  // --- Stream ---
   const anthropic = getAnthropicProvider()
 
   let result
   try {
     result = streamText({
       model: anthropic(AI_CONFIG.model),
-      system: systemPrompt,
+      system: engine.systemPrompt,
       messages: modelMessages,
-      tools: createReadTools(activeFund.fundId, activeFund.currency),
+      tools: engine.tools,
       abortSignal: req.signal,
       onFinish: ({ usage }) => {
         const inputTokens = usage.inputTokens ?? 0
@@ -149,13 +147,10 @@ export async function POST(req: Request) {
     })
   } catch (streamError) {
     console.error('AI streaming failed to initialize:', streamError)
-    return NextResponse.json(
-      { error: 'AI streaming failed to initialize' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'AI streaming failed to initialize' }, { status: 500 })
   }
 
-  // 11. Return streaming response with persistence + title generation on finish
+  // --- Response with persistence + title generation ---
   const isNewConversation = !reqConversationId
   return result.toUIMessageStreamResponse({
     originalMessages: messages,
@@ -164,7 +159,6 @@ export async function POST(req: Request) {
         console.error('Failed to persist AI messages:', error)
       })
 
-      // Generate a descriptive title for new conversations after first exchange
       if (isNewConversation && allMessages.length >= 2) {
         generateConversationTitle(conversationId, allMessages, anthropic).catch(
           (error: unknown) => {
