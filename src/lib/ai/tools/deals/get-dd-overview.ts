@@ -1,16 +1,9 @@
 import { z } from 'zod'
-import { DealStage } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { notDeleted } from '@/lib/shared/soft-delete'
 import { formatPercent } from '@/lib/shared/formatters'
 import type { ITool } from '../../core/types'
-
-const DD_ACTIVE_STAGES: DealStage[] = [
-  DealStage.DUE_DILIGENCE,
-  DealStage.FINAL_NEGOTIATION,
-  DealStage.CLOSING,
-]
-const DD_DONE_STATUSES = ['COMPLETED', 'NA']
+import { DD_ACTIVE_STAGES, DD_DONE_STATUSES } from './dd-constants'
 
 export const getDDOverview: ITool = {
   metadata: {
@@ -36,6 +29,7 @@ export const getDDOverview: ITool = {
             redFlag: true,
             priority: true,
           },
+          orderBy: { category: 'asc' },
         },
       },
       orderBy: { name: 'asc' },

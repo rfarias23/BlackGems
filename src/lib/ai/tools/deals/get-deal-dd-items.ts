@@ -3,8 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { notDeleted } from '@/lib/shared/soft-delete'
 import { formatPercent } from '@/lib/shared/formatters'
 import type { ITool } from '../../core/types'
-
-const DD_DONE_STATUSES = ['COMPLETED', 'NA']
+import { DD_DONE_STATUSES } from './dd-constants'
 
 export const getDealDDItems: ITool = {
   metadata: {
@@ -21,25 +20,31 @@ export const getDealDDItems: ITool = {
   async execute(input: { dealNameOrId: string }, ctx) {
     const { dealNameOrId } = input
 
-    const deal = await prisma.deal.findFirst({
-      where: {
-        fundId: ctx.fundId,
-        ...notDeleted,
-        OR: [
-          { id: dealNameOrId },
-          { name: { contains: dealNameOrId, mode: 'insensitive' as const } },
+    const ddInclude = {
+      dueDiligenceItems: {
+        orderBy: [
+          { category: 'asc' as const },
+          { priority: 'asc' as const },
+          { createdAt: 'asc' as const },
         ],
       },
-      include: {
-        dueDiligenceItems: {
-          orderBy: [
-            { category: 'asc' },
-            { priority: 'asc' },
-            { createdAt: 'asc' },
-          ],
-        },
-      },
+    }
+
+    const byId = await prisma.deal.findFirst({
+      where: { id: dealNameOrId, fundId: ctx.fundId, ...notDeleted },
+      include: ddInclude,
     })
+
+    const deal =
+      byId ??
+      (await prisma.deal.findFirst({
+        where: {
+          fundId: ctx.fundId,
+          ...notDeleted,
+          name: { contains: dealNameOrId, mode: 'insensitive' as const },
+        },
+        include: ddInclude,
+      }))
 
     if (!deal) {
       return {
@@ -106,6 +111,7 @@ export const getDealDDItems: ITool = {
           status: item.status,
           priority: item.priority,
           assignedTo: item.assignedTo,
+          notes: item.notes,
           findings: item.findings,
           redFlag: item.redFlag,
           updatedAt: item.updatedAt.toISOString().split('T')[0],

@@ -18,25 +18,31 @@ export const getDealContacts: ITool = {
   async execute(input: { dealNameOrId: string }, ctx) {
     const { dealNameOrId } = input
 
-    const deal = await prisma.deal.findFirst({
-      where: {
-        fundId: ctx.fundId,
-        ...notDeleted,
-        OR: [
-          { id: dealNameOrId },
-          { name: { contains: dealNameOrId, mode: 'insensitive' as const } },
+    const contactsInclude = {
+      contacts: {
+        orderBy: [
+          { isPrimary: 'desc' as const },
+          { role: 'asc' as const },
+          { name: 'asc' as const },
         ],
       },
-      include: {
-        contacts: {
-          orderBy: [
-            { isPrimary: 'desc' },
-            { role: 'asc' },
-            { name: 'asc' },
-          ],
-        },
-      },
+    }
+
+    const byId = await prisma.deal.findFirst({
+      where: { id: dealNameOrId, fundId: ctx.fundId, ...notDeleted },
+      include: contactsInclude,
     })
+
+    const deal =
+      byId ??
+      (await prisma.deal.findFirst({
+        where: {
+          fundId: ctx.fundId,
+          ...notDeleted,
+          name: { contains: dealNameOrId, mode: 'insensitive' as const },
+        },
+        include: contactsInclude,
+      }))
 
     if (!deal) {
       return {
@@ -80,6 +86,7 @@ export const getDealContacts: ITool = {
             role: primary.role,
             email: primary.email,
             phone: primary.phone,
+            notes: primary.notes,
           }
         : null,
       contacts,
