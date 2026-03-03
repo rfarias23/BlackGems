@@ -18,6 +18,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { cn } from '@/lib/utils'
 import { useAICopilot } from './ai-copilot-provider'
 import { AIMessage } from './ai-message'
 import {
@@ -29,7 +30,7 @@ import {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function formatRelativeTime(date: Date | string): string {
+export function formatRelativeTime(date: Date | string): string {
   const now = Date.now()
   const then = new Date(date).getTime()
   const diffMs = now - then
@@ -49,7 +50,17 @@ function formatRelativeTime(date: Date | string): string {
 // with a React key so useChat always receives a STATIC id prop.
 // ---------------------------------------------------------------------------
 
-export function AICopilot() {
+interface AICopilotProps {
+  variant?: 'desktop' | 'mobile'
+  onNewConversation?: () => void
+  onSwitchConversation?: (id: string) => void
+  exposeHandlers?: (handlers: {
+    handleNewConversation: () => void
+    handleSwitchConversation: (id: string) => void
+  }) => void
+}
+
+export function AICopilot({ variant = 'desktop', exposeHandlers }: AICopilotProps) {
   const {
     isOpen,
     setIsOpen,
@@ -67,13 +78,13 @@ export function AICopilot() {
   )
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  // Focus textarea when panel opens
+  // Focus textarea when panel opens (desktop) or on mount (mobile)
   useEffect(() => {
-    if (isOpen) {
+    if (variant === 'mobile' || isOpen) {
       const timer = setTimeout(() => textareaRef.current?.focus(), 100)
       return () => clearTimeout(timer)
     }
-  }, [isOpen])
+  }, [isOpen, variant])
 
   // Auto-resize textarea
   const handleTextareaChange = useCallback(
@@ -161,6 +172,11 @@ export function AICopilot() {
     [setCurrentConversationId]
   )
 
+  // Expose handlers to parent (for MobileEmmaShell)
+  useEffect(() => {
+    exposeHandlers?.({ handleNewConversation, handleSwitchConversation })
+  }, [exposeHandlers, handleNewConversation, handleSwitchConversation])
+
   // Current conversation title
   const currentTitle = currentConversationId
     ? conversations.find((c) => c.id === currentConversationId)?.title ??
@@ -176,11 +192,15 @@ export function AICopilot() {
     setPendingFirstMessage(null)
   }, [])
 
-  if (!isOpen) return null
+  if (variant === 'desktop' && !isOpen) return null
 
   return (
-    <div className="flex flex-col h-full w-[400px] bg-[#080A0F] border-l border-[#1E293B]">
-      {/* Header */}
+    <div className={cn(
+      'flex flex-col h-full bg-[#080A0F]',
+      variant === 'desktop' ? 'w-[400px] border-l border-[#1E293B]' : 'w-full'
+    )}>
+      {/* Header — desktop only (mobile has its own shell header) */}
+      {variant === 'desktop' && (
       <div className="flex items-center justify-between h-16 px-4 border-b border-[#1E293B] shrink-0">
         <div className="flex items-center gap-2 min-w-0">
           <DropdownMenu>
@@ -245,6 +265,7 @@ export function AICopilot() {
           </Button>
         </div>
       </div>
+      )}
 
       {/* Chat session — keyed so useChat always gets a static id */}
       <ChatSession
@@ -260,7 +281,10 @@ export function AICopilot() {
       />
 
       {/* Input */}
-      <div className="shrink-0 px-4 pb-4 pt-2">
+      <div className={cn(
+        'shrink-0 px-4 pt-2',
+        variant === 'mobile' ? 'pb-[max(1rem,env(safe-area-inset-bottom))]' : 'pb-4'
+      )}>
         {sendError && (
           <p className="text-xs text-red-400 mb-2 px-1">{sendError}</p>
         )}
@@ -441,7 +465,7 @@ function ChatSession({
   }, [clearError, messages, sendMessage])
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+    <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 space-y-4">
       {messages.length === 0 && !isStreaming && (
         <div className="flex flex-col items-center justify-center h-full text-center px-6">
           <span className="font-serif text-[32px] font-semibold tracking-tight text-[#F8FAFC] mb-3 select-none">

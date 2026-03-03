@@ -8,6 +8,7 @@ import { getUserModulePermissions } from '@/lib/shared/fund-access';
 import { redirect } from 'next/navigation';
 import { AICopilotProvider } from '@/components/ai/ai-copilot-provider';
 import { AICopilotPanel, AICopilotContentWrapper } from '@/components/ai/ai-copilot-layout';
+import { MobileEmmaShell } from '@/components/ai/mobile-emma-shell';
 import { prisma } from '@/lib/prisma';
 import { checkSubscriptionAccess } from '@/lib/shared/subscription-access';
 import { BlockModal } from '@/components/billing/block-modal';
@@ -102,32 +103,42 @@ export default async function DashboardLayout({
             }
         >
             <AICopilotProvider isEnabled={aiEnabled} fundId={fundId}>
-                {/* Sidebar fixed on the left */}
-                <div className="fixed inset-y-0 z-50 hidden w-64 md:flex md:flex-col">
-                    <Sidebar
-                        userRole={session?.user?.role as string | undefined}
-                        funds={funds}
-                        activeFundId={fundId}
-                        permissions={permissions}
-                        trialDaysRemaining={subscriptionAccess.allowed ? subscriptionAccess.daysRemaining : undefined}
-                    />
+                {/* Mobile: Full-screen Emma (< 768px) — only when AI is enabled */}
+                {aiEnabled && (
+                <div className="flex md:hidden h-dvh">
+                    <MobileEmmaShell />
+                </div>
+                )}
+
+                {/* Desktop/Tablet: Cockpit (>= 768px) */}
+                <div className="hidden md:block">
+                    {/* Sidebar fixed on the left */}
+                    <div className="fixed inset-y-0 z-50 hidden w-64 md:flex md:flex-col">
+                        <Sidebar
+                            userRole={session?.user?.role as string | undefined}
+                            funds={funds}
+                            activeFundId={fundId}
+                            permissions={permissions}
+                            trialDaysRemaining={subscriptionAccess.allowed ? subscriptionAccess.daysRemaining : undefined}
+                        />
+                    </div>
+
+                    {/* Main content area — padding adjusts when AI panel is open */}
+                    <AICopilotContentWrapper>
+                        <Header user={session?.user} unreadCount={unreadCount} />
+                        <main className="flex-1 p-8">
+                            {children}
+                        </main>
+                    </AICopilotContentWrapper>
+
+                    {/* AI Copilot panel — fixed on the right */}
+                    <AICopilotPanel />
                 </div>
 
-                {/* Main content area — padding adjusts when AI panel is open */}
-                <AICopilotContentWrapper>
-                    <Header user={session?.user} unreadCount={unreadCount} />
-                    <main className="flex-1 p-8">
-                        {children}
-                    </main>
-                </AICopilotContentWrapper>
-
-                {/* Subscription block modal — hard gate */}
+                {/* Subscription block modal — all breakpoints */}
                 {!subscriptionAccess.allowed && (
                     <BlockModal reason={subscriptionAccess.reason ?? 'Subscription required'} />
                 )}
-
-                {/* AI Copilot panel — fixed on the right */}
-                <AICopilotPanel />
             </AICopilotProvider>
         </div>
     );
