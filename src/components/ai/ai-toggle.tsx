@@ -23,7 +23,7 @@ export function AIToggle() {
   return (
     <button
       onClick={() => setIsOpen(!isOpen)}
-      className={`hidden lg:flex items-center h-8 px-2 rounded-md transition-colors hover:bg-[#334155] ${
+      className={`hidden md:flex items-center h-8 px-2 rounded-md transition-colors hover:bg-[#334155] ${
         isOpen ? 'opacity-100' : 'opacity-60 hover:opacity-100'
       }`}
       aria-label="Toggle Emma AI"

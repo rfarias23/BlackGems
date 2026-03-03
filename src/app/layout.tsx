@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import '@fontsource/inter/400.css';
 import '@fontsource/inter/500.css';
 import '@fontsource/inter/600.css';
@@ -8,6 +8,13 @@ import '@fontsource-variable/source-serif-4';
 import '@fontsource-variable/jetbrains-mono';
 import './globals.css';
 import { CookieConsent } from '@/components/landing/cookie-consent';
+
+export const viewport: Viewport = {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    viewportFit: 'cover',
+};
 
 export const metadata: Metadata = {
     metadataBase: new URL('https://www.blackgem.ai'),
