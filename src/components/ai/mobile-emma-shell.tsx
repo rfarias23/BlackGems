@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback } from 'react'
+import { useCallback, useRef } from 'react'
 import { Plus, MoreVertical, ChevronDown, Settings, LogOut } from 'lucide-react'
 import { signOut } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
@@ -12,25 +12,36 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useAICopilot } from './ai-copilot-provider'
-import { AICopilot } from './ai-copilot'
-import { formatRelativeTime } from './ai-copilot'
+import { AICopilot, formatRelativeTime } from './ai-copilot'
 
 export function MobileEmmaShell() {
   const {
     currentConversationId,
-    setCurrentConversationId,
     conversations,
   } = useAICopilot()
 
+  // Handlers owned by AICopilot (includes state resets for inputValue, sendError, pendingFirstMessage)
+  const handlersRef = useRef<{
+    handleNewConversation: () => void
+    handleSwitchConversation: (id: string) => void
+  } | null>(null)
+
+  const onExposeHandlers = useCallback((handlers: {
+    handleNewConversation: () => void
+    handleSwitchConversation: (id: string) => void
+  }) => {
+    handlersRef.current = handlers
+  }, [])
+
   const handleNewConversation = useCallback(() => {
-    setCurrentConversationId(null)
-  }, [setCurrentConversationId])
+    handlersRef.current?.handleNewConversation()
+  }, [])
 
   const handleSwitchConversation = useCallback(
     (id: string) => {
-      setCurrentConversationId(id)
+      handlersRef.current?.handleSwitchConversation(id)
     },
-    [setCurrentConversationId]
+    []
   )
 
   const currentTitle = currentConversationId
@@ -142,7 +153,7 @@ export function MobileEmmaShell() {
 
       {/* Chat body — fills remaining height */}
       <div className="flex-1 min-h-0">
-        <AICopilot variant="mobile" />
+        <AICopilot variant="mobile" exposeHandlers={onExposeHandlers} />
       </div>
     </div>
   )

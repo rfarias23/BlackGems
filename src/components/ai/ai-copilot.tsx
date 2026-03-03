@@ -50,7 +50,17 @@ export function formatRelativeTime(date: Date | string): string {
 // with a React key so useChat always receives a STATIC id prop.
 // ---------------------------------------------------------------------------
 
-export function AICopilot({ variant = 'desktop' }: { variant?: 'desktop' | 'mobile' }) {
+interface AICopilotProps {
+  variant?: 'desktop' | 'mobile'
+  onNewConversation?: () => void
+  onSwitchConversation?: (id: string) => void
+  exposeHandlers?: (handlers: {
+    handleNewConversation: () => void
+    handleSwitchConversation: (id: string) => void
+  }) => void
+}
+
+export function AICopilot({ variant = 'desktop', exposeHandlers }: AICopilotProps) {
   const {
     isOpen,
     setIsOpen,
@@ -68,13 +78,13 @@ export function AICopilot({ variant = 'desktop' }: { variant?: 'desktop' | 'mobi
   )
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  // Focus textarea when panel opens
+  // Focus textarea when panel opens (desktop) or on mount (mobile)
   useEffect(() => {
-    if (isOpen) {
+    if (variant === 'mobile' || isOpen) {
       const timer = setTimeout(() => textareaRef.current?.focus(), 100)
       return () => clearTimeout(timer)
     }
-  }, [isOpen])
+  }, [isOpen, variant])
 
   // Auto-resize textarea
   const handleTextareaChange = useCallback(
@@ -161,6 +171,11 @@ export function AICopilot({ variant = 'desktop' }: { variant?: 'desktop' | 'mobi
     },
     [setCurrentConversationId]
   )
+
+  // Expose handlers to parent (for MobileEmmaShell)
+  useEffect(() => {
+    exposeHandlers?.({ handleNewConversation, handleSwitchConversation })
+  }, [exposeHandlers, handleNewConversation, handleSwitchConversation])
 
   // Current conversation title
   const currentTitle = currentConversationId

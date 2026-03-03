@@ -103,10 +103,12 @@ export default async function DashboardLayout({
             }
         >
             <AICopilotProvider isEnabled={aiEnabled} fundId={fundId}>
-                {/* Mobile: Full-screen Emma (< 768px) */}
+                {/* Mobile: Full-screen Emma (< 768px) — only when AI is enabled */}
+                {aiEnabled && (
                 <div className="flex md:hidden h-dvh">
                     <MobileEmmaShell />
                 </div>
+                )}
 
                 {/* Desktop/Tablet: Cockpit (>= 768px) */}
                 <div className="hidden md:block">
