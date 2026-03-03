@@ -2,16 +2,12 @@ import { describe, it, expect } from 'vitest'
 import { createDefaultRegistry } from '../create-default-registry'
 
 /**
- * Parity test: verifies the new ITool-based registry produces the same tool
- * names, descriptions, and SDK shape as the old createReadTools().
- *
- * We cannot import createReadTools here because it requires a live Prisma
- * connection. Instead we verify against the known tool metadata from the
- * old implementation (captured as constants).
+ * Parity test: verifies the ITool-based registry produces the expected tool
+ * names, descriptions, and SDK shape for all registered tools.
  */
 
-// --- Snapshot of old createReadTools metadata ---
-const OLD_TOOL_METADATA = [
+const EXPECTED_TOOL_METADATA = [
+  // Phase 1
   {
     name: 'getPipelineSummary',
     description: 'Get the current deal pipeline with counts by stage, total pipeline value, and active deal count.',
@@ -37,54 +33,84 @@ const OLD_TOOL_METADATA = [
     description: 'Get portfolio company metrics including revenue, EBITDA, margins, and performance data.',
     category: 'portfolio',
   },
+  // Phase 1.5 Batch 1
+  {
+    name: 'getCapitalCallSummary',
+    description: 'Get a summary of all capital calls for the fund including total called, collected, outstanding amounts, and status breakdown by call.',
+    category: 'capital',
+  },
+  {
+    name: 'getCapitalCallDetails',
+    description: 'Get detailed information about a specific capital call including per-investor payment status, amounts, and collection progress.',
+    category: 'capital',
+  },
+  {
+    name: 'getOverdueCallItems',
+    description: 'Get all overdue capital call line items \u2014 specific LPs who have missed payment deadlines. Returns per-investor detail grouped by call, including amounts owed, days overdue, and contact info for follow-up. Only includes calls that have been sent to LPs.',
+    category: 'capital',
+  },
+  {
+    name: 'getDistributionSummary',
+    description: 'Get a summary of all distributions for the fund including total distributed, breakdown by distribution type and status, component totals (return of capital, realized gains, dividends, interest), and recent distribution history.',
+    category: 'capital',
+  },
+  {
+    name: 'getDistributionDetails',
+    description: 'Get detailed information about a specific distribution including per-investor payment amounts, withholding tax, net amounts, and payment status.',
+    category: 'capital',
+  },
 ] as const
 
-describe('tool-parity: new ITool registry matches old createReadTools', () => {
+describe('tool-parity: registry contains all expected tools', () => {
   const registry = createDefaultRegistry()
 
-  it('has exactly 5 tools', () => {
-    expect(registry.getAll()).toHaveLength(5)
+  it('has exactly 10 tools', () => {
+    expect(registry.getAll()).toHaveLength(10)
   })
 
-  it('all old tool names are present', () => {
+  it('all expected tool names are present', () => {
     const names = registry.getAll().map((t) => t.metadata.name)
-    for (const old of OLD_TOOL_METADATA) {
-      expect(names).toContain(old.name)
+    for (const expected of EXPECTED_TOOL_METADATA) {
+      expect(names).toContain(expected.name)
     }
   })
 
   it('descriptions match exactly', () => {
-    for (const old of OLD_TOOL_METADATA) {
-      const tool = registry.get(old.name)
+    for (const expected of EXPECTED_TOOL_METADATA) {
+      const tool = registry.get(expected.name)
       expect(tool).toBeDefined()
-      expect(tool!.metadata.description).toBe(old.description)
+      expect(tool!.metadata.description).toBe(expected.description)
     }
   })
 
   it('categories are assigned correctly', () => {
-    for (const old of OLD_TOOL_METADATA) {
-      const tool = registry.get(old.name)
-      expect(tool!.metadata.category).toBe(old.category)
+    for (const expected of EXPECTED_TOOL_METADATA) {
+      const tool = registry.get(expected.name)
+      expect(tool!.metadata.category).toBe(expected.category)
     }
   })
 
-  it('toSDKTools produces all 5 tools with expected shape', () => {
+  it('capital category has 6 tools (1 existing + 5 new)', () => {
+    expect(registry.getByCategory('capital')).toHaveLength(6)
+  })
+
+  it('toSDKTools produces all 10 tools with expected shape', () => {
     const ctx = { fundId: 'test-fund', currency: 'USD' as const, userId: 'test-user' }
     const sdkTools = registry.toSDKTools(ctx)
 
-    for (const old of OLD_TOOL_METADATA) {
-      expect(sdkTools).toHaveProperty(old.name)
-      expect(sdkTools[old.name]).toHaveProperty('description')
-      expect(sdkTools[old.name]).toHaveProperty('inputSchema')
-      expect(sdkTools[old.name]).toHaveProperty('execute')
+    for (const expected of EXPECTED_TOOL_METADATA) {
+      expect(sdkTools).toHaveProperty(expected.name)
+      expect(sdkTools[expected.name]).toHaveProperty('description')
+      expect(sdkTools[expected.name]).toHaveProperty('inputSchema')
+      expect(sdkTools[expected.name]).toHaveProperty('execute')
     }
   })
 
   it('generatePromptSection includes all tool names and descriptions', () => {
     const section = registry.generatePromptSection()
-    for (const old of OLD_TOOL_METADATA) {
-      expect(section).toContain(old.name)
-      expect(section).toContain(old.description)
+    for (const expected of EXPECTED_TOOL_METADATA) {
+      expect(section).toContain(expected.name)
+      expect(section).toContain(expected.description)
     }
   })
 })

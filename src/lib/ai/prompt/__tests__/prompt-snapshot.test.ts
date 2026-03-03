@@ -65,7 +65,8 @@ const OLD_KEY_PHRASES = [
 // which outputs compact "name - description" lines instead of the old per-tool usage hints.
 // This is intentional — tool usage context lives in the tool descriptions themselves.
 // Baseline calibrated from actual new prompt output with identical test fixtures.
-const OLD_APPROX_TOKEN_COUNT = 1189
+// Updated for Phase 1.5: 10 tools (was 1189 with 5 tools)
+const OLD_APPROX_TOKEN_COUNT = 1433
 
 // --- Test fixtures (same as what old buildSystemPrompt was tested with) ---
 const mockFundContext: FundContext = {
