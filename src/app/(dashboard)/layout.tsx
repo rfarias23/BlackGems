@@ -40,8 +40,11 @@ export default async function DashboardLayout({
         getActiveFundId(),
     ]);
 
-    const permissions = activeFundId
-        ? await getUserModulePermissions(session.user.id!, activeFundId ?? funds[0]?.id ?? '')
+    // Resolve fund ID: cookie → first fund from membership → empty
+    const resolvedFundId = activeFundId ?? funds[0]?.id ?? '';
+
+    const permissions = resolvedFundId
+        ? await getUserModulePermissions(session.user.id!, resolvedFundId)
         : [];
 
     // Check subscription access
@@ -72,7 +75,7 @@ export default async function DashboardLayout({
     }
 
     const aiEnabled = !!process.env.ANTHROPIC_API_KEY;
-    const fundId = activeFundId ?? funds[0]?.id ?? '';
+    const fundId = resolvedFundId;
 
     return (
         <div
