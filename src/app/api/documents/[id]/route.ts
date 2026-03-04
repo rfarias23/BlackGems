@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { notDeleted } from '@/lib/shared/soft-delete'
-import { requireFundAccess } from '@/lib/shared/fund-access'
+import { requireFundAccess, getActiveFundWithCurrency } from '@/lib/shared/fund-access'
 import fs from 'fs/promises'
 import path from 'path'
 import { getSignedDownloadUrl } from '@/lib/s3'
@@ -56,14 +56,30 @@ export async function GET(
     return NextResponse.json({ error: 'Document not found' }, { status: 404 })
   }
 
-  // Verify fund access
-  const fundId = doc.deal?.fundId
+  // Verify fund access — through deal, direct fundId, or investor commitment
+  const fundId = doc.deal?.fundId ?? doc.fundId
   if (fundId) {
     try {
       await requireFundAccess(session.user.id, fundId)
     } catch {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
+  } else if (doc.investorId) {
+    // Investor document without deal — verify via commitment
+    const fundResult = await getActiveFundWithCurrency(session.user.id)
+    if (!fundResult) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+    }
+    const commitment = await prisma.commitment.findFirst({
+      where: { investorId: doc.investorId, fundId: fundResult.fundId, ...notDeleted },
+      select: { id: true },
+    })
+    if (!commitment) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+    }
+  } else {
+    // Document has no traceable fund context — deny by default
+    return NextResponse.json({ error: 'Access denied' }, { status: 403 })
   }
 
   // S3 documents: redirect to signed URL

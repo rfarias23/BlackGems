@@ -3,7 +3,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { DocumentCategory } from '@prisma/client'
 import { notDeleted } from '@/lib/shared/soft-delete'
-import { requireFundAccess } from '@/lib/shared/fund-access'
+import { requireFundAccess, getActiveFundWithCurrency } from '@/lib/shared/fund-access'
 import { logAudit } from '@/lib/shared/audit'
 import { rateLimit } from '@/lib/shared/rate-limit'
 import { revalidatePath } from 'next/cache'
@@ -83,6 +83,18 @@ export async function POST(request: NextRequest) {
       })
       if (!investor) {
         return NextResponse.json({ error: 'Investor not found' }, { status: 404 })
+      }
+      // Verify investor has commitment to a fund the caller can access
+      const fundResult = await getActiveFundWithCurrency(session.user.id)
+      if (!fundResult) {
+        return NextResponse.json({ error: 'Access denied: no active fund' }, { status: 403 })
+      }
+      const commitment = await prisma.commitment.findFirst({
+        where: { investorId, fundId: fundResult.fundId, ...notDeleted },
+        select: { id: true },
+      })
+      if (!commitment) {
+        return NextResponse.json({ error: 'Access denied: investor not in your fund' }, { status: 403 })
       }
     }
 

@@ -33,20 +33,33 @@ const updateCommitmentSchema = z.object({
 
 export async function getFundsForCommitment(): Promise<{ id: string; name: string; currency: string }[]> {
     const session = await auth()
-    if (!session?.user?.id) {
-        return []
-    }
+    if (!session?.user?.id) return []
 
-    const funds = await prisma.fund.findMany({
-        select: {
-            id: true,
-            name: true,
-            currency: true,
-        },
-        orderBy: { name: 'asc' },
+    const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { role: true, organizationId: true },
     })
 
-    return funds
+    if (user?.role === 'SUPER_ADMIN') {
+        return prisma.fund.findMany({
+            select: { id: true, name: true, currency: true },
+            orderBy: { name: 'asc' },
+        })
+    }
+
+    if (user?.role === 'FUND_ADMIN') {
+        return prisma.fund.findMany({
+            where: { organizationId: user.organizationId ?? undefined },
+            select: { id: true, name: true, currency: true },
+            orderBy: { name: 'asc' },
+        })
+    }
+
+    const memberships = await prisma.fundMember.findMany({
+        where: { userId: session.user.id, isActive: true },
+        select: { fund: { select: { id: true, name: true, currency: true } } },
+    })
+    return memberships.map(m => m.fund)
 }
 
 // ============================================================================
