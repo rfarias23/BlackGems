@@ -101,15 +101,15 @@ export interface CapitalCallDetail {
 // Get capital calls with pagination and search
 export async function getCapitalCalls(params?: PaginationParams): Promise<PaginatedResult<CapitalCallListItem>> {
     const session = await auth()
+    const { page, pageSize, skip, search } = parsePaginationParams(params)
+
     if (!session?.user?.id) {
-        return paginatedResult([], 0, 1, 25)
+        return paginatedResult([], 0, page, pageSize)
     }
 
     const fundResult = await getActiveFundWithCurrency(session.user.id!)
-    if (!fundResult) return paginatedResult([], 0, 1, 25)
+    if (!fundResult) return paginatedResult([], 0, page, pageSize)
     const { fundId, currency } = fundResult
-
-    const { page, pageSize, skip, search } = parsePaginationParams(params)
 
     const where = {
         fundId,
@@ -190,11 +190,11 @@ export async function getCapitalCall(id: string): Promise<CapitalCallDetail | nu
         return null
     }
 
-    try { await requireFundAccess(session.user.id, call.fundId) } catch { return null }
+    try { await requireFundAccess(session.user.id, call.fundId) } catch (err) { console.error('Fund access denied for capital call:', err); return null }
 
-    const fundResult = await getActiveFundWithCurrency(session.user.id!)
-    if (!fundResult) return null
-    const { currency } = fundResult
+    // Get currency from the capital call's fund (not the active fund, which could differ)
+    const fund = await prisma.fund.findUnique({ where: { id: call.fundId }, select: { currency: true } })
+    const currency = fund?.currency ?? 'USD'
 
     return {
         id: call.id,
@@ -648,11 +648,11 @@ export async function getCapitalCallPDFData(id: string): Promise<CapitalCallPDFD
 
     if (!call) return null
 
-    try { await requireFundAccess(session.user.id, call.fundId) } catch { return null }
+    try { await requireFundAccess(session.user.id, call.fundId) } catch (err) { console.error('Fund access denied for capital call PDF:', err); return null }
 
-    const fundResult = await getActiveFundWithCurrency(session.user.id!)
-    if (!fundResult) return null
-    const { currency } = fundResult
+    // Get currency from the capital call's fund (not the active fund, which could differ)
+    const fund = await prisma.fund.findUnique({ where: { id: call.fundId }, select: { currency: true } })
+    const currency = fund?.currency ?? 'USD'
 
     const totalCommitted = call.items.reduce((sum, item) => {
         const commitment = item.investor.commitments.find(c => c.fundId === call.fundId)

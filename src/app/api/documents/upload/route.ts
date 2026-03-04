@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Access denied: no active fund' }, { status: 403 })
       }
       const commitment = await prisma.commitment.findFirst({
-        where: { investorId, fundId: fundResult.fundId, deletedAt: null },
+        where: { investorId, fundId: fundResult.fundId, ...notDeleted },
         select: { id: true },
       })
       if (!commitment) {

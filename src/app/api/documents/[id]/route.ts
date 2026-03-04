@@ -71,12 +71,15 @@ export async function GET(
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
     const commitment = await prisma.commitment.findFirst({
-      where: { investorId: doc.investorId, fundId: fundResult.fundId, deletedAt: null },
+      where: { investorId: doc.investorId, fundId: fundResult.fundId, ...notDeleted },
       select: { id: true },
     })
     if (!commitment) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
+  } else {
+    // Document has no traceable fund context — deny by default
+    return NextResponse.json({ error: 'Access denied' }, { status: 403 })
   }
 
   // S3 documents: redirect to signed URL

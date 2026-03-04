@@ -117,15 +117,15 @@ export interface DistributionDetail {
 // Get distributions with pagination and search
 export async function getDistributions(params?: PaginationParams): Promise<PaginatedResult<DistributionListItem>> {
     const session = await auth()
+    const { page, pageSize, skip, search } = parsePaginationParams(params)
+
     if (!session?.user?.id) {
-        return paginatedResult([], 0, 1, 25)
+        return paginatedResult([], 0, page, pageSize)
     }
 
     const fundResult = await getActiveFundWithCurrency(session.user.id!)
-    if (!fundResult) return paginatedResult([], 0, 1, 25)
+    if (!fundResult) return paginatedResult([], 0, page, pageSize)
     const { fundId, currency } = fundResult
-
-    const { page, pageSize, skip, search } = parsePaginationParams(params)
 
     const where = {
         fundId,
@@ -206,11 +206,11 @@ export async function getDistribution(id: string): Promise<DistributionDetail | 
         return null
     }
 
-    try { await requireFundAccess(session.user.id, dist.fundId) } catch { return null }
+    try { await requireFundAccess(session.user.id, dist.fundId) } catch (err) { console.error('Fund access denied for distribution:', err); return null }
 
-    const fundResult = await getActiveFundWithCurrency(session.user.id!)
-    if (!fundResult) return null
-    const { currency } = fundResult
+    // Get currency from the distribution's fund (not the active fund, which could differ)
+    const fund = await prisma.fund.findUnique({ where: { id: dist.fundId }, select: { currency: true } })
+    const currency = fund?.currency ?? 'USD'
 
     return {
         id: dist.id,
@@ -649,11 +649,11 @@ export async function getDistributionPDFData(id: string): Promise<DistributionPD
 
     if (!dist) return null
 
-    try { await requireFundAccess(session.user.id, dist.fundId) } catch { return null }
+    try { await requireFundAccess(session.user.id, dist.fundId) } catch (err) { console.error('Fund access denied for distribution PDF:', err); return null }
 
-    const fundResult = await getActiveFundWithCurrency(session.user.id!)
-    if (!fundResult) return null
-    const { currency } = fundResult
+    // Get currency from the distribution's fund (not the active fund, which could differ)
+    const fund = await prisma.fund.findUnique({ where: { id: dist.fundId }, select: { currency: true } })
+    const currency = fund?.currency ?? 'USD'
 
     const totalCommitted = dist.items.reduce((sum, item) => {
         const commitment = item.investor.commitments.find(c => c.fundId === dist.fundId)
