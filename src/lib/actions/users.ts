@@ -94,40 +94,95 @@ export interface UserDetail {
     } | null
 }
 
-// Get all users
+// Get all users scoped to the active fund (or all for SUPER_ADMIN)
 export async function getUsers(): Promise<UserListItem[]> {
     const session = await auth()
     if (!session?.user?.id) {
         return []
     }
 
-    const users = await prisma.user.findMany({
-        orderBy: { createdAt: 'desc' },
-        select: {
-            id: true,
-            name: true,
-            email: true,
-            role: true,
-            isActive: true,
-            createdAt: true,
-        },
+    const caller = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { role: true },
     })
 
-    return users.map((user) => ({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: USER_ROLE_DISPLAY[user.role] || user.role,
-        isActive: user.isActive,
-        createdAt: user.createdAt,
+    // SUPER_ADMIN: platform-wide view
+    if (caller?.role === 'SUPER_ADMIN') {
+        const users = await prisma.user.findMany({
+            orderBy: { createdAt: 'desc' },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true,
+                isActive: true,
+                createdAt: true,
+            },
+        })
+
+        return users.map((user) => ({
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: USER_ROLE_DISPLAY[user.role] || user.role,
+            isActive: user.isActive,
+            createdAt: user.createdAt,
+        }))
+    }
+
+    // FUND_ADMIN / others: only users who are members of the active fund
+    const fundResult = await getActiveFundWithCurrency(session.user.id)
+    if (!fundResult) return []
+
+    const members = await prisma.fundMember.findMany({
+        where: { fundId: fundResult.fundId },
+        include: {
+            user: {
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    role: true,
+                    isActive: true,
+                    createdAt: true,
+                },
+            },
+        },
+        orderBy: { joinedAt: 'desc' },
+    })
+
+    return members.map((m) => ({
+        id: m.user.id,
+        name: m.user.name,
+        email: m.user.email,
+        role: USER_ROLE_DISPLAY[m.user.role] || m.user.role,
+        isActive: m.user.isActive,
+        createdAt: m.user.createdAt,
     }))
 }
 
-// Get single user
+// Get single user (fund-scoped for non-SUPER_ADMIN callers)
 export async function getUserById(id: string): Promise<UserDetail | null> {
     const session = await auth()
     if (!session?.user?.id) {
         return null
+    }
+
+    // Non-SUPER_ADMIN: verify target user is a member of the caller's active fund
+    const caller = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { role: true },
+    })
+
+    if (caller?.role !== 'SUPER_ADMIN') {
+        const fundResult = await getActiveFundWithCurrency(session.user.id)
+        if (!fundResult) return null
+
+        const membership = await prisma.fundMember.findUnique({
+            where: { fundId_userId: { fundId: fundResult.fundId, userId: id } },
+            select: { id: true },
+        })
+        if (!membership) return null
     }
 
     const user = await prisma.user.findUnique({
