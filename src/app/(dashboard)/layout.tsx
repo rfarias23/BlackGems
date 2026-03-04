@@ -3,7 +3,7 @@ import { Header } from '@/components/layout/header';
 import { auth } from '@/lib/auth';
 import { getUnreadCount } from '@/lib/actions/notifications';
 import { getUserFunds } from '@/lib/actions/funds';
-import { getActiveFundId, setActiveFundId } from '@/lib/shared/active-fund';
+import { getActiveFundId } from '@/lib/shared/active-fund';
 import { getUserModulePermissions } from '@/lib/shared/fund-access';
 import { redirect } from 'next/navigation';
 import { AICopilotProvider } from '@/components/ai/ai-copilot-provider';
@@ -41,12 +41,9 @@ export default async function DashboardLayout({
     ]);
 
     // Resolve fund ID: cookie → first fund from membership → empty
+    // Note: cookie is set by getAuthorizedFundId() in downstream Server Actions
+    // (steps 1, 3, 4 of its resolution chain). Cannot set cookies in RSC render phase.
     const resolvedFundId = activeFundId ?? funds[0]?.id ?? '';
-
-    // Ensure cookie is set for downstream server actions
-    if (!activeFundId && resolvedFundId) {
-        await setActiveFundId(resolvedFundId);
-    }
 
     const permissions = resolvedFundId
         ? await getUserModulePermissions(session.user.id!, resolvedFundId)

@@ -9,7 +9,7 @@ import { UserRole, FundMemberRole } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 import { logAudit } from '@/lib/shared/audit'
 import { notDeleted } from '@/lib/shared/soft-delete'
-import { getActiveFundWithCurrency } from '@/lib/shared/fund-access'
+import { getActiveFundWithCurrency, requireFundAccess } from '@/lib/shared/fund-access'
 import { canBecomeFundMember, ALLOWED_FUND_ROLES, DEFAULT_PERMISSIONS } from '@/lib/shared/permissions'
 import { sendInviteEmail } from '@/lib/email'
 import crypto from 'crypto'
@@ -263,10 +263,20 @@ export async function createUser(formData: FormData) {
         return { error: 'Cannot create user: your account has no organization' }
     }
 
-    // Resolve caller's active fund (needed for FundMember creation)
-    const fundResult = await getActiveFundWithCurrency(session.user.id!)
-    if (!fundResult) {
-        return { error: 'Cannot create user: no active fund' }
+    // Resolve caller's active fund only if the new role needs fund membership
+    let fundId: string | null = null
+    if (canBecomeFundMember(dbRole)) {
+        const fundResult = await getActiveFundWithCurrency(session.user.id!)
+        if (!fundResult) {
+            return { error: 'Cannot create user: no active fund' }
+        }
+        try {
+            await requireFundAccess(session.user.id!, fundResult.fundId)
+        } catch {
+            console.error('createUser: caller lacks access to resolved fund', fundResult.fundId)
+            return { error: 'Cannot create user: no access to active fund' }
+        }
+        fundId = fundResult.fundId
     }
 
     try {
@@ -285,14 +295,14 @@ export async function createUser(formData: FormData) {
             })
 
             // 2. Create FundMember if role allows it (LP/Auditor roles skip)
-            if (canBecomeFundMember(dbRole)) {
+            if (fundId && canBecomeFundMember(dbRole)) {
                 const allowedRoles = ALLOWED_FUND_ROLES[dbRole]
                 const fundMemberRole = allowedRoles[0]
 
                 await tx.fundMember.create({
                     data: {
                         userId: newUser.id,
-                        fundId: fundResult.fundId,
+                        fundId,
                         role: fundMemberRole as FundMemberRole,
                         permissions: DEFAULT_PERMISSIONS[fundMemberRole] || DEFAULT_PERMISSIONS['ANALYST'],
                         isActive: true,
@@ -300,8 +310,18 @@ export async function createUser(formData: FormData) {
                 })
             }
 
-            // 3. Link to investor record if provided (LP roles)
+            // 3. Link to investor record if provided (LP roles) — verify investor belongs to caller's org
             if (data.investorId) {
+                const investor = await tx.investor.findFirst({
+                    where: {
+                        id: data.investorId,
+                        commitments: { some: { fund: { organizationId: caller.organizationId! } } },
+                    },
+                    select: { id: true },
+                })
+                if (!investor) {
+                    throw new Error('Investor not found in your organization')
+                }
                 await tx.investor.update({
                     where: { id: data.investorId },
                     data: { userId: newUser.id },
@@ -318,7 +338,7 @@ export async function createUser(formData: FormData) {
             entityId: user.id,
             changes: {
                 organizationId: { old: null, new: caller.organizationId },
-                fundId: { old: null, new: fundResult.fundId },
+                ...(fundId ? { fundId: { old: null, new: fundId } } : {}),
             },
         })
 
@@ -701,6 +721,8 @@ export async function acceptInvitation(token: string, name: string, password: st
     })
     if (commitment?.fund?.organizationId) {
         organizationId = commitment.fund.organizationId
+    } else {
+        console.error('acceptInvitation: could not resolve organizationId for investor', investorId)
     }
 
     try {
