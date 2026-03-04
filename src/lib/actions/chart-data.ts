@@ -122,8 +122,19 @@ export async function getLPChartData(
   const session = await auth()
   if (!session?.user?.id) return null
 
+  const fundResult = await getActiveFundWithCurrency(session.user.id!)
+  if (!fundResult) return null
+
+  // Verify investor has commitment in caller's active fund
+  const investorInFund = await prisma.commitment.findFirst({
+    where: { investorId, fundId: fundResult.fundId, ...notDeleted },
+    select: { id: true },
+  })
+  if (!investorInFund) return null
+
+  // Scope to active fund only (not cross-fund)
   const commitments = await prisma.commitment.findMany({
-    where: { investorId, ...notDeleted },
+    where: { investorId, fundId: fundResult.fundId, ...notDeleted },
     include: {
       fund: { select: { name: true } },
     },

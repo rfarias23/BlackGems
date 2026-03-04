@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { DistributionType } from '@prisma/client'
+import type { Prisma } from '@prisma/client'
 import { logAudit } from '@/lib/shared/audit'
 import { softDelete, notDeleted } from '@/lib/shared/soft-delete'
 import { requireFundAccess, getActiveFundWithCurrency } from '@/lib/shared/fund-access'
@@ -120,9 +121,14 @@ export async function getDistributions(params?: PaginationParams): Promise<Pagin
         return paginatedResult([], 0, 1, 25)
     }
 
+    const fundResult = await getActiveFundWithCurrency(session.user.id!)
+    if (!fundResult) return paginatedResult([], 0, 1, 25)
+    const { fundId, currency } = fundResult
+
     const { page, pageSize, skip, search } = parsePaginationParams(params)
 
     const where = {
+        fundId,
         ...notDeleted,
         ...(search ? {
             OR: [
@@ -152,10 +158,6 @@ export async function getDistributions(params?: PaginationParams): Promise<Pagin
         }),
         prisma.distribution.count({ where }),
     ])
-
-    const fundResult = await getActiveFundWithCurrency(session.user.id!)
-    if (!fundResult) return paginatedResult([], 0, page, pageSize)
-    const { currency } = fundResult
 
     const data = distributions.map((dist) => {
         const totalPaid = dist.items
@@ -203,6 +205,8 @@ export async function getDistribution(id: string): Promise<DistributionDetail | 
     if (!dist) {
         return null
     }
+
+    try { await requireFundAccess(session.user.id, dist.fundId) } catch { return null }
 
     const fundResult = await getActiveFundWithCurrency(session.user.id!)
     if (!fundResult) return null
@@ -645,6 +649,8 @@ export async function getDistributionPDFData(id: string): Promise<DistributionPD
 
     if (!dist) return null
 
+    try { await requireFundAccess(session.user.id, dist.fundId) } catch { return null }
+
     const fundResult = await getActiveFundWithCurrency(session.user.id!)
     if (!fundResult) return null
     const { currency } = fundResult
@@ -694,8 +700,11 @@ export async function getDistributionSummary(): Promise<DistributionSummary> {
         return { totalDistributed: 0, totalPaid: 0, totalPending: 0, draftCount: 0, processingCount: 0, completedCount: 0 }
     }
 
+    const fundResult = await getActiveFundWithCurrency(session.user.id!)
+    if (!fundResult) return { totalDistributed: 0, totalPaid: 0, totalPending: 0, draftCount: 0, processingCount: 0, completedCount: 0 }
+
     const distributions = await prisma.distribution.findMany({
-        where: notDeleted,
+        where: { fundId: fundResult.fundId, ...notDeleted },
         select: {
             status: true,
             totalAmount: true,
@@ -746,27 +755,42 @@ export async function getDistributionSummary(): Promise<DistributionSummary> {
 // Get available funds for distributions
 export async function getFundsForDistribution(): Promise<{ id: string; name: string }[]> {
     const session = await auth()
-    if (!session?.user?.id) {
-        return []
+    if (!session?.user?.id) return []
+
+    const commitmentFilter: Prisma.FundWhereInput = {
+        commitments: { some: { status: { in: ['SIGNED', 'ACTIVE', 'FUNDED'] } } },
     }
 
-    // Get funds that have active commitments (what matters for distributions)
-    const funds = await prisma.fund.findMany({
-        where: {
-            commitments: {
-                some: {
-                    status: { in: ['SIGNED', 'ACTIVE', 'FUNDED'] },
-                },
-            },
-        },
-        select: {
-            id: true,
-            name: true,
-        },
-        orderBy: { name: 'asc' },
+    const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { role: true, organizationId: true },
     })
 
-    const uniqueFunds = funds
+    if (user?.role === 'SUPER_ADMIN') {
+        return prisma.fund.findMany({
+            where: commitmentFilter,
+            select: { id: true, name: true },
+            orderBy: { name: 'asc' },
+        })
+    }
 
-    return uniqueFunds
+    if (user?.role === 'FUND_ADMIN') {
+        return prisma.fund.findMany({
+            where: { organizationId: user.organizationId ?? undefined, ...commitmentFilter },
+            select: { id: true, name: true },
+            orderBy: { name: 'asc' },
+        })
+    }
+
+    const memberships = await prisma.fundMember.findMany({
+        where: { userId: session.user.id, isActive: true },
+        select: { fundId: true },
+    })
+    const fundIds = memberships.map(m => m.fundId)
+
+    return prisma.fund.findMany({
+        where: { id: { in: fundIds }, ...commitmentFilter },
+        select: { id: true, name: true },
+        orderBy: { name: 'asc' },
+    })
 }
