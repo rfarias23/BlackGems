@@ -41,6 +41,8 @@ export default async function DashboardLayout({
     ]);
 
     // Resolve fund ID: cookie → first fund from membership → empty
+    // Note: cookie is set by getAuthorizedFundId() in downstream Server Actions
+    // (steps 1, 3, 4 of its resolution chain). Cannot set cookies in RSC render phase.
     const resolvedFundId = activeFundId ?? funds[0]?.id ?? '';
 
     const permissions = resolvedFundId
