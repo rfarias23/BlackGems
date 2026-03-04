@@ -181,9 +181,12 @@ export async function getAuthorizedFundId(userId: string): Promise<string | null
         await setActiveFundId(fund.id)
         return fund.id
       }
-    } else if (isFundAdmin && userOrgId) {
+    } else if (isFundAdmin) {
+      // TODO(multi-org): Remove global fund fallback — security risk in multi-tenant.
+      // A FUND_ADMIN with null organizationId can see any fund globally here.
+      // Safe in single-tenant; must be removed before multi-org launch.
       const fund = await prisma.fund.findFirst({
-        where: { organizationId: userOrgId },
+        where: userOrgId ? { organizationId: userOrgId } : {},
         select: { id: true },
         orderBy: { createdAt: 'asc' },
       })

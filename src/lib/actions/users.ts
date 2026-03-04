@@ -5,11 +5,12 @@ import { auth } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
-import { UserRole } from '@prisma/client'
+import { UserRole, FundMemberRole } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 import { logAudit } from '@/lib/shared/audit'
 import { notDeleted } from '@/lib/shared/soft-delete'
 import { getActiveFundWithCurrency } from '@/lib/shared/fund-access'
+import { canBecomeFundMember, ALLOWED_FUND_ROLES, DEFAULT_PERMISSIONS } from '@/lib/shared/permissions'
 import { sendInviteEmail } from '@/lib/email'
 import crypto from 'crypto'
 
@@ -253,31 +254,72 @@ export async function createUser(formData: FormData) {
         return { error: 'A user with this email already exists' }
     }
 
+    // Resolve caller's organization
+    const caller = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { organizationId: true },
+    })
+    if (!caller?.organizationId) {
+        return { error: 'Cannot create user: your account has no organization' }
+    }
+
+    // Resolve caller's active fund (needed for FundMember creation)
+    const fundResult = await getActiveFundWithCurrency(session.user.id!)
+    if (!fundResult) {
+        return { error: 'Cannot create user: no active fund' }
+    }
+
     try {
         const hashedPassword = await bcrypt.hash(data.password, 10)
 
-        const user = await prisma.user.create({
-            data: {
-                name: data.name,
-                email: data.email,
-                role: dbRole,
-                passwordHash: hashedPassword,
-            },
-        })
-
-        // Link to investor record if provided (LP roles)
-        if (data.investorId) {
-            await prisma.investor.update({
-                where: { id: data.investorId },
-                data: { userId: user.id },
+        const user = await prisma.$transaction(async (tx) => {
+            // 1. Create user with organization linkage
+            const newUser = await tx.user.create({
+                data: {
+                    name: data.name,
+                    email: data.email,
+                    role: dbRole,
+                    passwordHash: hashedPassword,
+                    organizationId: caller.organizationId,
+                },
             })
-        }
+
+            // 2. Create FundMember if role allows it (LP/Auditor roles skip)
+            if (canBecomeFundMember(dbRole)) {
+                const allowedRoles = ALLOWED_FUND_ROLES[dbRole]
+                const fundMemberRole = allowedRoles[0]
+
+                await tx.fundMember.create({
+                    data: {
+                        userId: newUser.id,
+                        fundId: fundResult.fundId,
+                        role: fundMemberRole as FundMemberRole,
+                        permissions: DEFAULT_PERMISSIONS[fundMemberRole] || DEFAULT_PERMISSIONS['ANALYST'],
+                        isActive: true,
+                    },
+                })
+            }
+
+            // 3. Link to investor record if provided (LP roles)
+            if (data.investorId) {
+                await tx.investor.update({
+                    where: { id: data.investorId },
+                    data: { userId: newUser.id },
+                })
+            }
+
+            return newUser
+        })
 
         await logAudit({
             userId: session.user.id!,
             action: 'CREATE',
             entityType: 'User',
             entityId: user.id,
+            changes: {
+                organizationId: { old: null, new: caller.organizationId },
+                fundId: { old: null, new: fundResult.fundId },
+            },
         })
 
         revalidatePath('/admin/users')
@@ -651,6 +693,16 @@ export async function acceptInvitation(token: string, name: string, password: st
         return { error: 'An account with this email already exists. Please sign in instead.' }
     }
 
+    // Resolve organization from investor's fund commitment
+    let organizationId: string | null = null
+    const commitment = await prisma.commitment.findFirst({
+        where: { investorId, ...notDeleted },
+        select: { fund: { select: { organizationId: true } } },
+    })
+    if (commitment?.fund?.organizationId) {
+        organizationId = commitment.fund.organizationId
+    }
+
     try {
         const hashedPassword = await bcrypt.hash(password, 10)
 
@@ -663,6 +715,7 @@ export async function acceptInvitation(token: string, name: string, password: st
                     role,
                     passwordHash: hashedPassword,
                     emailVerified: new Date(), // Auto-verify since they clicked the email link
+                    organizationId,
                 },
             })
 
