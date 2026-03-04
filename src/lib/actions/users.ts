@@ -94,24 +94,50 @@ export interface UserDetail {
     } | null
 }
 
-// Get all users
+// Get all users — scoped to the caller's organization/fund
 export async function getUsers(): Promise<UserListItem[]> {
     const session = await auth()
     if (!session?.user?.id) {
         return []
     }
 
-    const users = await prisma.user.findMany({
-        orderBy: { createdAt: 'desc' },
-        select: {
-            id: true,
-            name: true,
-            email: true,
-            role: true,
-            isActive: true,
-            createdAt: true,
-        },
+    const caller = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { role: true, organizationId: true },
     })
+
+    let users
+
+    if (caller?.role === 'SUPER_ADMIN') {
+        // Platform admin sees all users
+        users = await prisma.user.findMany({
+            orderBy: { createdAt: 'desc' },
+            select: { id: true, name: true, email: true, role: true, isActive: true, createdAt: true },
+        })
+    } else if (caller?.role === 'FUND_ADMIN' && caller.organizationId) {
+        // Fund admin sees users in same organization
+        users = await prisma.user.findMany({
+            where: { organizationId: caller.organizationId },
+            orderBy: { createdAt: 'desc' },
+            select: { id: true, name: true, email: true, role: true, isActive: true, createdAt: true },
+        })
+    } else {
+        // Regular users: see users who share at least one fund via FundMember
+        const fundResult = await getActiveFundWithCurrency(session.user.id)
+        if (!fundResult) return []
+
+        const fundMembers = await prisma.fundMember.findMany({
+            where: { fundId: fundResult.fundId, isActive: true },
+            select: { userId: true },
+        })
+        const userIds = [...new Set(fundMembers.map(m => m.userId))]
+
+        users = await prisma.user.findMany({
+            where: { id: { in: userIds } },
+            orderBy: { createdAt: 'desc' },
+            select: { id: true, name: true, email: true, role: true, isActive: true, createdAt: true },
+        })
+    }
 
     return users.map((user) => ({
         id: user.id,
@@ -123,7 +149,7 @@ export async function getUsers(): Promise<UserListItem[]> {
     }))
 }
 
-// Get single user
+// Get single user — with organization boundary check
 export async function getUserById(id: string): Promise<UserDetail | null> {
     const session = await auth()
     if (!session?.user?.id) {
@@ -146,6 +172,27 @@ export async function getUserById(id: string): Promise<UserDetail | null> {
 
     if (!user) {
         return null
+    }
+
+    // Verify caller can see this user (same org or shared fund)
+    const caller = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { role: true, organizationId: true },
+    })
+
+    if (caller?.role !== 'SUPER_ADMIN') {
+        if (caller?.role === 'FUND_ADMIN' && caller.organizationId) {
+            if (user.organizationId !== caller.organizationId) return null
+        } else {
+            // Regular user: verify they share a fund
+            const fundResult = await getActiveFundWithCurrency(session.user.id)
+            if (!fundResult) return null
+            const sharedMembership = await prisma.fundMember.findFirst({
+                where: { userId: id, fundId: fundResult.fundId, isActive: true },
+                select: { id: true },
+            })
+            if (!sharedMembership) return null
+        }
     }
 
     return {
