@@ -85,6 +85,7 @@ export function AICopilot({ variant = 'desktop', exposeHandlers }: AICopilotProp
   const [pendingFirstMessage, setPendingFirstMessage] = useState<string | null>(
     null
   )
+  const [isMultiLine, setIsMultiLine] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   // Focus textarea when panel opens (desktop) or on mount (mobile)
@@ -102,7 +103,9 @@ export function AICopilot({ variant = 'desktop', exposeHandlers }: AICopilotProp
       setSendError(null)
       const el = e.target
       el.style.height = 'auto'
-      el.style.height = `${Math.min(el.scrollHeight, 120)}px`
+      const scrollH = el.scrollHeight
+      el.style.height = `${Math.min(scrollH, 120)}px`
+      setIsMultiLine(scrollH > 32)
     },
     []
   )
@@ -119,6 +122,7 @@ export function AICopilot({ variant = 'desktop', exposeHandlers }: AICopilotProp
 
     setInputValue('')
     setSendError(null)
+    setIsMultiLine(false)
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto'
     }
@@ -372,7 +376,10 @@ export function AICopilot({ variant = 'desktop', exposeHandlers }: AICopilotProp
         {sendError && (
           <p className="text-xs text-red-400 mb-2 px-1">{sendError}</p>
         )}
-        <div className="flex items-end gap-2 bg-[#0F1218] border border-[#1E293B] rounded-lg px-3 py-2 focus-within:border-[#3E5CFF] transition-colors">
+        <div className={cn(
+          "flex gap-2 bg-[#0F1218] border border-[#1E293B] rounded-lg px-3 py-2 focus-within:border-[#3E5CFF] transition-colors",
+          isMultiLine ? "items-end" : "items-center"
+        )}>
           <textarea
             ref={textareaRef}
             value={inputValue}
