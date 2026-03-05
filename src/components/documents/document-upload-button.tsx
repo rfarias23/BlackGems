@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -68,6 +69,7 @@ interface DocumentUploadButtonProps {
 }
 
 export function DocumentUploadButton({ dealId, investorId, parentDocumentId, buttonLabel }: DocumentUploadButtonProps) {
+    const router = useRouter();
     const categories = investorId ? INVESTOR_DOC_CATEGORIES : DEAL_CATEGORIES;
     const [open, setOpen] = useState(false);
     const [file, setFile] = useState<File | null>(null);
@@ -138,8 +140,7 @@ export function DocumentUploadButton({ dealId, investorId, parentDocumentId, but
 
             setOpen(false);
             resetForm();
-            // Force page refresh to show new document
-            window.location.reload();
+            router.refresh();
         } catch {
             setError('Upload failed. Please try again.');
         } finally {
@@ -257,7 +258,7 @@ export function DocumentUploadButton({ dealId, investorId, parentDocumentId, but
                             disabled={!file || !category || uploading}
                             className={dark.saveBtn}
                         >
-                            {uploading ? 'Uploading...' : 'Upload'}
+                            Upload
                         </Button>
                     </div>
                 </div>

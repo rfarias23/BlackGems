@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -82,6 +83,7 @@ export function DocumentList({ documents, canManage }: DocumentListProps) {
     const [deleteTarget, setDeleteTarget] = useState<DocumentItem | null>(null);
     const [previewDoc, setPreviewDoc] = useState<DocumentItem | null>(null);
     const [isPending, startTransition] = useTransition();
+    const router = useRouter();
 
     const handleDelete = () => {
         if (!deleteTarget) return;
@@ -89,7 +91,7 @@ export function DocumentList({ documents, canManage }: DocumentListProps) {
             const result = await deleteDocument(deleteTarget.id);
             if (result.success) {
                 setDeleteTarget(null);
-                window.location.reload();
+                router.refresh();
             }
         });
     };
@@ -162,8 +164,10 @@ export function DocumentList({ documents, canManage }: DocumentListProps) {
                                             className={`h-8 w-8 ${doc.visibleToLPs ? 'text-[#059669]' : 'text-muted-foreground'} hover:text-foreground`}
                                             onClick={() => {
                                                 startTransition(async () => {
-                                                    await toggleDocumentVisibility(doc.id)
-                                                    window.location.reload()
+                                                    const result = await toggleDocumentVisibility(doc.id)
+                                                    if (result?.success) {
+                                                        router.refresh()
+                                                    }
                                                 })
                                             }}
                                             title={doc.visibleToLPs ? 'Visible to LPs \u2014 click to hide' : 'Hidden from LPs \u2014 click to show'}
@@ -307,7 +311,7 @@ export function DocumentList({ documents, canManage }: DocumentListProps) {
                             disabled={isPending}
                             className={dark.deleteBtn}
                         >
-                            {isPending ? 'Deleting...' : 'Delete'}
+                            Delete
                         </Button>
                     </div>
                 </DialogContent>
