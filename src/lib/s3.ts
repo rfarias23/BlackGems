@@ -12,7 +12,13 @@ function getS3Client(): S3Client {
   return _client
 }
 
-const getBucket = () => process.env.AWS_S3_BUCKET || ''
+const getBucket = () => {
+  const bucket = process.env.AWS_S3_BUCKET
+  if (!bucket) {
+    throw new Error('AWS_S3_BUCKET environment variable is not configured')
+  }
+  return bucket
+}
 
 export async function uploadToS3(
   key: string,

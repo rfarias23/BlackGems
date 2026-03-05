@@ -37,115 +37,131 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  try {
-    const formData = await request.formData()
-    const file = formData.get('file') as File | null
-    const dealId = formData.get('dealId') as string | null
-    const investorId = formData.get('investorId') as string | null
-    const category = formData.get('category') as string | null
-    const documentName = formData.get('name') as string | null
-    const parentDocumentId = formData.get('parentDocumentId') as string | null
+  // Validate S3 configuration before processing the upload
+  if (!process.env.AWS_S3_BUCKET) {
+    console.error('Upload error: AWS_S3_BUCKET environment variable is not configured')
+    return NextResponse.json({ error: 'File storage is not configured. Contact your administrator.' }, { status: 503 })
+  }
 
-    if (!file || !category || (!dealId && !investorId)) {
-      return NextResponse.json({ error: 'Missing required fields: file, category, and dealId or investorId' }, { status: 400 })
+  const formData = await request.formData()
+  const file = formData.get('file') as File | null
+  const dealId = formData.get('dealId') as string | null
+  const investorId = formData.get('investorId') as string | null
+  const category = formData.get('category') as string | null
+  const documentName = formData.get('name') as string | null
+  const parentDocumentId = formData.get('parentDocumentId') as string | null
+
+  if (!file || !category || (!dealId && !investorId)) {
+    return NextResponse.json({ error: 'Missing required fields: file, category, and dealId or investorId' }, { status: 400 })
+  }
+
+  // Validate file size
+  if (file.size > MAX_FILE_SIZE) {
+    return NextResponse.json({ error: 'File too large. Maximum size is 50MB.' }, { status: 400 })
+  }
+
+  // Validate file extension
+  const ext = path.extname(file.name).toLowerCase()
+  if (!ALLOWED_EXTENSIONS.includes(ext)) {
+    return NextResponse.json({ error: `File type ${ext} not allowed.` }, { status: 400 })
+  }
+
+  // Validate category
+  if (!Object.values(DocumentCategory).includes(category as DocumentCategory)) {
+    return NextResponse.json({ error: 'Invalid category' }, { status: 400 })
+  }
+
+  // Determine ownership folder and verify access
+  const ownerId = dealId || investorId!
+  if (dealId) {
+    const deal = await prisma.deal.findFirst({
+      where: { id: dealId, ...notDeleted },
+      select: { fundId: true },
+    })
+    if (!deal) {
+      return NextResponse.json({ error: 'Deal not found' }, { status: 404 })
     }
-
-    // Validate file size
-    if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json({ error: 'File too large. Maximum size is 50MB.' }, { status: 400 })
-    }
-
-    // Validate file extension
-    const ext = path.extname(file.name).toLowerCase()
-    if (!ALLOWED_EXTENSIONS.includes(ext)) {
-      return NextResponse.json({ error: `File type ${ext} not allowed.` }, { status: 400 })
-    }
-
-    // Validate category
-    if (!Object.values(DocumentCategory).includes(category as DocumentCategory)) {
-      return NextResponse.json({ error: 'Invalid category' }, { status: 400 })
-    }
-
-    // Determine ownership folder and verify access
-    const ownerId = dealId || investorId!
-    if (dealId) {
-      const deal = await prisma.deal.findFirst({
-        where: { id: dealId, ...notDeleted },
-        select: { fundId: true },
-      })
-      if (!deal) {
-        return NextResponse.json({ error: 'Deal not found' }, { status: 404 })
-      }
+    try {
       await requireFundAccess(session.user.id, deal.fundId)
-    } else if (investorId) {
-      const investor = await prisma.investor.findFirst({
-        where: { id: investorId, deletedAt: null },
-      })
-      if (!investor) {
-        return NextResponse.json({ error: 'Investor not found' }, { status: 404 })
-      }
-      // Verify investor has commitment to a fund the caller can access
-      const fundResult = await getActiveFundWithCurrency(session.user.id)
-      if (!fundResult) {
-        return NextResponse.json({ error: 'Access denied: no active fund' }, { status: 403 })
-      }
-      const commitment = await prisma.commitment.findFirst({
-        where: { investorId, fundId: fundResult.fundId, ...notDeleted },
-        select: { id: true },
-      })
-      if (!commitment) {
-        return NextResponse.json({ error: 'Access denied: investor not in your fund' }, { status: 403 })
-      }
+    } catch {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
+  } else if (investorId) {
+    const investor = await prisma.investor.findFirst({
+      where: { id: investorId, deletedAt: null },
+    })
+    if (!investor) {
+      return NextResponse.json({ error: 'Investor not found' }, { status: 404 })
+    }
+    // Verify investor has commitment to a fund the caller can access
+    const fundResult = await getActiveFundWithCurrency(session.user.id)
+    if (!fundResult) {
+      return NextResponse.json({ error: 'Access denied: no active fund' }, { status: 403 })
+    }
+    const commitment = await prisma.commitment.findFirst({
+      where: { investorId, fundId: fundResult.fundId, ...notDeleted },
+      select: { id: true },
+    })
+    if (!commitment) {
+      return NextResponse.json({ error: 'Access denied: investor not in your fund' }, { status: 403 })
+    }
+  }
 
-    // Upload to S3
-    const s3Key = getS3Key(ownerId, file.name)
-    const buffer = Buffer.from(await file.arrayBuffer())
-    const contentType = file.type || 'application/octet-stream'
+  // Upload to S3
+  const s3Key = getS3Key(ownerId, file.name)
+  const buffer = Buffer.from(await file.arrayBuffer())
+  const contentType = file.type || 'application/octet-stream'
+
+  try {
     await uploadToS3(s3Key, buffer, contentType)
+  } catch (error) {
+    console.error('S3 upload failed:', error)
+    return NextResponse.json({ error: 'File storage error. Please try again.' }, { status: 502 })
+  }
 
-    // Version logic
-    let version = 1
-    let parentId: string | undefined = undefined
+  // Version logic
+  let version = 1
+  let parentId: string | undefined = undefined
 
-    if (parentDocumentId) {
-      const parentDoc = await prisma.document.findFirst({
-        where: { id: parentDocumentId, ...notDeleted },
+  if (parentDocumentId) {
+    const parentDoc = await prisma.document.findFirst({
+      where: { id: parentDocumentId, ...notDeleted },
+    })
+    if (parentDoc) {
+      // Find the root document
+      const rootId = parentDoc.parentId || parentDoc.id
+
+      // Get highest version in the chain
+      const maxVersion = await prisma.document.aggregate({
+        where: {
+          OR: [
+            { id: rootId },
+            { parentId: rootId },
+          ],
+          ...notDeleted,
+        },
+        _max: { version: true },
       })
-      if (parentDoc) {
-        // Find the root document
-        const rootId = parentDoc.parentId || parentDoc.id
 
-        // Get highest version in the chain
-        const maxVersion = await prisma.document.aggregate({
-          where: {
-            OR: [
-              { id: rootId },
-              { parentId: rootId },
-            ],
-            ...notDeleted,
-          },
-          _max: { version: true },
-        })
+      version = (maxVersion._max.version || 0) + 1
+      parentId = rootId
 
-        version = (maxVersion._max.version || 0) + 1
-        parentId = rootId
-
-        // Mark all existing versions as not latest
-        await prisma.document.updateMany({
-          where: {
-            OR: [
-              { id: rootId },
-              { parentId: rootId },
-            ],
-            ...notDeleted,
-          },
-          data: { isLatest: false },
-        })
-      }
+      // Mark all existing versions as not latest
+      await prisma.document.updateMany({
+        where: {
+          OR: [
+            { id: rootId },
+            { parentId: rootId },
+          ],
+          ...notDeleted,
+        },
+        data: { isLatest: false },
+      })
     }
+  }
 
-    // Create document record
+  // Create document record
+  try {
     const doc = await prisma.document.create({
       data: {
         name: documentName || file.name,
@@ -175,7 +191,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, documentId: doc.id })
   } catch (error) {
-    console.error('Upload error:', error)
-    return NextResponse.json({ error: 'Upload failed' }, { status: 500 })
+    console.error('Document record creation failed:', error)
+    return NextResponse.json({ error: 'Failed to save document record' }, { status: 500 })
   }
 }
