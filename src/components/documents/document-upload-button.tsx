@@ -258,7 +258,7 @@ export function DocumentUploadButton({ dealId, investorId, parentDocumentId, but
                             disabled={!file || !category || uploading}
                             className={dark.saveBtn}
                         >
-                            {uploading ? 'Uploading...' : 'Upload'}
+                            Upload
                         </Button>
                     </div>
                 </div>

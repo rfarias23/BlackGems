@@ -164,8 +164,10 @@ export function DocumentList({ documents, canManage }: DocumentListProps) {
                                             className={`h-8 w-8 ${doc.visibleToLPs ? 'text-[#059669]' : 'text-muted-foreground'} hover:text-foreground`}
                                             onClick={() => {
                                                 startTransition(async () => {
-                                                    await toggleDocumentVisibility(doc.id)
-                                                    router.refresh()
+                                                    const result = await toggleDocumentVisibility(doc.id)
+                                                    if (result?.success) {
+                                                        router.refresh()
+                                                    }
                                                 })
                                             }}
                                             title={doc.visibleToLPs ? 'Visible to LPs \u2014 click to hide' : 'Hidden from LPs \u2014 click to show'}
@@ -309,7 +311,7 @@ export function DocumentList({ documents, canManage }: DocumentListProps) {
                             disabled={isPending}
                             className={dark.deleteBtn}
                         >
-                            {isPending ? 'Deleting...' : 'Delete'}
+                            Delete
                         </Button>
                     </div>
                 </DialogContent>
