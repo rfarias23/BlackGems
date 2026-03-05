@@ -6,7 +6,7 @@ interface AuditLogParams {
   action: AuditAction
   entityType: string
   entityId: string
-  changes?: Record<string, { old: unknown; new: unknown }>
+  changes?: Record<string, unknown>
 }
 
 /**

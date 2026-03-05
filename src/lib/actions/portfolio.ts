@@ -387,6 +387,7 @@ export async function createPortfolioCompany(formData: FormData) {
         })
 
         revalidatePath('/portfolio')
+        revalidatePath('/dashboard')
         redirect(`/portfolio/${company.id}`)
     } catch (error) {
         if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
@@ -436,6 +437,7 @@ export async function updatePortfolioCompanyStatus(id: string, status: string) {
 
         revalidatePath('/portfolio')
         revalidatePath(`/portfolio/${id}`)
+        revalidatePath('/dashboard')
         return { success: true }
     } catch (error) {
         console.error('Error updating portfolio company status:', error)
@@ -514,6 +516,7 @@ export async function updatePortfolioValuation(
 
         revalidatePath('/portfolio')
         revalidatePath(`/portfolio/${id}`)
+        revalidatePath('/dashboard')
         return { success: true }
     } catch (error) {
         console.error('Error updating valuation:', error)
@@ -668,6 +671,7 @@ export async function deletePortfolioCompany(id: string) {
         })
 
         revalidatePath('/portfolio')
+        revalidatePath('/dashboard')
         redirect('/portfolio')
     } catch (error) {
         if (error instanceof Error && error.message === 'NEXT_REDIRECT') {

@@ -363,8 +363,12 @@ export async function createDistribution(formData: FormData) {
         })
 
         revalidatePath('/capital')
+        revalidatePath('/dashboard')
         redirect(`/capital/distributions/${distribution.id}`)
     } catch (error) {
+        if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
+            throw error
+        }
         console.error('Error creating distribution:', error)
         return { error: 'Failed to create distribution' }
     }
@@ -422,6 +426,7 @@ export async function updateDistributionStatus(id: string, status: string) {
 
         revalidatePath('/capital')
         revalidatePath(`/capital/distributions/${id}`)
+        revalidatePath('/dashboard')
         return { success: true }
     } catch (error) {
         console.error('Error updating distribution status:', error)
@@ -546,6 +551,7 @@ export async function processDistributionItem(itemId: string) {
 
         revalidatePath('/capital')
         revalidatePath(`/capital/distributions/${item.distributionId}`)
+        revalidatePath('/dashboard')
         return { success: true }
     } catch (error) {
         console.error('Error processing distribution:', error)
@@ -590,8 +596,12 @@ export async function deleteDistribution(id: string) {
         })
 
         revalidatePath('/capital')
+        revalidatePath('/dashboard')
         redirect('/capital')
     } catch (error) {
+        if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
+            throw error
+        }
         console.error('Error deleting distribution:', error)
         return { error: 'Failed to delete distribution' }
     }

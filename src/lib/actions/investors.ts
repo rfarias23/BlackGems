@@ -373,6 +373,7 @@ export async function createInvestor(formData: FormData) {
         })
 
         revalidatePath('/investors')
+        revalidatePath('/dashboard')
         redirect(`/investors/${investor.id}`)
     } catch (error) {
         if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
@@ -405,8 +406,7 @@ export async function updateInvestor(id: string, formData: FormData) {
     })
     if (!hasCommitment) return { error: 'Investor not found in this fund' }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const updateData: Record<string, any> = {}
+    const updateData: Record<string, string | number | Date | null> = {}
 
     const name = formData.get('name') as string | null
     if (name) updateData.name = name
@@ -498,6 +498,7 @@ export async function updateInvestor(id: string, formData: FormData) {
 
         revalidatePath('/investors')
         revalidatePath(`/investors/${id}`)
+        revalidatePath('/dashboard')
         return { success: true }
     } catch (error) {
         console.error('Error updating investor:', error)
@@ -721,6 +722,7 @@ export async function deleteInvestor(id: string) {
         })
 
         revalidatePath('/investors')
+        revalidatePath('/dashboard')
         redirect('/investors')
     } catch (error) {
         if (error instanceof Error && error.message === 'NEXT_REDIRECT') {

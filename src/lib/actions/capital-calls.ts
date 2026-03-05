@@ -338,8 +338,12 @@ export async function createCapitalCall(formData: FormData) {
         })
 
         revalidatePath('/capital')
+        revalidatePath('/dashboard')
         redirect(`/capital/calls/${capitalCall.id}`)
     } catch (error) {
+        if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
+            throw error
+        }
         console.error('Error creating capital call:', error)
         return { error: 'Failed to create capital call' }
     }
@@ -397,6 +401,7 @@ export async function updateCapitalCallStatus(id: string, status: string) {
 
         revalidatePath('/capital')
         revalidatePath(`/capital/calls/${id}`)
+        revalidatePath('/dashboard')
         return { success: true }
     } catch (error) {
         console.error('Error updating capital call status:', error)
@@ -547,6 +552,7 @@ export async function recordCallItemPayment(
 
         revalidatePath('/capital')
         revalidatePath(`/capital/calls/${item.capitalCallId}`)
+        revalidatePath('/dashboard')
         return { success: true }
     } catch (error) {
         console.error('Error recording payment:', error)
@@ -591,8 +597,12 @@ export async function deleteCapitalCall(id: string) {
         })
 
         revalidatePath('/capital')
+        revalidatePath('/dashboard')
         redirect('/capital')
     } catch (error) {
+        if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
+            throw error
+        }
         console.error('Error deleting capital call:', error)
         return { error: 'Failed to delete capital call' }
     }
