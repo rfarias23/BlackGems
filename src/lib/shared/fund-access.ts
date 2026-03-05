@@ -45,6 +45,21 @@ async function getFundSlugFromHeaders(): Promise<string | null> {
 }
 
 /**
+ * Best-effort cookie persistence for the active fund.
+ * In Server Actions / Route Handlers the cookie is written normally.
+ * In RSC render context (where cookie writes are forbidden by Next.js 15),
+ * the write is silently skipped — the fund ID is still returned to the caller.
+ * The cookie will be set on the user's next Server Action invocation.
+ */
+async function trySaveActiveFundId(fundId: string): Promise<void> {
+  try {
+    await setActiveFundId(fundId)
+  } catch {
+    // Expected in RSC render context — safe to ignore.
+  }
+}
+
+/**
  * Validates that a user and fund belong to the same organization.
  * Returns true if:
  * - Both orgIds match
@@ -142,7 +157,7 @@ export async function getAuthorizedFundId(userId: string): Promise<string | null
         select: { id: true, organizationId: true },
       })
       if (fund && await canAccessFund(fund.id, fund.organizationId)) {
-        await setActiveFundId(fund.id)
+        await trySaveActiveFundId(fund.id)
         return fund.id
       }
     }
@@ -167,7 +182,7 @@ export async function getAuthorizedFundId(userId: string): Promise<string | null
     })
 
     if (membership) {
-      await setActiveFundId(membership.fundId)
+      await trySaveActiveFundId(membership.fundId)
       return membership.fundId
     }
 
@@ -178,7 +193,7 @@ export async function getAuthorizedFundId(userId: string): Promise<string | null
         orderBy: { createdAt: 'asc' },
       })
       if (fund) {
-        await setActiveFundId(fund.id)
+        await trySaveActiveFundId(fund.id)
         return fund.id
       }
     } else if (isFundAdmin) {
@@ -191,7 +206,7 @@ export async function getAuthorizedFundId(userId: string): Promise<string | null
         orderBy: { createdAt: 'asc' },
       })
       if (fund) {
-        await setActiveFundId(fund.id)
+        await trySaveActiveFundId(fund.id)
         return fund.id
       }
     }
