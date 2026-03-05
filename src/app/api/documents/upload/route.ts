@@ -8,7 +8,7 @@ import { logAudit } from '@/lib/shared/audit'
 import { rateLimit } from '@/lib/shared/rate-limit'
 import { revalidatePath } from 'next/cache'
 import path from 'path'
-import { uploadToS3, getS3Key } from '@/lib/s3'
+import { uploadToS3, getS3Key, deleteFromS3 } from '@/lib/s3'
 
 const MANAGE_ROLES = ['SUPER_ADMIN', 'FUND_ADMIN', 'INVESTMENT_MANAGER', 'ANALYST']
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
@@ -37,37 +37,49 @@ export async function POST(request: NextRequest) {
     )
   }
 
+  // Validate S3 configuration before processing the upload
+  if (!process.env.AWS_S3_BUCKET) {
+    console.error('Upload error: AWS_S3_BUCKET environment variable is not configured')
+    return NextResponse.json({ error: 'File storage is not configured. Contact your administrator.' }, { status: 503 })
+  }
+
+  let formData: FormData
   try {
-    const formData = await request.formData()
-    const file = formData.get('file') as File | null
-    const dealId = formData.get('dealId') as string | null
-    const investorId = formData.get('investorId') as string | null
-    const category = formData.get('category') as string | null
-    const documentName = formData.get('name') as string | null
-    const parentDocumentId = formData.get('parentDocumentId') as string | null
+    formData = await request.formData()
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+  }
 
-    if (!file || !category || (!dealId && !investorId)) {
-      return NextResponse.json({ error: 'Missing required fields: file, category, and dealId or investorId' }, { status: 400 })
-    }
+  const file = formData.get('file') as File | null
+  const dealId = formData.get('dealId') as string | null
+  const investorId = formData.get('investorId') as string | null
+  const category = formData.get('category') as string | null
+  const documentName = formData.get('name') as string | null
+  const parentDocumentId = formData.get('parentDocumentId') as string | null
 
-    // Validate file size
-    if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json({ error: 'File too large. Maximum size is 50MB.' }, { status: 400 })
-    }
+  if (!file || !category || (!dealId && !investorId)) {
+    return NextResponse.json({ error: 'Missing required fields: file, category, and dealId or investorId' }, { status: 400 })
+  }
 
-    // Validate file extension
-    const ext = path.extname(file.name).toLowerCase()
-    if (!ALLOWED_EXTENSIONS.includes(ext)) {
-      return NextResponse.json({ error: `File type ${ext} not allowed.` }, { status: 400 })
-    }
+  // Validate file size
+  if (file.size > MAX_FILE_SIZE) {
+    return NextResponse.json({ error: 'File too large. Maximum size is 50MB.' }, { status: 400 })
+  }
 
-    // Validate category
-    if (!Object.values(DocumentCategory).includes(category as DocumentCategory)) {
-      return NextResponse.json({ error: 'Invalid category' }, { status: 400 })
-    }
+  // Validate file extension
+  const ext = path.extname(file.name).toLowerCase()
+  if (!ALLOWED_EXTENSIONS.includes(ext)) {
+    return NextResponse.json({ error: `File type ${ext} not allowed.` }, { status: 400 })
+  }
 
-    // Determine ownership folder and verify access
-    const ownerId = dealId || investorId!
+  // Validate category
+  if (!Object.values(DocumentCategory).includes(category as DocumentCategory)) {
+    return NextResponse.json({ error: 'Invalid category' }, { status: 400 })
+  }
+
+  // Determine ownership folder and verify access
+  const ownerId = dealId || investorId!
+  try {
     if (dealId) {
       const deal = await prisma.deal.findFirst({
         where: { id: dealId, ...notDeleted },
@@ -84,7 +96,6 @@ export async function POST(request: NextRequest) {
       if (!investor) {
         return NextResponse.json({ error: 'Investor not found' }, { status: 404 })
       }
-      // Verify investor has commitment to a fund the caller can access
       const fundResult = await getActiveFundWithCurrency(session.user.id)
       if (!fundResult) {
         return NextResponse.json({ error: 'Access denied: no active fund' }, { status: 403 })
@@ -97,26 +108,36 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Access denied: investor not in your fund' }, { status: 403 })
       }
     }
+  } catch (error) {
+    if (error instanceof Response) throw error
+    console.error('Ownership verification failed:', error)
+    return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+  }
 
-    // Upload to S3
-    const s3Key = getS3Key(ownerId, file.name)
-    const buffer = Buffer.from(await file.arrayBuffer())
-    const contentType = file.type || 'application/octet-stream'
+  // Upload to S3
+  const s3Key = getS3Key(ownerId, file.name)
+  const buffer = Buffer.from(await file.arrayBuffer())
+  const contentType = file.type || 'application/octet-stream'
+
+  try {
     await uploadToS3(s3Key, buffer, contentType)
+  } catch (error) {
+    console.error('S3 upload failed:', error)
+    return NextResponse.json({ error: 'File storage error. Please try again.' }, { status: 502 })
+  }
 
-    // Version logic
-    let version = 1
-    let parentId: string | undefined = undefined
+  // Version logic
+  let version = 1
+  let parentId: string | undefined = undefined
 
+  try {
     if (parentDocumentId) {
       const parentDoc = await prisma.document.findFirst({
         where: { id: parentDocumentId, ...notDeleted },
       })
       if (parentDoc) {
-        // Find the root document
         const rootId = parentDoc.parentId || parentDoc.id
 
-        // Get highest version in the chain
         const maxVersion = await prisma.document.aggregate({
           where: {
             OR: [
@@ -131,7 +152,6 @@ export async function POST(request: NextRequest) {
         version = (maxVersion._max.version || 0) + 1
         parentId = rootId
 
-        // Mark all existing versions as not latest
         await prisma.document.updateMany({
           where: {
             OR: [
@@ -144,8 +164,13 @@ export async function POST(request: NextRequest) {
         })
       }
     }
+  } catch (error) {
+    console.error('Version resolution failed:', error)
+    return NextResponse.json({ error: 'Failed to resolve document version' }, { status: 500 })
+  }
 
-    // Create document record
+  // Create document record
+  try {
     const doc = await prisma.document.create({
       data: {
         name: documentName || file.name,
@@ -175,7 +200,13 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, documentId: doc.id })
   } catch (error) {
-    console.error('Upload error:', error)
-    return NextResponse.json({ error: 'Upload failed' }, { status: 500 })
+    console.error('Document record creation failed:', error)
+    // Clean up orphaned S3 object
+    try {
+      await deleteFromS3(s3Key)
+    } catch (cleanupError) {
+      console.error('S3 cleanup failed after DB error:', cleanupError)
+    }
+    return NextResponse.json({ error: 'Failed to save document record' }, { status: 500 })
   }
 }
