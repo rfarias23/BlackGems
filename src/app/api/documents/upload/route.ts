@@ -8,7 +8,7 @@ import { logAudit } from '@/lib/shared/audit'
 import { rateLimit } from '@/lib/shared/rate-limit'
 import { revalidatePath } from 'next/cache'
 import path from 'path'
-import { uploadToS3, getS3Key } from '@/lib/s3'
+import { uploadToS3, getS3Key, deleteFromS3 } from '@/lib/s3'
 
 const MANAGE_ROLES = ['SUPER_ADMIN', 'FUND_ADMIN', 'INVESTMENT_MANAGER', 'ANALYST']
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
@@ -43,7 +43,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'File storage is not configured. Contact your administrator.' }, { status: 503 })
   }
 
-  const formData = await request.formData()
+  let formData: FormData
+  try {
+    formData = await request.formData()
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+  }
+
   const file = formData.get('file') as File | null
   const dealId = formData.get('dealId') as string | null
   const investorId = formData.get('investorId') as string | null
@@ -73,38 +79,39 @@ export async function POST(request: NextRequest) {
 
   // Determine ownership folder and verify access
   const ownerId = dealId || investorId!
-  if (dealId) {
-    const deal = await prisma.deal.findFirst({
-      where: { id: dealId, ...notDeleted },
-      select: { fundId: true },
-    })
-    if (!deal) {
-      return NextResponse.json({ error: 'Deal not found' }, { status: 404 })
-    }
-    try {
+  try {
+    if (dealId) {
+      const deal = await prisma.deal.findFirst({
+        where: { id: dealId, ...notDeleted },
+        select: { fundId: true },
+      })
+      if (!deal) {
+        return NextResponse.json({ error: 'Deal not found' }, { status: 404 })
+      }
       await requireFundAccess(session.user.id, deal.fundId)
-    } catch {
-      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+    } else if (investorId) {
+      const investor = await prisma.investor.findFirst({
+        where: { id: investorId, deletedAt: null },
+      })
+      if (!investor) {
+        return NextResponse.json({ error: 'Investor not found' }, { status: 404 })
+      }
+      const fundResult = await getActiveFundWithCurrency(session.user.id)
+      if (!fundResult) {
+        return NextResponse.json({ error: 'Access denied: no active fund' }, { status: 403 })
+      }
+      const commitment = await prisma.commitment.findFirst({
+        where: { investorId, fundId: fundResult.fundId, ...notDeleted },
+        select: { id: true },
+      })
+      if (!commitment) {
+        return NextResponse.json({ error: 'Access denied: investor not in your fund' }, { status: 403 })
+      }
     }
-  } else if (investorId) {
-    const investor = await prisma.investor.findFirst({
-      where: { id: investorId, deletedAt: null },
-    })
-    if (!investor) {
-      return NextResponse.json({ error: 'Investor not found' }, { status: 404 })
-    }
-    // Verify investor has commitment to a fund the caller can access
-    const fundResult = await getActiveFundWithCurrency(session.user.id)
-    if (!fundResult) {
-      return NextResponse.json({ error: 'Access denied: no active fund' }, { status: 403 })
-    }
-    const commitment = await prisma.commitment.findFirst({
-      where: { investorId, fundId: fundResult.fundId, ...notDeleted },
-      select: { id: true },
-    })
-    if (!commitment) {
-      return NextResponse.json({ error: 'Access denied: investor not in your fund' }, { status: 403 })
-    }
+  } catch (error) {
+    if (error instanceof Response) throw error
+    console.error('Ownership verification failed:', error)
+    return NextResponse.json({ error: 'Access denied' }, { status: 403 })
   }
 
   // Upload to S3
@@ -123,41 +130,43 @@ export async function POST(request: NextRequest) {
   let version = 1
   let parentId: string | undefined = undefined
 
-  if (parentDocumentId) {
-    const parentDoc = await prisma.document.findFirst({
-      where: { id: parentDocumentId, ...notDeleted },
-    })
-    if (parentDoc) {
-      // Find the root document
-      const rootId = parentDoc.parentId || parentDoc.id
-
-      // Get highest version in the chain
-      const maxVersion = await prisma.document.aggregate({
-        where: {
-          OR: [
-            { id: rootId },
-            { parentId: rootId },
-          ],
-          ...notDeleted,
-        },
-        _max: { version: true },
+  try {
+    if (parentDocumentId) {
+      const parentDoc = await prisma.document.findFirst({
+        where: { id: parentDocumentId, ...notDeleted },
       })
+      if (parentDoc) {
+        const rootId = parentDoc.parentId || parentDoc.id
 
-      version = (maxVersion._max.version || 0) + 1
-      parentId = rootId
+        const maxVersion = await prisma.document.aggregate({
+          where: {
+            OR: [
+              { id: rootId },
+              { parentId: rootId },
+            ],
+            ...notDeleted,
+          },
+          _max: { version: true },
+        })
 
-      // Mark all existing versions as not latest
-      await prisma.document.updateMany({
-        where: {
-          OR: [
-            { id: rootId },
-            { parentId: rootId },
-          ],
-          ...notDeleted,
-        },
-        data: { isLatest: false },
-      })
+        version = (maxVersion._max.version || 0) + 1
+        parentId = rootId
+
+        await prisma.document.updateMany({
+          where: {
+            OR: [
+              { id: rootId },
+              { parentId: rootId },
+            ],
+            ...notDeleted,
+          },
+          data: { isLatest: false },
+        })
+      }
     }
+  } catch (error) {
+    console.error('Version resolution failed:', error)
+    return NextResponse.json({ error: 'Failed to resolve document version' }, { status: 500 })
   }
 
   // Create document record
@@ -192,6 +201,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, documentId: doc.id })
   } catch (error) {
     console.error('Document record creation failed:', error)
+    // Clean up orphaned S3 object
+    try {
+      await deleteFromS3(s3Key)
+    } catch (cleanupError) {
+      console.error('S3 cleanup failed after DB error:', cleanupError)
+    }
     return NextResponse.json({ error: 'Failed to save document record' }, { status: 500 })
   }
 }

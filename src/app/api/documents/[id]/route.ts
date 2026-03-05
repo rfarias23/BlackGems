@@ -84,10 +84,15 @@ export async function GET(
 
   // S3 documents: redirect to signed URL
   if (doc.fileUrl.startsWith('documents/')) {
+    if (!process.env.AWS_S3_BUCKET) {
+      console.error('Download error: AWS_S3_BUCKET environment variable is not configured')
+      return NextResponse.json({ error: 'File storage is not configured. Contact your administrator.' }, { status: 503 })
+    }
     try {
       const signedUrl = await getSignedDownloadUrl(doc.fileUrl)
       return NextResponse.redirect(signedUrl)
-    } catch {
+    } catch (error) {
+      console.error('S3 download failed:', error)
       return NextResponse.json({ error: 'File not found in storage' }, { status: 404 })
     }
   }
