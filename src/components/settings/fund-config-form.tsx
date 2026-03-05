@@ -226,7 +226,7 @@ export function FundConfigForm({ fund }: FundConfigFormProps) {
                                 <Percent className="h-4 w-4" />
                                 Fee Structure
                             </h4>
-                            <div className="grid gap-4 md:grid-cols-3">
+                            <div className="grid gap-4 md:grid-cols-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="managementFee">Management Fee *</Label>
                                     <Input
@@ -254,6 +254,15 @@ export function FundConfigForm({ fund }: FundConfigFormProps) {
                                         name="hurdleRate"
                                         defaultValue={fund.hurdleRate || ''}
                                         placeholder="8.00%"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="catchUpRate">Catch-up Rate</Label>
+                                    <Input
+                                        id="catchUpRate"
+                                        name="catchUpRate"
+                                        defaultValue={fund.catchUpRate || ''}
+                                        placeholder="100.0%"
                                     />
                                 </div>
                             </div>
