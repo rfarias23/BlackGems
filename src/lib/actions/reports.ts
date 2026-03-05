@@ -2,12 +2,26 @@
 
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
-import { calculateFundIRR, calculateCompanyIRR, calculateLPIRR } from '@/lib/shared/irr'
+import { calculateFundIRR, calculateCompanyIRR, calculateLPIRR, calculateNetIRR } from '@/lib/shared/irr'
 import { calculateWaterfall, type WaterfallTier } from '@/lib/shared/waterfall'
 import { notDeleted } from '@/lib/shared/soft-delete'
 import { formatMoney, formatPercent, formatMultiple } from '@/lib/shared/formatters'
 import { getActiveFundWithCurrency } from '@/lib/shared/fund-access'
 
+// ============================================================================
+// HELPERS
+// ============================================================================
+
+function sanitizeMultiple(value: number, metricName: string): number {
+    if (!isFinite(value) || isNaN(value)) return 0
+    if (value > 100) {
+        console.warn(`[metrics] ${metricName} = ${value}x — unusually high, check data`)
+    }
+    if (value < -10) {
+        console.warn(`[metrics] ${metricName} = ${value}x — unusually low, check data`)
+    }
+    return value
+}
 
 // ============================================================================
 // DASHBOARD DATA
@@ -52,7 +66,17 @@ export async function getDashboardData(): Promise<DashboardData | null> {
     const fundResult = await getActiveFundWithCurrency(session.user.id!)
     if (!fundResult) return null
     const { fundId, currency } = fundResult
-    const fund = await prisma.fund.findUnique({ where: { id: fundId }, select: { name: true } })
+    const fund = await prisma.fund.findUnique({
+        where: { id: fundId },
+        select: {
+            name: true,
+            managementFee: true,
+            carriedInterest: true,
+            hurdleRate: true,
+            catchUpRate: true,
+            vintage: true,
+        },
+    })
     if (!fund) {
         return null
     }
@@ -84,9 +108,36 @@ export async function getDashboardData(): Promise<DashboardData | null> {
     const totalValue = portfolioCompanies.reduce((sum, c) => sum + Number(c.totalValue || 0), 0)
     const unrealizedValue = portfolioCompanies.reduce((sum, c) => sum + Number(c.unrealizedValue || 0), 0)
 
-    const grossMoic = totalInvested > 0 ? totalValue / totalInvested : 0
-    const netMoic = grossMoic * 0.85
-    const tvpi = totalPaid > 0 ? (totalDistributed + unrealizedValue) / totalPaid : 0
+    const grossMoic = sanitizeMultiple(
+        totalInvested > 0 ? totalValue / totalInvested : 0,
+        'Gross MOIC'
+    )
+
+    // Net MOIC: use waterfall to compute LP's net share after carry + mgmt fees
+    let netMoic = grossMoic
+    if (totalInvested > 0 && totalValue > 0) {
+        const mgmtFeeRate = Number(fund.managementFee) || 0
+        const holdingYears = Math.max(1, new Date().getFullYear() - fund.vintage)
+        const totalMgmtFees = totalInvested * mgmtFeeRate * holdingYears
+
+        const wf = calculateWaterfall({
+            totalDistributable: totalValue,
+            totalContributed: totalInvested,
+            hurdleRate: fund.hurdleRate ? Number(fund.hurdleRate) : null,
+            carriedInterest: Number(fund.carriedInterest) || 0.20,
+            catchUpRate: fund.catchUpRate ? Number(fund.catchUpRate) : null,
+            holdingPeriodYears: holdingYears,
+            managementFee: mgmtFeeRate,
+        })
+
+        const netValueToLPs = wf.lpTotal - totalMgmtFees
+        netMoic = sanitizeMultiple(netValueToLPs / totalInvested, 'Net MOIC')
+    }
+
+    const tvpi = sanitizeMultiple(
+        totalPaid > 0 ? (totalDistributed + unrealizedValue) / totalPaid : 0,
+        'TVPI'
+    )
 
     // Deal metrics
     const activeDeals = deals.filter(d => d.status === 'ACTIVE')
@@ -242,11 +293,33 @@ export async function getFundPerformanceReport(fundId?: string): Promise<FundPer
     const unrealizedValue = portfolioCompanies.reduce((sum, c) => sum + Number(c.unrealizedValue || 0), 0)
 
     // Calculate performance metrics
-    const grossMoic = totalInvested > 0 ? totalValue / totalInvested : 0
-    const netMoic = grossMoic * 0.85 // Simplified: 85% of gross after fees/carry
-    const dpi = totalPaid > 0 ? totalDistributed / totalPaid : 0
-    const rvpi = totalPaid > 0 ? unrealizedValue / totalPaid : 0
-    const tvpi = totalPaid > 0 ? (totalDistributed + unrealizedValue) / totalPaid : 0
+    const mgmtFeeRate = Number(fund.managementFee) || 0
+    const holdingYears = Math.max(1, new Date().getFullYear() - fund.vintage)
+    const grossMoic = sanitizeMultiple(
+        totalInvested > 0 ? totalValue / totalInvested : 0,
+        'Gross MOIC'
+    )
+
+    // Net MOIC: waterfall-based LP share minus management fees
+    let netMoic = grossMoic
+    if (totalInvested > 0 && totalValue > 0) {
+        const totalMgmtFees = totalInvested * mgmtFeeRate * holdingYears
+        const wfForMoic = calculateWaterfall({
+            totalDistributable: totalValue,
+            totalContributed: totalInvested,
+            hurdleRate: fund.hurdleRate ? Number(fund.hurdleRate) : null,
+            carriedInterest: Number(fund.carriedInterest) || 0.20,
+            catchUpRate: fund.catchUpRate ? Number(fund.catchUpRate) : null,
+            holdingPeriodYears: holdingYears,
+            managementFee: mgmtFeeRate,
+        })
+        const netValueToLPs = wfForMoic.lpTotal - totalMgmtFees
+        netMoic = sanitizeMultiple(netValueToLPs / totalInvested, 'Net MOIC')
+    }
+
+    const dpi = sanitizeMultiple(totalPaid > 0 ? totalDistributed / totalPaid : 0, 'DPI')
+    const rvpi = sanitizeMultiple(totalPaid > 0 ? unrealizedValue / totalPaid : 0, 'RVPI')
+    const tvpi = sanitizeMultiple(totalPaid > 0 ? (totalDistributed + unrealizedValue) / totalPaid : 0, 'TVPI')
 
     // Compute IRR from capital call and distribution records
     const [capitalCalls, distributions, deals] = await Promise.all([
@@ -276,14 +349,25 @@ export async function getFundPerformanceReport(fundId?: string): Promise<FundPer
         valuationDate: new Date(),
     })
 
-    // Net IRR: approximate by reducing distributions by management fee impact
-    const mgmtFeeRate = Number(fund.managementFee) || 0
+    // Net IRR: fee-adjusted cashflows
     const netIrr = grossIrr !== null
-        ? grossIrr * (1 - mgmtFeeRate * 2) // rough approximation
+        ? calculateNetIRR({
+            capitalCalls: capitalCalls.map(c => ({
+                date: c.callDate,
+                amount: Number(c.totalAmount),
+            })),
+            distributions: distributions.map(d => ({
+                date: d.distributionDate,
+                amount: Number(d.totalAmount),
+            })),
+            currentNAV: unrealizedValue,
+            valuationDate: new Date(),
+            managementFeeRate: mgmtFeeRate,
+            carriedInterestRate: Number(fund.carriedInterest) || 0.20,
+        })
         : null
 
     // Compute waterfall distribution
-    const holdingYears = Math.max(1, (new Date().getFullYear() - fund.vintage))
     let waterfallResult = null
     if (totalDistributed + unrealizedValue > 0) {
         const wf = calculateWaterfall({
@@ -466,11 +550,24 @@ export async function getLPCapitalStatement(investorId: string, fundId?: string)
     orderBy: { distribution: { distributionDate: 'desc' } },
     })
 
+    // Get fund-level NAV from portfolio companies for pro-rata LP valuation
+    const portfolioCompanies = await prisma.portfolioCompany.findMany({
+        where: { fundId: resolvedFundId },
+        select: { unrealizedValue: true, totalValue: true },
+    })
+    const fundNAV = portfolioCompanies.reduce(
+        (sum, c) => sum + Number(c.unrealizedValue || c.totalValue || 0), 0
+    )
+
     const netContributions = Number(commitment.paidAmount) - Number(commitment.distributedAmount)
-    const estimatedValue = Number(commitment.paidAmount) * 1.1 // Simplified: 10% gain estimate
-    const moic = Number(commitment.paidAmount) > 0
-        ? (Number(commitment.distributedAmount) + estimatedValue) / Number(commitment.paidAmount)
-        : 1
+    const estimatedValue = fundNAV * ownershipPct
+    const paidAmount = Number(commitment.paidAmount)
+    const moic = sanitizeMultiple(
+        paidAmount > 0
+            ? (Number(commitment.distributedAmount) + estimatedValue) / paidAmount
+            : 0,
+        'LP MOIC'
+    )
 
     // Calculate LP-level IRR from their capital call and distribution items
     const lpIrr = calculateLPIRR({
