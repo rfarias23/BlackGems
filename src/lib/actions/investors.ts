@@ -373,6 +373,7 @@ export async function createInvestor(formData: FormData) {
         })
 
         revalidatePath('/investors')
+        revalidatePath('/dashboard')
         redirect(`/investors/${investor.id}`)
     } catch (error) {
         if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
@@ -498,6 +499,7 @@ export async function updateInvestor(id: string, formData: FormData) {
 
         revalidatePath('/investors')
         revalidatePath(`/investors/${id}`)
+        revalidatePath('/dashboard')
         return { success: true }
     } catch (error) {
         console.error('Error updating investor:', error)
@@ -721,6 +723,7 @@ export async function deleteInvestor(id: string) {
         })
 
         revalidatePath('/investors')
+        revalidatePath('/dashboard')
         redirect('/investors')
     } catch (error) {
         if (error instanceof Error && error.message === 'NEXT_REDIRECT') {

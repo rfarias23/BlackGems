@@ -430,6 +430,7 @@ export async function createDeal(formData: FormData) {
         })
 
         revalidatePath('/deals')
+        revalidatePath('/dashboard')
         redirect(`/deals/${deal.id}`)
     } catch (error) {
         // redirect() throws a special Next.js error — re-throw it
@@ -596,6 +597,7 @@ export async function updateDeal(id: string, formData: FormData) {
 
         revalidatePath('/deals')
         revalidatePath(`/deals/${id}`)
+        revalidatePath('/dashboard')
         return { success: true }
     } catch (error) {
         console.error('Error updating deal:', error)
@@ -636,6 +638,7 @@ export async function deleteDeal(id: string) {
         })
 
         revalidatePath('/deals')
+        revalidatePath('/dashboard')
         redirect('/deals')
     } catch (error) {
         if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
@@ -706,6 +709,7 @@ export async function updateDealStage(id: string, stage: string) {
 
         revalidatePath('/deals')
         revalidatePath(`/deals/${id}`)
+        revalidatePath('/dashboard')
         return { success: true, newStage: STAGE_TO_DISPLAY[dbStage] || stage }
     } catch (error) {
         console.error('Error updating deal stage:', error)
@@ -875,6 +879,7 @@ export async function convertDealToPortfolio(dealId: string, formData: FormData)
         revalidatePath('/deals')
         revalidatePath(`/deals/${dealId}`)
         revalidatePath('/portfolio')
+        revalidatePath('/dashboard')
         return { success: true, portfolioId: company.id }
     } catch (error) {
         console.error('Error converting deal to portfolio:', error)
