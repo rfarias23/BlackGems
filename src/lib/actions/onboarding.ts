@@ -166,7 +166,8 @@ export async function registerWithOnboarding(
           currency: data.currency as Currency,
           managementFee: 0.02,
           carriedInterest: 0.20,
-          hurdleRate: isSearchFund ? 0.08 : null,
+          hurdleRate: 0.08,
+          catchUpRate: 1.0,
           strategy: data.strategy || null,
         },
       })

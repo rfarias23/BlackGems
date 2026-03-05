@@ -191,6 +191,7 @@ export interface FundConfig {
     managementFee: string
     carriedInterest: string
     hurdleRate: string | null
+    catchUpRate: string | null
     description: string | null
 }
 
@@ -233,6 +234,7 @@ export async function getFundConfig(): Promise<FundConfig | null> {
         managementFee: formatPercentage(fund.managementFee) ?? '',
         carriedInterest: formatPercentage(fund.carriedInterest) ?? '',
         hurdleRate: fund.hurdleRate ? formatPercentage(fund.hurdleRate) : null,
+        catchUpRate: fund.catchUpRate ? formatPercentage(fund.catchUpRate) : null,
         description: fund.description,
     }
 }
@@ -247,6 +249,7 @@ const updateFundSchema = z.object({
     managementFee: z.string().min(1, 'Management fee is required'),
     carriedInterest: z.string().min(1, 'Carried interest is required'),
     hurdleRate: z.string().optional(),
+    catchUpRate: z.string().optional(),
 })
 
 export async function updateFundConfig(formData: FormData) {
@@ -267,6 +270,7 @@ export async function updateFundConfig(formData: FormData) {
         managementFee: formData.get('managementFee') as string,
         carriedInterest: formData.get('carriedInterest') as string,
         hurdleRate: formData.get('hurdleRate') as string || undefined,
+        catchUpRate: formData.get('catchUpRate') as string || undefined,
     }
 
     const validated = updateFundSchema.safeParse(rawData)
@@ -283,7 +287,7 @@ export async function updateFundConfig(formData: FormData) {
     try {
         const currentFund = await prisma.fund.findUnique({
             where: { id: fundId },
-            select: { name: true, targetSize: true, managementFee: true, carriedInterest: true, hurdleRate: true },
+            select: { name: true, targetSize: true, managementFee: true, carriedInterest: true, hurdleRate: true, catchUpRate: true },
         })
 
         await prisma.fund.update({
@@ -298,6 +302,7 @@ export async function updateFundConfig(formData: FormData) {
                 managementFee: parsePercent(rawData.managementFee),
                 carriedInterest: parsePercent(rawData.carriedInterest),
                 hurdleRate: rawData.hurdleRate ? parsePercent(rawData.hurdleRate) : null,
+                catchUpRate: rawData.catchUpRate ? parsePercent(rawData.catchUpRate) : null,
             },
         })
 
@@ -308,6 +313,7 @@ export async function updateFundConfig(formData: FormData) {
                 managementFee: Number(currentFund?.managementFee),
                 carriedInterest: Number(currentFund?.carriedInterest),
                 hurdleRate: currentFund?.hurdleRate ? Number(currentFund.hurdleRate) : null,
+                catchUpRate: currentFund?.catchUpRate ? Number(currentFund.catchUpRate) : null,
             },
             {
                 name: rawData.name,
@@ -315,6 +321,7 @@ export async function updateFundConfig(formData: FormData) {
                 managementFee: parsePercent(rawData.managementFee),
                 carriedInterest: parsePercent(rawData.carriedInterest),
                 hurdleRate: rawData.hurdleRate ? parsePercent(rawData.hurdleRate) : null,
+                catchUpRate: rawData.catchUpRate ? parsePercent(rawData.catchUpRate) : null,
             }
         )
 
