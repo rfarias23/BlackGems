@@ -49,13 +49,18 @@ async function getFundSlugFromHeaders(): Promise<string | null> {
  * In Server Actions / Route Handlers the cookie is written normally.
  * In RSC render context (where cookie writes are forbidden by Next.js 15),
  * the write is silently skipped — the fund ID is still returned to the caller.
- * The cookie will be set on the user's next Server Action invocation.
+ * The cookie may be set on the user's next Server Action or Route Handler invocation.
  */
 async function trySaveActiveFundId(fundId: string): Promise<void> {
   try {
     await setActiveFundId(fundId)
-  } catch {
-    // Expected in RSC render context — safe to ignore.
+  } catch (error) {
+    // Next.js 15 throws when cookie writes happen during RSC render.
+    // That is expected and safe to ignore. Anything else is unexpected.
+    const message = error instanceof Error ? error.message : String(error)
+    if (!message.includes('Cookies can only be modified')) {
+      console.error('trySaveActiveFundId: unexpected error', error)
+    }
   }
 }
 

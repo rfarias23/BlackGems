@@ -172,6 +172,50 @@ describe('getAuthorizedFundId', () => {
     expect(result).toBeNull()
   })
 
+  it('still returns fund ID when setActiveFundId throws (RSC context)', async () => {
+    mockGetActiveFundId.mockResolvedValue(null)
+    mockPrisma.user.findUnique.mockResolvedValue({ role: 'SUPER_ADMIN' })
+    mockPrisma.fundMember.findFirst.mockResolvedValue(null)
+    mockPrisma.fund.findFirst.mockResolvedValue({ id: 'fund-rsc' })
+    mockSetActiveFundId.mockRejectedValue(
+      new Error('Cookies can only be modified in a Server Action or Route Handler.')
+    )
+
+    const result = await getAuthorizedFundId('admin-1')
+    expect(result).toBe('fund-rsc')
+    expect(mockSetActiveFundId).toHaveBeenCalledWith('fund-rsc')
+  })
+
+  it('still returns fund ID when setActiveFundId throws via membership fallback', async () => {
+    mockGetActiveFundId.mockResolvedValue('deleted-fund')
+    mockPrisma.user.findUnique.mockResolvedValue({ role: 'LP' })
+    mockPrisma.fundMember.findUnique.mockResolvedValue(null)
+    mockPrisma.fundMember.findFirst.mockResolvedValue({ fundId: 'fund-member' })
+    mockSetActiveFundId.mockRejectedValue(
+      new Error('Cookies can only be modified in a Server Action or Route Handler.')
+    )
+
+    const result = await getAuthorizedFundId('user-1')
+    expect(result).toBe('fund-member')
+  })
+
+  it('logs unexpected errors from setActiveFundId', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    mockGetActiveFundId.mockResolvedValue(null)
+    mockPrisma.user.findUnique.mockResolvedValue({ role: 'SUPER_ADMIN' })
+    mockPrisma.fundMember.findFirst.mockResolvedValue(null)
+    mockPrisma.fund.findFirst.mockResolvedValue({ id: 'fund-err' })
+    mockSetActiveFundId.mockRejectedValue(new Error('Some unexpected DB error'))
+
+    const result = await getAuthorizedFundId('admin-1')
+    expect(result).toBe('fund-err')
+    expect(consoleSpy).toHaveBeenCalledWith(
+      'trySaveActiveFundId: unexpected error',
+      expect.any(Error)
+    )
+    consoleSpy.mockRestore()
+  })
+
   it('returns null when no funds exist at all', async () => {
     mockGetActiveFundId.mockResolvedValue(null)
     mockPrisma.user.findUnique.mockResolvedValue({ role: 'SUPER_ADMIN' })
