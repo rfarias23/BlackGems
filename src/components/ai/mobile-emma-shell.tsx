@@ -95,9 +95,9 @@ export function MobileEmmaShell() {
     >
       {/* Mobile header */}
       <div className="flex items-center justify-between h-14 px-4 border-b border-[#1E293B] shrink-0">
-        {/* Left: Emma wordmark */}
+        {/* Left: BlackGem wordmark */}
         <span className="font-serif text-[20px] font-semibold tracking-tight text-[#F8FAFC] select-none shrink-0">
-          Emma
+          BlackGem
         </span>
 
         {/* Center: Conversation picker or inline title edit */}
