@@ -591,7 +591,6 @@ export async function recordPortfolioMetrics(formData: FormData) {
 
         revalidatePath('/portfolio')
         revalidatePath(`/portfolio/${companyId}`)
-        revalidatePath('/dashboard')
         return { success: true }
     } catch (error) {
         console.error('Error recording metrics:', error)

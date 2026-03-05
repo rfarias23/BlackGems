@@ -341,6 +341,9 @@ export async function createCapitalCall(formData: FormData) {
         revalidatePath('/dashboard')
         redirect(`/capital/calls/${capitalCall.id}`)
     } catch (error) {
+        if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
+            throw error
+        }
         console.error('Error creating capital call:', error)
         return { error: 'Failed to create capital call' }
     }
@@ -597,6 +600,9 @@ export async function deleteCapitalCall(id: string) {
         revalidatePath('/dashboard')
         redirect('/capital')
     } catch (error) {
+        if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
+            throw error
+        }
         console.error('Error deleting capital call:', error)
         return { error: 'Failed to delete capital call' }
     }

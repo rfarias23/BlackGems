@@ -366,6 +366,9 @@ export async function createDistribution(formData: FormData) {
         revalidatePath('/dashboard')
         redirect(`/capital/distributions/${distribution.id}`)
     } catch (error) {
+        if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
+            throw error
+        }
         console.error('Error creating distribution:', error)
         return { error: 'Failed to create distribution' }
     }
@@ -596,6 +599,9 @@ export async function deleteDistribution(id: string) {
         revalidatePath('/dashboard')
         redirect('/capital')
     } catch (error) {
+        if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
+            throw error
+        }
         console.error('Error deleting distribution:', error)
         return { error: 'Failed to delete distribution' }
     }

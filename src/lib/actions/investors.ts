@@ -406,8 +406,7 @@ export async function updateInvestor(id: string, formData: FormData) {
     })
     if (!hasCommitment) return { error: 'Investor not found in this fund' }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const updateData: Record<string, any> = {}
+    const updateData: Record<string, string | number | Date | null> = {}
 
     const name = formData.get('name') as string | null
     if (name) updateData.name = name

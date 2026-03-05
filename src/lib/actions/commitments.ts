@@ -141,6 +141,7 @@ export async function createCommitment(
         })
 
         revalidatePath(`/investors/${investorId}`)
+        revalidatePath('/dashboard')
         return { success: true }
     } catch (error) {
         console.error('Failed to create commitment:', error)
@@ -232,6 +233,7 @@ export async function updateCommitment(
         })
 
         revalidatePath(`/investors/${existing.investorId}`)
+        revalidatePath('/dashboard')
         return { success: true }
     } catch (error) {
         console.error('Failed to update commitment:', error)
@@ -272,6 +274,7 @@ export async function deleteCommitment(
         })
 
         revalidatePath(`/investors/${existing.investorId}`)
+        revalidatePath('/dashboard')
         return { success: true }
     } catch (error) {
         console.error('Failed to delete commitment:', error)

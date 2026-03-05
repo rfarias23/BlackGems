@@ -467,8 +467,7 @@ export async function updateDeal(id: string, formData: FormData) {
     const stage = formData.get('stage') as string | null
 
     // Build update data
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const updateData: Record<string, any> = {}
+    const updateData: Record<string, string | number | Date | null> = {}
 
     const name = formData.get('name') as string | null
     if (name) {
@@ -516,9 +515,9 @@ export async function updateDeal(id: string, formData: FormData) {
     }
 
     // Auto-calculate derived metrics using updated values or existing DB values
-    const finalRevenue = updateData.revenue ?? (existingDeal.revenue ? Number(existingDeal.revenue) : null)
-    const finalEbitda = updateData.ebitda ?? (existingDeal.ebitda ? Number(existingDeal.ebitda) : null)
-    const finalAskingPrice = updateData.askingPrice ?? (existingDeal.askingPrice ? Number(existingDeal.askingPrice) : null)
+    const finalRevenue: number | null = updateData.revenue != null ? Number(updateData.revenue) : (existingDeal.revenue ? Number(existingDeal.revenue) : null)
+    const finalEbitda: number | null = updateData.ebitda != null ? Number(updateData.ebitda) : (existingDeal.ebitda ? Number(existingDeal.ebitda) : null)
+    const finalAskingPrice: number | null = updateData.askingPrice != null ? Number(updateData.askingPrice) : (existingDeal.askingPrice ? Number(existingDeal.askingPrice) : null)
 
     if (finalRevenue && finalEbitda && finalRevenue > 0) {
         updateData.ebitdaMargin = finalEbitda / finalRevenue
@@ -1406,6 +1405,7 @@ export async function updateDealScores(
 
         revalidatePath('/deals')
         revalidatePath(`/deals/${dealId}`)
+        revalidatePath('/dashboard')
         return { success: true }
     } catch (error) {
         console.error('Error updating deal scores:', error)
@@ -1541,6 +1541,7 @@ export async function updateDealSource(
 
         revalidatePath('/deals')
         revalidatePath(`/deals/${dealId}`)
+        revalidatePath('/dashboard')
         return { success: true }
     } catch (error) {
         console.error('Error updating deal source:', error)
