@@ -41,10 +41,9 @@ export function DealStageSelect({
             <SelectContent>
                 {STAGES.map((stage) => (
                     <SelectItem key={stage} value={stage}>
-                        <div className="flex items-center">
-                            <DealStageBadge stage={stage} className="mr-2" />
-                            {/* Force text color for select item to be readable */}
-                            <span className="opacity-0 w-0 h-0 overflow-hidden">{stage}</span>
+                        <div className="flex items-center gap-2">
+                            <DealStageBadge stage={stage} />
+                            <span className="text-[#F8FAFC]">{stage}</span>
                         </div>
                     </SelectItem>
                 ))}

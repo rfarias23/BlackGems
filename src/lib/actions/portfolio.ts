@@ -62,7 +62,11 @@ const createPortfolioCompanySchema = z.object({
     entryEbitda: z.string().optional(),
     equityInvested: z.string().min(1, 'Equity invested is required'),
     debtFinancing: z.string().optional(),
-    ownershipPct: z.string().min(1, 'Ownership percentage is required'),
+    ownershipPct: z.string().min(1, 'Ownership percentage is required')
+        .refine((val) => {
+            const num = parseFloat(val)
+            return !isNaN(num) && num >= 0 && num <= 100
+        }, 'Ownership must be between 0% and 100%'),
     ceoName: z.string().optional(),
     ceoEmail: z.string().optional(),
     investmentThesis: z.string().optional(),
@@ -569,7 +573,14 @@ export async function recordPortfolioMetrics(formData: FormData) {
                 employeeCount: formData.get('employeeCount') ? parseInt(formData.get('employeeCount') as string) : null,
                 customerCount: formData.get('customerCount') ? parseInt(formData.get('customerCount') as string) : null,
                 currentValuation: formData.get('currentValuation') ? parseMoney(formData.get('currentValuation') as string) : null,
-                evEbitda: formData.get('evEbitda') ? parseFloat(formData.get('evEbitda') as string) : null,
+                evEbitda: formData.get('evEbitda') ? parseFloat(formData.get('evEbitda') as string)
+                    : (formData.get('currentValuation') && formData.get('ebitda')
+                        ? (() => {
+                            const ev = parseMoney(formData.get('currentValuation') as string)
+                            const ebitda = parseMoney(formData.get('ebitda') as string)
+                            return ebitda > 0 ? ev / ebitda : null
+                        })()
+                        : null),
                 highlights: formData.get('highlights') as string || null,
                 concerns: formData.get('concerns') as string || null,
                 notes: formData.get('notes') as string || null,

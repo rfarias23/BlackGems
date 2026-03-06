@@ -162,16 +162,16 @@ export function DealForm({ sources }: DealFormProps) {
                     )}
                 />
 
-                {sources && sources.length > 0 && (
-                    <FormField
-                        control={form.control}
-                        name="sourceId"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Deal Source</FormLabel>
-                                <FormControl>
-                                    <>
-                                        <input type="hidden" name="sourceId" value={field.value || ''} />
+                <FormField
+                    control={form.control}
+                    name="sourceId"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Deal Source</FormLabel>
+                            <FormControl>
+                                <>
+                                    <input type="hidden" name="sourceId" value={field.value || ''} />
+                                    {sources && sources.length > 0 ? (
                                         <Select value={field.value || ''} onValueChange={field.onChange}>
                                             <SelectTrigger>
                                                 <SelectValue placeholder="Select source (optional)" />
@@ -193,16 +193,20 @@ export function DealForm({ sources }: DealFormProps) {
                                                 ))}
                                             </SelectContent>
                                         </Select>
-                                    </>
-                                </FormControl>
-                                <FormDescription>
-                                    How this deal was sourced (optional).
-                                </FormDescription>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                )}
+                                    ) : (
+                                        <p className="text-sm text-muted-foreground py-2">
+                                            No deal sources configured. Add sources in Settings.
+                                        </p>
+                                    )}
+                                </>
+                            </FormControl>
+                            <FormDescription>
+                                How this deal was sourced (optional).
+                            </FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
 
                 <FormField
                     control={form.control}
