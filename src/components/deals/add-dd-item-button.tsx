@@ -188,7 +188,7 @@ export function AddDDItemButton({ dealId, members }: AddDDItemButtonProps) {
                                 </SelectTrigger>
                                 <SelectContent>
                                     {members.map((m) => (
-                                        <SelectItem key={m.id} value={m.name || m.id}>
+                                        <SelectItem key={m.id} value={m.name || 'Unnamed'}>
                                             {m.name || 'Unnamed'}
                                         </SelectItem>
                                     ))}

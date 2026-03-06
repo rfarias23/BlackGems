@@ -61,7 +61,7 @@ export function UpdateValuationButton({ companyId, companyName }: UpdateValuatio
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="outline">
+                <Button variant="outline" className="border-[#334155] text-[#F8FAFC] hover:bg-[#334155]">
                     <TrendingUp className="mr-2 h-4 w-4" />
                     Update Valuation
                 </Button>

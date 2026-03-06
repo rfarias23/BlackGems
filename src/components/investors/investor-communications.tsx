@@ -296,7 +296,7 @@ export function InvestorCommunications({
                         </div>
                         <Button
                             onClick={handleSendEmail}
-                            disabled={isPending || !fundId}
+                            disabled={isPending || !investorEmail || !fundId}
                             className="bg-[#3E5CFF] hover:bg-[#3E5CFF]/90 text-white"
                         >
                             <Mail className="mr-2 h-4 w-4" />

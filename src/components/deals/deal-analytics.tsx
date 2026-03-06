@@ -1,15 +1,5 @@
 import { DealAnalytics } from '@/lib/actions/deals'
-
-const PIPELINE_DISPLAY_STAGES = [
-    'Identified',
-    'Initial Review',
-    'NDA Signed',
-    'IOI Submitted',
-    'LOI Negotiation',
-    'Due Diligence',
-    'Closing',
-    'Closed Won',
-] as const
+import { PIPELINE_DISPLAY_STAGES } from '@/lib/shared/stage-transitions'
 
 interface MetricCardProps {
     label: string
@@ -122,18 +112,17 @@ export function DealAnalyticsTab({ analytics }: DealAnalyticsTabProps) {
                         />
                         {/* Stage dots */}
                         {PIPELINE_DISPLAY_STAGES.map((stageName, i) => {
-                            const currentIdx = PIPELINE_DISPLAY_STAGES.indexOf(analytics.stage as typeof PIPELINE_DISPLAY_STAGES[number])
-                            const isActive = i === currentIdx
-                            const isCompleted = currentIdx >= 0 && i < currentIdx
+                            const isActive = i === displayIdx
+                            const isCompleted = displayIdx >= 0 && i < displayIdx
                             return (
                                 <div key={stageName} className="relative flex flex-col items-center z-10">
                                     <div
-                                        className={`w-4 h-4 rounded-full border-2 transition-colors ${
+                                        className={`rounded-full border-2 transition-colors ${
                                             isActive
-                                                ? 'bg-[#3E5CFF] border-[#3E5CFF]'
+                                                ? 'w-4 h-4 bg-[#3E5CFF] border-[#3E5CFF] ring-2 ring-[#3E5CFF]/30 ring-offset-1 ring-offset-card'
                                                 : isCompleted
-                                                    ? 'bg-[#3E5CFF] border-[#3E5CFF]'
-                                                    : 'bg-card border-border'
+                                                    ? 'w-4 h-4 bg-[#3E5CFF] border-[#3E5CFF]'
+                                                    : 'w-4 h-4 bg-card border-border'
                                         }`}
                                     />
                                     <span
