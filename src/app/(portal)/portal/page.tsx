@@ -56,7 +56,7 @@ export default async function PortalPage() {
                         <DollarSign className="h-4 w-4 text-slate-400" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-slate-900">{formatMoney(summary.totalCommitted)}</div>
+                        <div className="text-2xl font-bold font-mono tabular-nums text-slate-900">{formatMoney(summary.totalCommitted)}</div>
                     </CardContent>
                 </Card>
 
@@ -66,7 +66,7 @@ export default async function PortalPage() {
                         <TrendingUp className="h-4 w-4 text-slate-400" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-slate-900">{formatMoney(summary.totalCalled)}</div>
+                        <div className="text-2xl font-bold font-mono tabular-nums text-slate-900">{formatMoney(summary.totalCalled)}</div>
                         <p className="text-xs text-slate-500 mt-1">{summary.calledPct}% of commitment</p>
                     </CardContent>
                 </Card>
@@ -77,7 +77,7 @@ export default async function PortalPage() {
                         <Wallet className="h-4 w-4 text-slate-400" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-emerald-600">{formatMoney(summary.totalDistributed)}</div>
+                        <div className="text-2xl font-bold font-mono tabular-nums text-emerald-600">{formatMoney(summary.totalDistributed)}</div>
                     </CardContent>
                 </Card>
 
@@ -87,7 +87,7 @@ export default async function PortalPage() {
                         <DollarSign className="h-4 w-4 text-slate-400" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-slate-900">{formatMoney(summary.unfunded)}</div>
+                        <div className="text-2xl font-bold font-mono tabular-nums text-slate-900">{formatMoney(summary.unfunded)}</div>
                     </CardContent>
                 </Card>
             </div>
