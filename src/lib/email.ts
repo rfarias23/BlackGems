@@ -1,20 +1,25 @@
 import { Resend } from 'resend';
 
-// Lazy-init to avoid build-time crash when RESEND_API_KEY is not set
+// Lazy-init to avoid build-time crash when RESEND_API_KEY is not set.
+// Resets if the key changes or is removed between calls.
 let _resend: Resend | null = null;
-function getResend(): Resend {
-    if (!_resend) {
-        _resend = new Resend(process.env.RESEND_API_KEY);
-    }
-    return _resend;
-}
+let _resendKey: string | undefined;
 
-function checkApiKey(): string | null {
+function getApiKeyError(): string | null {
     if (!process.env.RESEND_API_KEY) {
         console.error('[email] RESEND_API_KEY is not configured');
         return 'Email service is not configured. Contact your administrator.';
     }
     return null;
+}
+
+function getResend(): Resend {
+    const currentKey = process.env.RESEND_API_KEY;
+    if (!_resend || currentKey !== _resendKey) {
+        _resend = new Resend(currentKey);
+        _resendKey = currentKey;
+    }
+    return _resend;
 }
 
 export async function sendInviteEmail({
@@ -28,7 +33,7 @@ export async function sendInviteEmail({
     fundName: string;
     inviterName: string;
 }): Promise<{ success: boolean; error?: string }> {
-    const keyError = checkApiKey();
+    const keyError = getApiKeyError();
     if (keyError) return { success: false, error: keyError };
 
     const baseUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
@@ -77,7 +82,7 @@ export async function sendInviteEmail({
 
         if (sendError) {
             console.error('[email] Resend API error (invite):', sendError);
-            return { success: false, error: `Email delivery failed: ${sendError.message}` };
+            return { success: false, error: `Email delivery failed: ${sendError.message ?? 'Unknown error'}` };
         }
 
         return { success: true };
@@ -98,7 +103,7 @@ export async function sendWelcomeEmail({
     fundName: string;
     fundSlug: string;
 }): Promise<{ success: boolean; error?: string }> {
-    const keyError = checkApiKey();
+    const keyError = getApiKeyError();
     if (keyError) return { success: false, error: keyError };
 
     const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || process.env.ROOT_DOMAIN || 'blackgem.ai';
@@ -153,7 +158,7 @@ export async function sendWelcomeEmail({
 
         if (sendError) {
             console.error('[email] Resend API error (welcome):', sendError);
-            return { success: false, error: `Email delivery failed: ${sendError.message}` };
+            return { success: false, error: `Email delivery failed: ${sendError.message ?? 'Unknown error'}` };
         }
 
         return { success: true };
@@ -174,7 +179,7 @@ export async function sendInvestorEmail({
     investorName: string;
     message: string;
 }): Promise<{ success: boolean; error?: string }> {
-    const keyError = checkApiKey();
+    const keyError = getApiKeyError();
     if (keyError) return { success: false, error: keyError };
 
     try {
@@ -208,7 +213,7 @@ ${message}
 
         if (sendError) {
             console.error('[email] Resend API error (investor):', sendError);
-            return { success: false, error: `Email delivery failed: ${sendError.message}` };
+            return { success: false, error: `Email delivery failed: ${sendError.message ?? 'Unknown error'}` };
         }
 
         return { success: true };

@@ -186,7 +186,7 @@ export function InviteLPDialog({ investors }: InviteLPDialogProps) {
                         disabled={!email || !investorId || isPending}
                         className={dark.saveBtn}
                     >
-                        {isPending ? 'Sending...' : 'Send Invitation'}
+                        Send Invitation
                     </Button>
                 </DialogFooter>
             </DialogContent>
