@@ -68,20 +68,23 @@ const dark = {
 
 interface AddDDItemButtonProps {
     dealId: string;
+    members: { id: string; name: string | null }[];
 }
 
-export function AddDDItemButton({ dealId }: AddDDItemButtonProps) {
+export function AddDDItemButton({ dealId, members }: AddDDItemButtonProps) {
     const [open, setOpen] = useState(false);
     const [isPending, startTransition] = useTransition();
     const [error, setError] = useState<string | null>(null);
     const [category, setCategory] = useState('');
     const [status, setStatus] = useState('NOT_STARTED');
     const [priority, setPriority] = useState('3');
+    const [assignedTo, setAssignedTo] = useState('');
 
     const resetForm = () => {
         setCategory('');
         setStatus('NOT_STARTED');
         setPriority('3');
+        setAssignedTo('');
         setError(null);
     };
 
@@ -90,6 +93,7 @@ export function AddDDItemButton({ dealId }: AddDDItemButtonProps) {
         formData.set('category', category);
         formData.set('status', status);
         formData.set('priority', priority);
+        if (assignedTo) formData.set('assignedTo', assignedTo);
         startTransition(async () => {
             const result = await createDDItem(dealId, formData);
             if (result?.error) {
@@ -178,11 +182,18 @@ export function AddDDItemButton({ dealId }: AddDDItemButtonProps) {
                         </div>
                         <div className="space-y-2">
                             <Label className={dark.label}>Assigned To</Label>
-                            <Input
-                                name="assignedTo"
-                                placeholder="Name or initials"
-                                className={dark.input}
-                            />
+                            <Select value={assignedTo} onValueChange={setAssignedTo}>
+                                <SelectTrigger className={dark.input}>
+                                    <SelectValue placeholder="Select member..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {members.map((m) => (
+                                        <SelectItem key={m.id} value={m.name || m.id}>
+                                            {m.name || 'Unnamed'}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
                     </div>
 
