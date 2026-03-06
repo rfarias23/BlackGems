@@ -170,6 +170,10 @@ export function PortfolioCompanyForm({ funds }: PortfolioCompanyFormProps) {
                             <Input
                                 id="ownershipPct"
                                 name="ownershipPct"
+                                type="number"
+                                min="0"
+                                max="100"
+                                step="0.01"
                                 placeholder="85"
                                 required
                             />

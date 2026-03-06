@@ -21,6 +21,7 @@ export interface DashboardData {
     capitalCallPct: string
     activeDeals: number
     totalDeals: number
+    closedWonDeals: number
     investorCount: number
     activeInvestors: number
     grossMoic: string
@@ -124,6 +125,7 @@ export async function getDashboardData(): Promise<DashboardData | null> {
         capitalCallPct: formatPercent(totalCommitments > 0 ? totalCalled / totalCommitments : 0),
         activeDeals: activeDeals.length,
         totalDeals: deals.length,
+        closedWonDeals: deals.filter(d => d.stage === 'CLOSED_WON').length,
         investorCount: investors.length,
         activeInvestors: activeInvestors.length,
         grossMoic: formatMultiple(grossMoic),
