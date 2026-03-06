@@ -68,15 +68,22 @@ export function InviteLPDialog({ investors }: InviteLPDialogProps) {
         formData.set('role', role);
 
         startTransition(async () => {
-            const result = await createLPInvitation(formData);
-            if (result?.error) {
-                setError(result.error);
-            } else if (result?.success) {
-                setSuccess(`Invitation sent to ${result.email}`);
-                setTimeout(() => {
-                    setOpen(false);
-                    resetForm();
-                }, 2000);
+            try {
+                const result = await createLPInvitation(formData);
+                if (result?.error) {
+                    setError(result.error);
+                } else if (result?.success) {
+                    setSuccess(`Invitation sent to ${result.email}`);
+                    setTimeout(() => {
+                        setOpen(false);
+                        resetForm();
+                    }, 2000);
+                } else {
+                    setError('Unexpected response. Please try again or check server logs.');
+                }
+            } catch (err) {
+                console.error('[InviteLPDialog] Unhandled error:', err);
+                setError('An unexpected error occurred. Please try again.');
             }
         });
     };
@@ -179,7 +186,7 @@ export function InviteLPDialog({ investors }: InviteLPDialogProps) {
                         disabled={!email || !investorId || isPending}
                         className={dark.saveBtn}
                     >
-                        {isPending ? 'Sending...' : 'Send Invitation'}
+                        Send Invitation
                     </Button>
                 </DialogFooter>
             </DialogContent>

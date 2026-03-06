@@ -1,10 +1,23 @@
 import { Resend } from 'resend';
 
-// Lazy-init to avoid build-time crash when RESEND_API_KEY is not set
+// Lazy-init to avoid build-time crash when RESEND_API_KEY is not set.
+// Resets if the key changes or is removed between calls.
 let _resend: Resend | null = null;
+let _resendKey: string | undefined;
+
+function getApiKeyError(): string | null {
+    if (!process.env.RESEND_API_KEY) {
+        console.error('[email] RESEND_API_KEY is not configured');
+        return 'Email service is not configured. Contact your administrator.';
+    }
+    return null;
+}
+
 function getResend(): Resend {
-    if (!_resend) {
-        _resend = new Resend(process.env.RESEND_API_KEY);
+    const currentKey = process.env.RESEND_API_KEY;
+    if (!_resend || currentKey !== _resendKey) {
+        _resend = new Resend(currentKey);
+        _resendKey = currentKey;
     }
     return _resend;
 }
@@ -20,11 +33,14 @@ export async function sendInviteEmail({
     fundName: string;
     inviterName: string;
 }): Promise<{ success: boolean; error?: string }> {
+    const keyError = getApiKeyError();
+    if (keyError) return { success: false, error: keyError };
+
     const baseUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     const acceptUrl = `${baseUrl}/accept-invite?token=${inviteToken}`;
 
     try {
-        await getResend().emails.send({
+        const { error: sendError } = await getResend().emails.send({
             from: process.env.RESEND_FROM_EMAIL || 'BlackGem <noreply@blackgem.app>',
             to,
             subject: `You've been invited to ${fundName} on BlackGem`,
@@ -63,9 +79,15 @@ export async function sendInviteEmail({
                 </div>
             `,
         });
+
+        if (sendError) {
+            console.error('[email] Resend API error (invite):', sendError);
+            return { success: false, error: `Email delivery failed: ${sendError.message ?? 'Unknown error'}` };
+        }
+
         return { success: true };
     } catch (error) {
-        console.error('Error sending invite email:', error);
+        console.error('[email] Failed to send invite email:', error);
         return { success: false, error: 'Failed to send invitation email' };
     }
 }
@@ -81,6 +103,9 @@ export async function sendWelcomeEmail({
     fundName: string;
     fundSlug: string;
 }): Promise<{ success: boolean; error?: string }> {
+    const keyError = getApiKeyError();
+    if (keyError) return { success: false, error: keyError };
+
     const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || process.env.ROOT_DOMAIN || 'blackgem.ai';
     const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
     const dashboardUrl = process.env.NODE_ENV === 'production'
@@ -88,7 +113,7 @@ export async function sendWelcomeEmail({
         : `http://localhost:3002/dashboard`;
 
     try {
-        await getResend().emails.send({
+        const { error: sendError } = await getResend().emails.send({
             from: process.env.RESEND_FROM_EMAIL || 'BlackGem <noreply@blackgem.app>',
             to,
             subject: 'Welcome to BlackGem — Your fund is ready',
@@ -130,9 +155,15 @@ export async function sendWelcomeEmail({
                 </div>
             `,
         });
+
+        if (sendError) {
+            console.error('[email] Resend API error (welcome):', sendError);
+            return { success: false, error: `Email delivery failed: ${sendError.message ?? 'Unknown error'}` };
+        }
+
         return { success: true };
     } catch (error) {
-        console.error('Error sending welcome email:', error);
+        console.error('[email] Failed to send welcome email:', error);
         return { success: false, error: 'Failed to send welcome email' };
     }
 }
@@ -148,8 +179,11 @@ export async function sendInvestorEmail({
     investorName: string;
     message: string;
 }): Promise<{ success: boolean; error?: string }> {
+    const keyError = getApiKeyError();
+    if (keyError) return { success: false, error: keyError };
+
     try {
-        await getResend().emails.send({
+        const { error: sendError } = await getResend().emails.send({
             from: process.env.RESEND_FROM_EMAIL || 'BlackGem <noreply@blackgem.app>',
             to,
             subject,
@@ -176,9 +210,15 @@ ${message}
                 </div>
             `,
         });
+
+        if (sendError) {
+            console.error('[email] Resend API error (investor):', sendError);
+            return { success: false, error: `Email delivery failed: ${sendError.message ?? 'Unknown error'}` };
+        }
+
         return { success: true };
     } catch (error) {
-        console.error('Error sending investor email:', error);
+        console.error('[email] Failed to send investor email:', error);
         return { success: false, error: 'Failed to send email' };
     }
 }
