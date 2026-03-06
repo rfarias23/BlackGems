@@ -176,7 +176,7 @@ export function DealSourceSelect({
                         </div>
                     )}
                     {saved && (
-                        <p className="text-xs text-emerald-500">Source updated</p>
+                        <p className="text-xs text-emerald-600">Source updated</p>
                     )}
                 </CardContent>
             </Card>
@@ -343,7 +343,7 @@ export function DealSourceSelect({
 
                 {/* Feedback */}
                 {error && <p className="text-xs text-red-400">{error}</p>}
-                {saved && <p className="text-xs text-emerald-500">Source updated</p>}
+                {saved && <p className="text-xs text-emerald-600">Source updated</p>}
             </CardContent>
         </Card>
     )

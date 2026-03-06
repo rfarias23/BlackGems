@@ -16,7 +16,7 @@ export default async function NewCapitalCallPage() {
                     </Link>
                 </Button>
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-foreground">New Capital Call</h2>
+                    <h2 className="font-serif text-3xl font-bold tracking-tight text-foreground">New Capital Call</h2>
                     <p className="text-muted-foreground">
                         Create a capital call to request funds from LPs.
                     </p>

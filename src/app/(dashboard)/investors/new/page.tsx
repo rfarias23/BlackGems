@@ -14,7 +14,7 @@ export default function NewInvestorPage() {
                     </Link>
                 </Button>
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-foreground">New Investor</h2>
+                    <h2 className="font-serif text-3xl font-bold tracking-tight text-foreground">New Investor</h2>
                     <p className="text-muted-foreground">
                         Add a new Limited Partner to the fund.
                     </p>

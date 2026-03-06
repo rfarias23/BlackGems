@@ -119,7 +119,7 @@ export function UserTable({ users }: UserTableProps) {
                                     <TableCell>
                                         <Link
                                             href={`/admin/users/${user.id}`}
-                                            className="font-medium hover:underline hover:text-primary"
+                                            className="font-medium hover:underline hover:text-foreground"
                                         >
                                             {user.name || '-'}
                                         </Link>

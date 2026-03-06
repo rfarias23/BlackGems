@@ -39,7 +39,7 @@ export default async function CapitalPage({ searchParams }: CapitalPageProps) {
         <div className="space-y-6">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-foreground font-serif">Capital Management</h2>
+                    <h2 className="font-serif text-3xl font-bold tracking-tight text-foreground">Capital Management</h2>
                     <p className="text-muted-foreground">
                         Manage capital calls and distributions for your fund.
                     </p>

@@ -25,11 +25,11 @@ export function DashboardCharts({
         <Card className="col-span-4">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="text-primary">MOIC by Company</CardTitle>
+              <CardTitle className="text-foreground">MOIC by Company</CardTitle>
               {fundIrr !== null && (
                 <div className="text-right">
                   <p className="text-xs text-muted-foreground">Fund IRR</p>
-                  <p className="text-lg font-bold text-emerald-500">
+                  <p className="text-lg font-bold text-emerald-600">
                     {(fundIrr * 100).toFixed(1)}%
                   </p>
                 </div>
@@ -42,7 +42,7 @@ export function DashboardCharts({
         </Card>
         <Card className="col-span-3">
           <CardHeader>
-            <CardTitle className="text-primary">Sector Allocation</CardTitle>
+            <CardTitle className="text-foreground">Sector Allocation</CardTitle>
           </CardHeader>
           <CardContent>
             <SectorAllocationChart
@@ -58,7 +58,7 @@ export function DashboardCharts({
       {capitalTimeline.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-primary">Capital Deployment</CardTitle>
+            <CardTitle className="text-foreground">Capital Deployment</CardTitle>
           </CardHeader>
           <CardContent>
             <CapitalDeploymentChart

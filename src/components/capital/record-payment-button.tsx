@@ -86,7 +86,7 @@ export function RecordPaymentButton({
                         </div>
                         <div>
                             <span className="text-muted-foreground">Already Paid</span>
-                            <div className="font-medium text-emerald-500">{formatMoney(paidAmount, currency)}</div>
+                            <div className="font-medium text-emerald-600">{formatMoney(paidAmount, currency)}</div>
                         </div>
                         <div className="col-span-2">
                             <span className="text-muted-foreground">Outstanding</span>

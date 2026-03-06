@@ -47,7 +47,7 @@ export default async function CapitalAccountPage() {
                         <CardTitle className="text-sm font-medium text-slate-500">Total Contributions</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-slate-900">{formatMoney(summary.totalPaid)}</div>
+                        <div className="text-2xl font-bold font-mono tabular-nums text-slate-900">{formatMoney(summary.totalPaid)}</div>
                         <p className="text-xs text-slate-500 mt-1">Capital paid in</p>
                     </CardContent>
                 </Card>
@@ -56,7 +56,7 @@ export default async function CapitalAccountPage() {
                         <CardTitle className="text-sm font-medium text-slate-500">Total Distributions</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-emerald-600">{formatMoney(summary.totalDistributed)}</div>
+                        <div className="text-2xl font-bold font-mono tabular-nums text-emerald-600">{formatMoney(summary.totalDistributed)}</div>
                         <p className="text-xs text-slate-500 mt-1">Cash returned</p>
                     </CardContent>
                 </Card>
@@ -65,7 +65,7 @@ export default async function CapitalAccountPage() {
                         <CardTitle className="text-sm font-medium text-slate-500">Net Invested</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-slate-900">{formatMoney(summary.netValue)}</div>
+                        <div className="text-2xl font-bold font-mono tabular-nums text-slate-900">{formatMoney(summary.netValue)}</div>
                         <p className="text-xs text-slate-500 mt-1">Contributions − Distributions</p>
                     </CardContent>
                 </Card>
@@ -74,7 +74,7 @@ export default async function CapitalAccountPage() {
                         <CardTitle className="text-sm font-medium text-slate-500">Remaining Commitment</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-slate-900">{formatMoney(summary.unfunded)}</div>
+                        <div className="text-2xl font-bold font-mono tabular-nums text-slate-900">{formatMoney(summary.unfunded)}</div>
                         <p className="text-xs text-slate-500 mt-1">Uncalled capital</p>
                     </CardContent>
                 </Card>

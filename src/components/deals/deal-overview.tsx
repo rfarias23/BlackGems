@@ -394,7 +394,7 @@ export function DealOverview({ deal, userRole, portfolioLink, rawDeal, currency 
                         <CardTitle className="text-sm font-medium">EBITDA Margin</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-emerald-500">{computedMargin}</div>
+                        <div className="text-2xl font-bold text-emerald-600">{computedMargin}</div>
                     </CardContent>
                 </Card>
                 <Card>
@@ -598,7 +598,7 @@ export function DealOverview({ deal, userRole, portfolioLink, rawDeal, currency 
                         {portfolioLink ? (
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
-                                    <ArrowRightLeft className="h-4 w-4 text-emerald-500" />
+                                    <ArrowRightLeft className="h-4 w-4 text-emerald-600" />
                                     <span className="text-sm font-medium">Portfolio company created from this deal</span>
                                 </div>
                                 <Button variant="outline" size="sm" asChild>

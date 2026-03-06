@@ -28,7 +28,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
     return (
         <div className="space-y-6">
             <div>
-                <h2 className="text-3xl font-bold tracking-tight text-foreground">Settings</h2>
+                <h2 className="font-serif text-3xl font-bold tracking-tight text-foreground">Settings</h2>
                 <p className="text-muted-foreground">
                     Manage your profile, fund configuration, and billing.
                 </p>

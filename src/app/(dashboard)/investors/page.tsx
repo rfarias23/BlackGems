@@ -35,7 +35,7 @@ export default async function InvestorsPage({ searchParams }: InvestorsPageProps
         <div className="space-y-8">
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-foreground">Investors</h2>
+                    <h2 className="font-serif text-3xl font-bold tracking-tight text-foreground">Investors</h2>
                     <p className="text-muted-foreground">
                         Manage your Limited Partners and track commitments.
                     </p>

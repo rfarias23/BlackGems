@@ -16,7 +16,7 @@ export default async function NewDistributionPage() {
                     </Link>
                 </Button>
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-foreground">New Distribution</h2>
+                    <h2 className="font-serif text-3xl font-bold tracking-tight text-foreground">New Distribution</h2>
                     <p className="text-muted-foreground">
                         Create a distribution to return capital to LPs.
                     </p>

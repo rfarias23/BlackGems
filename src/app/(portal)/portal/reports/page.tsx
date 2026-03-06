@@ -88,7 +88,7 @@ export default async function PortalReportsPage() {
                                         <CardTitle className="text-sm font-medium text-slate-500">Committed</CardTitle>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="text-2xl font-bold text-slate-900">
+                                        <div className="text-2xl font-bold font-mono tabular-nums text-slate-900">
                                             {capitalStatement.commitment.committedAmount}
                                         </div>
                                     </CardContent>
@@ -98,7 +98,7 @@ export default async function PortalReportsPage() {
                                         <CardTitle className="text-sm font-medium text-slate-500">Called</CardTitle>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="text-2xl font-bold text-slate-900">
+                                        <div className="text-2xl font-bold font-mono tabular-nums text-slate-900">
                                             {capitalStatement.commitment.calledAmount}
                                         </div>
                                     </CardContent>
@@ -108,7 +108,7 @@ export default async function PortalReportsPage() {
                                         <CardTitle className="text-sm font-medium text-slate-500">Paid</CardTitle>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="text-2xl font-bold text-slate-900">
+                                        <div className="text-2xl font-bold font-mono tabular-nums text-slate-900">
                                             {capitalStatement.commitment.paidAmount}
                                         </div>
                                     </CardContent>
@@ -118,7 +118,7 @@ export default async function PortalReportsPage() {
                                         <CardTitle className="text-sm font-medium text-slate-500">Distributed</CardTitle>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="text-2xl font-bold text-emerald-600">
+                                        <div className="text-2xl font-bold font-mono tabular-nums text-emerald-600">
                                             {capitalStatement.commitment.distributedAmount}
                                         </div>
                                     </CardContent>
@@ -128,7 +128,7 @@ export default async function PortalReportsPage() {
                                         <CardTitle className="text-sm font-medium text-slate-500">Unfunded</CardTitle>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="text-2xl font-bold text-slate-900">
+                                        <div className="text-2xl font-bold font-mono tabular-nums text-slate-900">
                                             {capitalStatement.commitment.unfundedAmount}
                                         </div>
                                     </CardContent>
@@ -138,7 +138,7 @@ export default async function PortalReportsPage() {
                                         <CardTitle className="text-sm font-medium text-slate-500">Est. MOIC</CardTitle>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="text-2xl font-bold text-slate-900">
+                                        <div className="text-2xl font-bold font-mono tabular-nums text-slate-900">
                                             {capitalStatement.performance.moic}
                                         </div>
                                     </CardContent>
@@ -149,7 +149,7 @@ export default async function PortalReportsPage() {
                                             <CardTitle className="text-sm font-medium text-slate-500">Est. IRR</CardTitle>
                                         </CardHeader>
                                         <CardContent>
-                                            <div className="text-2xl font-bold text-emerald-600">
+                                            <div className="text-2xl font-bold font-mono tabular-nums text-emerald-600">
                                                 {capitalStatement.performance.irr}
                                             </div>
                                         </CardContent>
@@ -291,7 +291,7 @@ export default async function PortalReportsPage() {
                                         <Target className="h-4 w-4 text-slate-400" />
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="text-2xl font-bold text-slate-900">
+                                        <div className="text-2xl font-bold font-mono tabular-nums text-slate-900">
                                             {fundPerformance.performance.grossMoic}
                                         </div>
                                     </CardContent>
@@ -301,7 +301,7 @@ export default async function PortalReportsPage() {
                                         <CardTitle className="text-sm font-medium text-slate-500">Net MOIC</CardTitle>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="text-2xl font-bold text-slate-900">
+                                        <div className="text-2xl font-bold font-mono tabular-nums text-slate-900">
                                             {fundPerformance.performance.netMoic}
                                         </div>
                                     </CardContent>
@@ -311,7 +311,7 @@ export default async function PortalReportsPage() {
                                         <CardTitle className="text-sm font-medium text-slate-500">DPI</CardTitle>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="text-2xl font-bold text-slate-900">
+                                        <div className="text-2xl font-bold font-mono tabular-nums text-slate-900">
                                             {fundPerformance.performance.dpi}
                                         </div>
                                         <p className="text-xs text-slate-400 mt-1">Distributions / Paid-In</p>
@@ -322,7 +322,7 @@ export default async function PortalReportsPage() {
                                         <CardTitle className="text-sm font-medium text-slate-500">RVPI</CardTitle>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="text-2xl font-bold text-slate-900">
+                                        <div className="text-2xl font-bold font-mono tabular-nums text-slate-900">
                                             {fundPerformance.performance.rvpi}
                                         </div>
                                         <p className="text-xs text-slate-400 mt-1">Residual / Paid-In</p>
@@ -333,7 +333,7 @@ export default async function PortalReportsPage() {
                                         <CardTitle className="text-sm font-medium text-slate-500">TVPI</CardTitle>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="text-2xl font-bold text-emerald-600">
+                                        <div className="text-2xl font-bold font-mono tabular-nums text-emerald-600">
                                             {fundPerformance.performance.tvpi}
                                         </div>
                                         <p className="text-xs text-slate-400 mt-1">Total Value / Paid-In</p>
@@ -442,7 +442,7 @@ export default async function PortalReportsPage() {
                                         <Building2 className="h-4 w-4 text-slate-400" />
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="text-2xl font-bold text-slate-900">
+                                        <div className="text-2xl font-bold font-mono tabular-nums text-slate-900">
                                             {portfolioSummary.summary.totalCompanies}
                                         </div>
                                     </CardContent>
@@ -453,7 +453,7 @@ export default async function PortalReportsPage() {
                                         <DollarSign className="h-4 w-4 text-slate-400" />
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="text-2xl font-bold text-slate-900">
+                                        <div className="text-2xl font-bold font-mono tabular-nums text-slate-900">
                                             {portfolioSummary.summary.totalInvested}
                                         </div>
                                     </CardContent>
@@ -464,7 +464,7 @@ export default async function PortalReportsPage() {
                                         <TrendingUp className="h-4 w-4 text-slate-400" />
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="text-2xl font-bold text-emerald-600">
+                                        <div className="text-2xl font-bold font-mono tabular-nums text-emerald-600">
                                             {portfolioSummary.summary.totalValue}
                                         </div>
                                     </CardContent>
@@ -475,7 +475,7 @@ export default async function PortalReportsPage() {
                                         <Target className="h-4 w-4 text-slate-400" />
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="text-2xl font-bold text-slate-900">
+                                        <div className="text-2xl font-bold font-mono tabular-nums text-slate-900">
                                             {portfolioSummary.summary.portfolioMoic}
                                         </div>
                                     </CardContent>
@@ -485,7 +485,7 @@ export default async function PortalReportsPage() {
                                         <CardTitle className="text-sm font-medium text-slate-500">Avg Hold</CardTitle>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="text-2xl font-bold text-slate-900">
+                                        <div className="text-2xl font-bold font-mono tabular-nums text-slate-900">
                                             {portfolioSummary.summary.avgHoldingPeriod}
                                         </div>
                                     </CardContent>

@@ -62,7 +62,7 @@ export function computeCompositeScore(
  *   1-4  = red (weak)
  */
 export function getScoreColor(score: number): string {
-  if (score >= 8) return 'text-emerald-500'
+  if (score >= 8) return 'text-emerald-600'
   if (score >= 5) return 'text-amber-500'
   return 'text-red-400'
 }

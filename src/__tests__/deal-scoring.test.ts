@@ -77,9 +77,9 @@ describe('computeCompositeScore', () => {
 
 describe('getScoreColor', () => {
   it('returns emerald-500 for scores 8-10', () => {
-    expect(getScoreColor(8)).toBe('text-emerald-500')
-    expect(getScoreColor(9)).toBe('text-emerald-500')
-    expect(getScoreColor(10)).toBe('text-emerald-500')
+    expect(getScoreColor(8)).toBe('text-emerald-600')
+    expect(getScoreColor(9)).toBe('text-emerald-600')
+    expect(getScoreColor(10)).toBe('text-emerald-600')
   })
 
   it('returns amber-500 for scores 5-7', () => {

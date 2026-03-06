@@ -157,7 +157,7 @@ export function LPStatementSelector({ investors, fundName = 'BlackGem Fund I' }:
                                 </div>
                                 <div>
                                     <p className="text-sm text-muted-foreground">Distributed</p>
-                                    <p className="text-xl font-bold text-emerald-500">{statement.commitment.distributedAmount}</p>
+                                    <p className="text-xl font-bold text-emerald-600">{statement.commitment.distributedAmount}</p>
                                 </div>
                                 <div>
                                     <p className="text-sm text-muted-foreground">Unfunded</p>
@@ -194,7 +194,7 @@ export function LPStatementSelector({ investors, fundName = 'BlackGem Fund I' }:
                                                 <TableCell>#{call.callNumber}</TableCell>
                                                 <TableCell>{formatDate(call.callDate)}</TableCell>
                                                 <TableCell>{call.amount}</TableCell>
-                                                <TableCell className="text-emerald-500">{call.paidAmount}</TableCell>
+                                                <TableCell className="text-emerald-600">{call.paidAmount}</TableCell>
                                                 <TableCell>
                                                     <Badge variant="outline">{call.status}</Badge>
                                                 </TableCell>
@@ -230,7 +230,7 @@ export function LPStatementSelector({ investors, fundName = 'BlackGem Fund I' }:
                                                 <TableCell>#{dist.distributionNumber}</TableCell>
                                                 <TableCell>{formatDate(dist.date)}</TableCell>
                                                 <TableCell>{dist.grossAmount}</TableCell>
-                                                <TableCell className="text-emerald-500">{dist.netAmount}</TableCell>
+                                                <TableCell className="text-emerald-600">{dist.netAmount}</TableCell>
                                                 <TableCell>
                                                     <Badge variant="outline">{dist.type.replace(/_/g, ' ')}</Badge>
                                                 </TableCell>
