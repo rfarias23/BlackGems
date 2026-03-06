@@ -3,7 +3,7 @@ import { Header } from '@/components/layout/header';
 import { auth } from '@/lib/auth';
 import { getUnreadCount } from '@/lib/actions/notifications';
 import { getUserFunds } from '@/lib/actions/funds';
-import { getActiveFundId } from '@/lib/shared/active-fund';
+import { getActiveFundId, setActiveFundId } from '@/lib/shared/active-fund';
 import { getUserModulePermissions } from '@/lib/shared/fund-access';
 import { redirect } from 'next/navigation';
 import { AICopilotProvider } from '@/components/ai/ai-copilot-provider';
@@ -41,10 +41,21 @@ export default async function DashboardLayout({
     ]);
 
     // Resolve fund ID: cookie → first fund from membership → empty
-    // Note: getAuthorizedFundId() attempts to persist the resolved fund via cookie
-    // (steps 1, 3, 4 of its resolution chain). In RSC render phase the write is
-    // silently skipped; the cookie is set on the next Server Action invocation.
     const resolvedFundId = activeFundId ?? funds[0]?.id ?? '';
+
+    // Persist resolved fund to cookie so downstream server actions don't re-resolve.
+    // In RSC render phase the write may be silently skipped (Next.js 15);
+    // the cookie is then set on the user's next Server Action invocation.
+    if (!activeFundId && resolvedFundId) {
+        try {
+            await setActiveFundId(resolvedFundId);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            if (!message.includes('Cookies can only be modified')) {
+                console.error('DashboardLayout: unexpected error persisting active fund cookie', error);
+            }
+        }
+    }
 
     const permissions = resolvedFundId
         ? await getUserModulePermissions(session.user.id!, resolvedFundId)
