@@ -219,17 +219,15 @@ export function InvestorCommunications({
 
     return (
         <div className="space-y-4">
-            {/* Send Email Communication */}
+            {/* Record Communication */}
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Send className="h-4 w-4" />
-                        Send Communication
+                        Record Communication
                     </CardTitle>
                     <CardDescription>
-                        {investorEmail
-                            ? `Send an email to ${investorName} at ${investorEmail}`
-                            : `No email address on file for ${investorName}`}
+                        Log an email communication with {investorName}{investorEmail ? ` (${investorEmail})` : ''}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -237,7 +235,7 @@ export function InvestorCommunications({
                         <p className="text-sm text-red-500 mb-4">{emailError}</p>
                     )}
                     {emailSuccess && (
-                        <p className="text-sm text-emerald-500 mb-4">Communication sent successfully.</p>
+                        <p className="text-sm text-emerald-500 mb-4">Communication recorded.</p>
                     )}
                     <div className="space-y-4">
                         <div className="space-y-2">
@@ -302,7 +300,7 @@ export function InvestorCommunications({
                             className="bg-[#3E5CFF] hover:bg-[#3E5CFF]/90 text-white"
                         >
                             <Mail className="mr-2 h-4 w-4" />
-                            {isPending ? 'Sending...' : 'Send Email'}
+                            {isPending ? 'Recording...' : 'Record Communication'}
                         </Button>
                     </div>
                 </CardContent>

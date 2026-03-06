@@ -1,4 +1,5 @@
 import { DealAnalytics } from '@/lib/actions/deals'
+import { PIPELINE_DISPLAY_STAGES } from '@/lib/shared/stage-transitions'
 
 interface MetricCardProps {
     label: string
@@ -37,8 +38,9 @@ interface DealAnalyticsTabProps {
 }
 
 export function DealAnalyticsTab({ analytics }: DealAnalyticsTabProps) {
-    const progressPercent = analytics.totalStages > 0
-        ? Math.round((analytics.stageIndex / (analytics.totalStages - 1)) * 100)
+    const displayIdx = PIPELINE_DISPLAY_STAGES.indexOf(analytics.stage as typeof PIPELINE_DISPLAY_STAGES[number])
+    const progressPercent = displayIdx >= 0
+        ? Math.round((displayIdx / (PIPELINE_DISPLAY_STAGES.length - 1)) * 100)
         : 0
 
     return (
@@ -86,25 +88,56 @@ export function DealAnalyticsTab({ analytics }: DealAnalyticsTabProps) {
                     Pipeline Timeline
                 </h3>
 
-                {/* Stage Progress Bar */}
+                {/* Stage Progress — named milestones */}
                 <div className="rounded-lg border border-border bg-card p-4 mb-4">
-                    <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center justify-between mb-4">
                         <span className="text-sm font-medium text-foreground">
                             {analytics.stage}
                         </span>
-                        <span className="text-xs font-mono tabular-nums text-muted-foreground">
-                            Stage {analytics.stageIndex + 1} of {analytics.totalStages}
-                        </span>
+                        {analytics.daysInPipeline !== null && (
+                            <span className="text-xs font-mono tabular-nums text-muted-foreground">
+                                {analytics.daysInPipeline}d in pipeline
+                            </span>
+                        )}
                     </div>
-                    <div className="h-2 w-full rounded-full bg-border overflow-hidden">
+                    <div className="relative flex items-center justify-between">
+                        {/* Connecting line */}
+                        <div className="absolute top-2 left-0 right-0 h-0.5 bg-border" />
                         <div
-                            className="h-full rounded-full transition-all duration-300"
+                            className="absolute top-2 left-0 h-0.5 transition-all duration-300"
                             style={{
                                 width: `${progressPercent}%`,
                                 backgroundColor: '#3E5CFF',
                             }}
                         />
+                        {/* Stage dots */}
+                        {PIPELINE_DISPLAY_STAGES.map((stageName, i) => {
+                            const isActive = i === displayIdx
+                            const isCompleted = displayIdx >= 0 && i < displayIdx
+                            return (
+                                <div key={stageName} className="relative flex flex-col items-center z-10">
+                                    <div
+                                        className={`rounded-full border-2 transition-colors ${
+                                            isActive
+                                                ? 'w-4 h-4 bg-[#3E5CFF] border-[#3E5CFF] ring-2 ring-[#3E5CFF]/30 ring-offset-1 ring-offset-card'
+                                                : isCompleted
+                                                    ? 'w-4 h-4 bg-[#3E5CFF] border-[#3E5CFF]'
+                                                    : 'w-4 h-4 bg-card border-border'
+                                        }`}
+                                    />
+                                    <span
+                                        className={`absolute top-6 text-[10px] whitespace-nowrap ${
+                                            isActive ? 'text-[#3E5CFF] font-medium' : 'text-muted-foreground'
+                                        }`}
+                                    >
+                                        {stageName}
+                                    </span>
+                                </div>
+                            )
+                        })}
                     </div>
+                    {/* Spacer for stage labels below dots */}
+                    <div className="h-8" />
                 </div>
 
                 {/* Timeline Metrics */}

@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { DealStageBadge, DealStage } from '@/components/deals/deal-stage-badge';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ArrowRightLeft } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getDeal, getDealPortfolioLink, getDealRawData, getDealAnalytics, getDealScores, getDealSources } from '@/lib/actions/deals';
@@ -104,6 +104,19 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
             </div>
 
             <Separator className="bg-border" />
+
+            {/* Closed Won — Portfolio Conversion Prompt */}
+            {deal.stage === 'Closed Won' && !portfolioLink && canEdit && (
+                <div className="flex items-center gap-3 rounded-lg border border-[#3E5CFF]/30 bg-[#3E5CFF]/5 px-4 py-3">
+                    <ArrowRightLeft className="h-4 w-4 text-[#3E5CFF] shrink-0" />
+                    <span className="text-sm text-foreground">
+                        Deal closed — ready to convert to a portfolio company.
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                        Open the Overview tab to start conversion.
+                    </span>
+                </div>
+            )}
 
             {/* Tabs */}
             <Tabs defaultValue="overview" className="space-y-4">
@@ -220,7 +233,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
                 <TabsContent value="due-diligence">
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-lg font-medium">Due Diligence Tracker</h3>
-                        {canEdit && <AddDDItemButton dealId={deal.id} />}
+                        {canEdit && <AddDDItemButton dealId={deal.id} members={members} />}
                     </div>
                     <DDTracker
                         items={ddItems}

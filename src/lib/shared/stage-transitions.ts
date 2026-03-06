@@ -85,3 +85,15 @@ export function getAllowedTransitions(current: DealStage): DealStage[] {
 
   return allowed
 }
+
+/** Display-level pipeline stages for UI progress indicators. */
+export const PIPELINE_DISPLAY_STAGES = [
+    'Identified',
+    'Initial Review',
+    'NDA Signed',
+    'IOI Submitted',
+    'LOI Negotiation',
+    'Due Diligence',
+    'Closing',
+    'Closed Won',
+] as const
