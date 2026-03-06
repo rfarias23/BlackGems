@@ -49,8 +49,11 @@ export default async function DashboardLayout({
     if (!activeFundId && resolvedFundId) {
         try {
             await setActiveFundId(resolvedFundId);
-        } catch {
-            // Expected in RSC render — cookie write not allowed
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            if (!message.includes('Cookies can only be modified')) {
+                console.error('DashboardLayout: unexpected error persisting active fund cookie', error);
+            }
         }
     }
 

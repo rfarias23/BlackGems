@@ -24,6 +24,24 @@ vi.mock('@/lib/shared/fund-access', () => ({
   requireFundAccess: vi.fn(),
 }))
 
+vi.mock('@/lib/shared/permissions', () => ({
+  canBecomeFundMember: vi.fn(),
+  ALLOWED_FUND_ROLES: {
+    SUPER_ADMIN: ['PRINCIPAL'],
+    FUND_ADMIN: ['PRINCIPAL'],
+    INVESTMENT_MANAGER: ['CO_PRINCIPAL'],
+    ANALYST: ['ANALYST'],
+    AUDITOR: [],
+    LP_PRIMARY: [],
+    LP_VIEWER: [],
+  },
+  DEFAULT_PERMISSIONS: {
+    PRINCIPAL: ['DEALS', 'INVESTORS', 'PORTFOLIO', 'CAPITAL', 'REPORTS', 'SETTINGS', 'TEAM'],
+    CO_PRINCIPAL: ['DEALS', 'INVESTORS', 'PORTFOLIO', 'CAPITAL', 'REPORTS'],
+    ANALYST: ['DEALS', 'PORTFOLIO', 'REPORTS'],
+  },
+}))
+
 vi.mock('@/lib/shared/active-fund', () => ({
   getActiveFundId: vi.fn(),
   setActiveFundId: vi.fn(),
@@ -54,12 +72,14 @@ vi.mock('@/lib/email', () => ({
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { getActiveFundWithCurrency, requireFundAccess } from '@/lib/shared/fund-access'
+import { canBecomeFundMember } from '@/lib/shared/permissions'
 import { createUser, acceptInvitation } from '../users'
 
 const mockPrisma = prisma as any
 const mockAuth = auth as ReturnType<typeof vi.fn>
 const mockGetActiveFundWithCurrency = getActiveFundWithCurrency as ReturnType<typeof vi.fn>
 const mockRequireFundAccess = requireFundAccess as ReturnType<typeof vi.fn>
+const mockCanBecomeFundMember = canBecomeFundMember as ReturnType<typeof vi.fn>
 
 // ---------------------------------------------------------------------------
 // createUser — fund linkage
@@ -82,6 +102,9 @@ describe('createUser — org + fund linkage', () => {
     mockPrisma.user.findUnique
       .mockResolvedValueOnce(null) // email check
       .mockResolvedValueOnce({ organizationId: 'org-1' }) // caller org
+
+    // INVESTMENT_MANAGER can become a fund member
+    mockCanBecomeFundMember.mockReturnValue(true)
 
     // Fund resolution (mocked at module boundary)
     mockGetActiveFundWithCurrency.mockResolvedValue({
@@ -190,6 +213,8 @@ describe('createUser — org + fund linkage', () => {
       .mockResolvedValueOnce(null) // email check
       .mockResolvedValueOnce({ organizationId: 'org-1' }) // caller org
 
+    mockCanBecomeFundMember.mockReturnValue(true)
+
     // No active fund
     mockGetActiveFundWithCurrency.mockResolvedValue(null)
 
@@ -202,6 +227,38 @@ describe('createUser — org + fund linkage', () => {
     const result = await createUser(formData)
 
     expect(result).toEqual({ error: expect.stringContaining('no active fund') })
+  })
+
+  it('returns error when caller lacks access to active fund', async () => {
+    mockAuth.mockResolvedValue({
+      user: { id: 'admin-1', role: 'FUND_ADMIN' },
+    })
+
+    mockPrisma.user.findUnique
+      .mockResolvedValueOnce(null) // email check
+      .mockResolvedValueOnce({ organizationId: 'org-1' }) // caller org
+
+    mockCanBecomeFundMember.mockReturnValue(true)
+
+    mockGetActiveFundWithCurrency.mockResolvedValue({
+      fundId: 'fund-1',
+      currency: 'USD',
+    })
+
+    // Security guard rejects — caller doesn't have access to this fund
+    mockRequireFundAccess.mockRejectedValue(new Error('Access denied'))
+
+    const formData = new FormData()
+    formData.set('name', 'Test User')
+    formData.set('email', 'test@example.com')
+    formData.set('role', 'Investment Manager')
+    formData.set('password', 'securepassword123')
+
+    const result = await createUser(formData)
+
+    expect(result).toEqual({ error: expect.stringContaining('no access to active fund') })
+    // Verify requireFundAccess was called with correct args
+    expect(mockRequireFundAccess).toHaveBeenCalledWith('admin-1', 'fund-1')
   })
 })
 
