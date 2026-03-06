@@ -16,7 +16,7 @@ export default async function NewPortfolioCompanyPage() {
                     </Link>
                 </Button>
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-foreground">Add Portfolio Company</h2>
+                    <h2 className="text-3xl font-bold tracking-tight text-foreground font-serif">Add Portfolio Company</h2>
                     <p className="text-muted-foreground">
                         Record a new acquisition in your portfolio.
                     </p>

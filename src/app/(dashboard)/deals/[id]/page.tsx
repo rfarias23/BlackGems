@@ -88,7 +88,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
                         </Link>
                     </Button>
                     <div className="space-y-1">
-                        <h2 className="text-3xl font-bold tracking-tight text-foreground">{deal.name}</h2>
+                        <h2 className="text-3xl font-bold tracking-tight text-foreground font-serif">{deal.name}</h2>
                         <div className="flex items-center gap-2 text-muted-foreground">
                             <span>{deal.industry || 'No sector'}</span>
                             <span>-</span>

@@ -46,7 +46,7 @@ export default async function DashboardPage() {
     if (!data) {
         return (
             <div className="space-y-8">
-                <h2 className="text-3xl font-bold tracking-tight text-primary">Dashboard</h2>
+                <h2 className="text-3xl font-bold tracking-tight text-foreground font-serif">Dashboard</h2>
                 <Card>
                     <CardContent className="p-12 text-center">
                         <p className="text-muted-foreground">No fund configured yet. Go to Settings to set up your fund.</p>
@@ -78,7 +78,7 @@ export default async function DashboardPage() {
         <div className="space-y-8">
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-primary">Dashboard</h2>
+                    <h2 className="text-3xl font-bold tracking-tight text-foreground font-serif">Dashboard</h2>
                     <p className="text-muted-foreground">{data.fundName}</p>
                 </div>
                 <DownloadReportButton metrics={pdfMetrics} />
@@ -95,7 +95,7 @@ export default async function DashboardPage() {
                         <DollarSign className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-primary">{data.totalAUM}</div>
+                        <div className="text-2xl font-bold text-foreground font-mono tabular-nums">{data.totalAUM}</div>
                         <p className="text-xs text-muted-foreground">
                             {data.capitalCallPct} capital called
                         </p>
@@ -109,7 +109,7 @@ export default async function DashboardPage() {
                         <Activity className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-primary">{data.activeDeals}</div>
+                        <div className="text-2xl font-bold text-foreground font-mono tabular-nums">{data.activeDeals}</div>
                         <p className="text-xs text-muted-foreground">
                             {data.totalDeals} total in pipeline
                         </p>
@@ -123,7 +123,7 @@ export default async function DashboardPage() {
                         <Users className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-primary">{data.investorCount}</div>
+                        <div className="text-2xl font-bold text-foreground font-mono tabular-nums">{data.investorCount}</div>
                         <p className="text-xs text-muted-foreground">
                             {data.activeInvestors} active
                         </p>
@@ -137,7 +137,7 @@ export default async function DashboardPage() {
                         <TrendingUp className="h-4 w-4 text-emerald-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-emerald-500">{data.grossMoic}</div>
+                        <div className="text-2xl font-bold text-emerald-500 font-mono tabular-nums">{data.grossMoic}</div>
                         <p className="text-xs text-muted-foreground">
                             TVPI: {data.tvpi}
                         </p>
@@ -155,7 +155,7 @@ export default async function DashboardPage() {
                         <DollarSign className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-primary">{data.totalCommitments}</div>
+                        <div className="text-2xl font-bold text-foreground font-mono tabular-nums">{data.totalCommitments}</div>
                         <p className="text-xs text-muted-foreground">
                             {data.capitalCalled} called
                         </p>
@@ -169,7 +169,7 @@ export default async function DashboardPage() {
                         <Briefcase className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-primary">{data.portfolioCompanies}</div>
+                        <div className="text-2xl font-bold text-foreground font-mono tabular-nums">{data.portfolioCompanies}</div>
                         <p className="text-xs text-muted-foreground">
                             Net MOIC: {data.netMoic}
                         </p>
@@ -183,7 +183,7 @@ export default async function DashboardPage() {
                         <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-primary font-mono tabular-nums">
+                        <div className="text-2xl font-bold text-foreground font-mono tabular-nums">
                             {data.totalDeals > 0 ? `${Math.round((data.closedWonDeals / data.totalDeals) * 100)}%` : '—'}
                         </div>
                         <p className="text-xs text-muted-foreground">
@@ -207,7 +207,7 @@ export default async function DashboardPage() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
                 <Card className="col-span-4">
                     <CardHeader>
-                        <CardTitle className="text-primary">Recent Activity</CardTitle>
+                        <CardTitle className="text-foreground">Recent Activity</CardTitle>
                     </CardHeader>
                     <CardContent>
                         {data.recentActivity.length === 0 ? (
@@ -218,7 +218,7 @@ export default async function DashboardPage() {
                                     <div key={activity.id} className="flex items-center gap-4">
                                         <div className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-medium text-primary truncate">
+                                            <p className="text-sm font-medium text-foreground truncate">
                                                 {describeActivity(activity.action, activity.entityType)}
                                             </p>
                                             <p className="text-xs text-muted-foreground">
@@ -236,8 +236,8 @@ export default async function DashboardPage() {
                 </Card>
                 <Card className="col-span-3">
                     <CardHeader className="flex flex-row items-center justify-between">
-                        <CardTitle className="text-primary">Deal Pipeline</CardTitle>
-                        <Link href="/deals" className="text-xs text-muted-foreground hover:text-primary transition-colors">
+                        <CardTitle className="text-foreground">Deal Pipeline</CardTitle>
+                        <Link href="/deals" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
                             View all →
                         </Link>
                     </CardHeader>
@@ -249,7 +249,7 @@ export default async function DashboardPage() {
                                 {data.recentDeals.map((deal) => (
                                     <Link key={deal.id} href={`/deals/${deal.id}`} className="flex items-center group">
                                         <div className="flex-1 space-y-1 min-w-0">
-                                            <p className="text-sm font-medium leading-none text-primary group-hover:text-emerald-400 transition-colors truncate">
+                                            <p className="text-sm font-medium leading-none text-foreground group-hover:text-emerald-400 transition-colors truncate">
                                                 {deal.name}
                                             </p>
                                             <p className="text-xs text-muted-foreground">{deal.stage}</p>

@@ -24,7 +24,7 @@ export default async function NewUserPage() {
                     </Link>
                 </Button>
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-foreground">Invite User</h2>
+                    <h2 className="text-3xl font-bold tracking-tight text-foreground font-serif">Invite User</h2>
                     <p className="text-muted-foreground">
                         Create a new user account for the platform.
                     </p>

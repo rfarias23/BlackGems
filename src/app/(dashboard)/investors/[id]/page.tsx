@@ -81,7 +81,7 @@ export default async function InvestorDetailPage({ params }: { params: Promise<{
                         </Link>
                     </Button>
                     <div className="space-y-1">
-                        <h2 className="text-3xl font-bold tracking-tight text-foreground">{investor.name}</h2>
+                        <h2 className="text-3xl font-bold tracking-tight text-foreground font-serif">{investor.name}</h2>
                         <div className="flex items-center gap-2 text-muted-foreground">
                             <span>{investor.type}</span>
                             <span>-</span>
@@ -115,7 +115,7 @@ export default async function InvestorDetailPage({ params }: { params: Promise<{
                                 <DollarSign className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">{formatMoney(totalCommitted, currency)}</div>
+                                <div className="text-2xl font-bold font-mono tabular-nums">{formatMoney(totalCommitted, currency)}</div>
                             </CardContent>
                         </Card>
                         <Card>
@@ -123,7 +123,7 @@ export default async function InvestorDetailPage({ params }: { params: Promise<{
                                 <CardTitle className="text-sm font-medium">Total Called</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">{formatMoney(totalCalled, currency)}</div>
+                                <div className="text-2xl font-bold font-mono tabular-nums">{formatMoney(totalCalled, currency)}</div>
                             </CardContent>
                         </Card>
                         <Card>
@@ -131,7 +131,7 @@ export default async function InvestorDetailPage({ params }: { params: Promise<{
                                 <CardTitle className="text-sm font-medium">Total Paid</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold text-emerald-500">{formatMoney(totalPaid, currency)}</div>
+                                <div className="text-2xl font-bold font-mono tabular-nums text-emerald-500">{formatMoney(totalPaid, currency)}</div>
                             </CardContent>
                         </Card>
                         <Card>
@@ -139,7 +139,7 @@ export default async function InvestorDetailPage({ params }: { params: Promise<{
                                 <CardTitle className="text-sm font-medium">Unfunded</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold text-muted-foreground">
+                                <div className="text-2xl font-bold font-mono tabular-nums text-muted-foreground">
                                     {formatMoney(totalCommitted - totalCalled, currency)}
                                 </div>
                             </CardContent>

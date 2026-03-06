@@ -75,7 +75,7 @@ export default async function ReportsPage() {
     return (
         <div className="space-y-6">
             <div>
-                <h2 className="text-3xl font-bold tracking-tight text-foreground">Reports</h2>
+                <h2 className="text-3xl font-bold tracking-tight text-foreground font-serif">Reports</h2>
                 <p className="text-muted-foreground">
                     Fund performance, portfolio analytics, and LP statements.
                 </p>
@@ -146,7 +146,7 @@ export default async function ReportsPage() {
                                         <Target className="h-4 w-4 text-muted-foreground" />
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="text-2xl font-bold">{fundPerformance.performance.grossMoic}</div>
+                                        <div className="text-2xl font-bold font-mono tabular-nums">{fundPerformance.performance.grossMoic}</div>
                                     </CardContent>
                                 </Card>
                                 <Card>
@@ -154,7 +154,7 @@ export default async function ReportsPage() {
                                         <CardTitle className="text-sm font-medium">Net MOIC</CardTitle>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="text-2xl font-bold">{fundPerformance.performance.netMoic}</div>
+                                        <div className="text-2xl font-bold font-mono tabular-nums">{fundPerformance.performance.netMoic}</div>
                                     </CardContent>
                                 </Card>
                                 <Card>
@@ -162,7 +162,7 @@ export default async function ReportsPage() {
                                         <CardTitle className="text-sm font-medium">DPI</CardTitle>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="text-2xl font-bold">{fundPerformance.performance.dpi}</div>
+                                        <div className="text-2xl font-bold font-mono tabular-nums">{fundPerformance.performance.dpi}</div>
                                         <p className="text-xs text-muted-foreground">Distributions / Paid-In</p>
                                     </CardContent>
                                 </Card>
@@ -171,7 +171,7 @@ export default async function ReportsPage() {
                                         <CardTitle className="text-sm font-medium">RVPI</CardTitle>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="text-2xl font-bold">{fundPerformance.performance.rvpi}</div>
+                                        <div className="text-2xl font-bold font-mono tabular-nums">{fundPerformance.performance.rvpi}</div>
                                         <p className="text-xs text-muted-foreground">Residual / Paid-In</p>
                                     </CardContent>
                                 </Card>
@@ -180,7 +180,7 @@ export default async function ReportsPage() {
                                         <CardTitle className="text-sm font-medium">TVPI</CardTitle>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="text-2xl font-bold text-emerald-500">{fundPerformance.performance.tvpi}</div>
+                                        <div className="text-2xl font-bold font-mono tabular-nums text-emerald-500">{fundPerformance.performance.tvpi}</div>
                                         <p className="text-xs text-muted-foreground">Total Value / Paid-In</p>
                                     </CardContent>
                                 </Card>
@@ -275,19 +275,19 @@ export default async function ReportsPage() {
                                     <div className="grid gap-4 md:grid-cols-4">
                                         <div>
                                             <p className="text-sm text-muted-foreground">Total Deals</p>
-                                            <p className="text-2xl font-bold">{fundPerformance.dealPipeline.totalDeals}</p>
+                                            <p className="text-2xl font-bold font-mono tabular-nums">{fundPerformance.dealPipeline.totalDeals}</p>
                                         </div>
                                         <div>
                                             <p className="text-sm text-muted-foreground">Active</p>
-                                            <p className="text-2xl font-bold">{fundPerformance.dealPipeline.activeDeals}</p>
+                                            <p className="text-2xl font-bold font-mono tabular-nums">{fundPerformance.dealPipeline.activeDeals}</p>
                                         </div>
                                         <div>
                                             <p className="text-sm text-muted-foreground">Won</p>
-                                            <p className="text-2xl font-bold text-emerald-500">{fundPerformance.dealPipeline.wonDeals}</p>
+                                            <p className="text-2xl font-bold font-mono tabular-nums text-emerald-500">{fundPerformance.dealPipeline.wonDeals}</p>
                                         </div>
                                         <div>
                                             <p className="text-sm text-muted-foreground">Conversion Rate</p>
-                                            <p className="text-2xl font-bold">{fundPerformance.dealPipeline.conversionRate}</p>
+                                            <p className="text-2xl font-bold font-mono tabular-nums">{fundPerformance.dealPipeline.conversionRate}</p>
                                         </div>
                                     </div>
                                 </CardContent>
@@ -317,7 +317,7 @@ export default async function ReportsPage() {
                                         <Building2 className="h-4 w-4 text-muted-foreground" />
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="text-2xl font-bold">{portfolioSummary.summary.totalCompanies}</div>
+                                        <div className="text-2xl font-bold font-mono tabular-nums">{portfolioSummary.summary.totalCompanies}</div>
                                     </CardContent>
                                 </Card>
                                 <Card>
@@ -326,7 +326,7 @@ export default async function ReportsPage() {
                                         <DollarSign className="h-4 w-4 text-muted-foreground" />
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="text-2xl font-bold">{portfolioSummary.summary.totalInvested}</div>
+                                        <div className="text-2xl font-bold font-mono tabular-nums">{portfolioSummary.summary.totalInvested}</div>
                                     </CardContent>
                                 </Card>
                                 <Card>
@@ -335,7 +335,7 @@ export default async function ReportsPage() {
                                         <TrendingUp className="h-4 w-4 text-muted-foreground" />
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="text-2xl font-bold text-emerald-500">{portfolioSummary.summary.totalValue}</div>
+                                        <div className="text-2xl font-bold font-mono tabular-nums text-emerald-500">{portfolioSummary.summary.totalValue}</div>
                                     </CardContent>
                                 </Card>
                                 <Card>
@@ -344,7 +344,7 @@ export default async function ReportsPage() {
                                         <Target className="h-4 w-4 text-muted-foreground" />
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="text-2xl font-bold">{portfolioSummary.summary.portfolioMoic}</div>
+                                        <div className="text-2xl font-bold font-mono tabular-nums">{portfolioSummary.summary.portfolioMoic}</div>
                                     </CardContent>
                                 </Card>
                                 <Card>
@@ -352,7 +352,7 @@ export default async function ReportsPage() {
                                         <CardTitle className="text-sm font-medium">Avg Hold</CardTitle>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="text-2xl font-bold">{portfolioSummary.summary.avgHoldingPeriod}</div>
+                                        <div className="text-2xl font-bold font-mono tabular-nums">{portfolioSummary.summary.avgHoldingPeriod}</div>
                                     </CardContent>
                                 </Card>
                             </div>
@@ -502,7 +502,7 @@ export default async function ReportsPage() {
                                         <Briefcase className="h-4 w-4 text-muted-foreground" />
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="text-2xl font-bold">{dealPipeline.summary.totalDeals}</div>
+                                        <div className="text-2xl font-bold font-mono tabular-nums">{dealPipeline.summary.totalDeals}</div>
                                     </CardContent>
                                 </Card>
                                 <Card>
@@ -510,7 +510,7 @@ export default async function ReportsPage() {
                                         <CardTitle className="text-sm font-medium">Active Deals</CardTitle>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="text-2xl font-bold">{dealPipeline.summary.activeDeals}</div>
+                                        <div className="text-2xl font-bold font-mono tabular-nums">{dealPipeline.summary.activeDeals}</div>
                                     </CardContent>
                                 </Card>
                                 <Card>
@@ -518,7 +518,7 @@ export default async function ReportsPage() {
                                         <CardTitle className="text-sm font-medium">Avg Deal Size</CardTitle>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="text-2xl font-bold">{dealPipeline.summary.avgDealSize}</div>
+                                        <div className="text-2xl font-bold font-mono tabular-nums">{dealPipeline.summary.avgDealSize}</div>
                                     </CardContent>
                                 </Card>
                                 <Card>
@@ -526,7 +526,7 @@ export default async function ReportsPage() {
                                         <CardTitle className="text-sm font-medium">Conversion</CardTitle>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="text-2xl font-bold">{dealPipeline.summary.conversionRate}</div>
+                                        <div className="text-2xl font-bold font-mono tabular-nums">{dealPipeline.summary.conversionRate}</div>
                                     </CardContent>
                                 </Card>
                             </div>

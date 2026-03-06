@@ -119,7 +119,7 @@ export default async function DistributionDetailPage({ params }: { params: Promi
                         </Link>
                     </Button>
                     <div className="space-y-1">
-                        <h2 className="text-3xl font-bold tracking-tight text-foreground">
+                        <h2 className="text-3xl font-bold tracking-tight text-foreground font-serif">
                             Distribution #{distribution.distributionNumber}
                         </h2>
                         <div className="flex items-center gap-2 text-muted-foreground">
@@ -159,7 +159,7 @@ export default async function DistributionDetailPage({ params }: { params: Promi
                         <Banknote className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{distribution.totalAmount}</div>
+                        <div className="text-2xl font-bold font-mono tabular-nums">{distribution.totalAmount}</div>
                     </CardContent>
                 </Card>
                 <Card>
@@ -168,7 +168,7 @@ export default async function DistributionDetailPage({ params }: { params: Promi
                         <DollarSign className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-emerald-500">
+                        <div className="text-2xl font-bold font-mono tabular-nums text-emerald-500">
                             {formatMoney(totalPaid, currency)}
                         </div>
                     </CardContent>
@@ -178,7 +178,7 @@ export default async function DistributionDetailPage({ params }: { params: Promi
                         <CardTitle className="text-sm font-medium">Pending</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-muted-foreground">
+                        <div className="text-2xl font-bold font-mono tabular-nums text-muted-foreground">
                             {formatMoney(totalNet - totalPaid, currency)}
                         </div>
                     </CardContent>
@@ -189,7 +189,7 @@ export default async function DistributionDetailPage({ params }: { params: Promi
                         <Users className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">
+                        <div className="text-2xl font-bold font-mono tabular-nums">
                             {paidCount} / {distribution.items.length}
                         </div>
                     </CardContent>
