@@ -1167,7 +1167,7 @@ const DISPLAY_STAGE_ORDER = [
     'Closing',
 ] as const
 
-type DisplayStage = (typeof DISPLAY_STAGE_ORDER)[number]
+export type DisplayStage = (typeof DISPLAY_STAGE_ORDER)[number]
 
 export interface PipelineStageMetrics {
     stage: DisplayStage
@@ -1179,12 +1179,14 @@ export interface PipelineStageMetrics {
 export interface PipelineAnalytics {
     stages: PipelineStageMetrics[]
     totalActiveDeals: number
+    totalDeals: number
     totalPipelineValue: string | null
     avgDaysInPipeline: number | null
     closedWon: number
     closedLost: number
     winRate: string | null
     conversionRate: string | null
+    currency: CurrencyCode
 }
 
 /** Pipeline-level analytics across all active deals in the fund */
@@ -1288,12 +1290,14 @@ export async function getDealPipelineAnalytics(): Promise<PipelineAnalytics | nu
     return {
         stages,
         totalActiveDeals,
+        totalDeals: deals.length,
         totalPipelineValue: totalPipelineValue > 0 ? formatCurrency(totalPipelineValue, currency) : null,
         avgDaysInPipeline: totalDaysCount > 0 ? Math.round(totalDaysSum / totalDaysCount) : null,
         closedWon,
         closedLost,
         winRate,
         conversionRate,
+        currency,
     }
 }
 
