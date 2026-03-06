@@ -235,7 +235,7 @@ export function InvestorCommunications({
                         <p className="text-sm text-red-500 mb-4">{emailError}</p>
                     )}
                     {emailSuccess && (
-                        <p className="text-sm text-emerald-500 mb-4">Communication recorded.</p>
+                        <p className="text-sm text-emerald-600 mb-4">Communication recorded.</p>
                     )}
                     <div className="space-y-4">
                         <div className="space-y-2">
@@ -337,7 +337,7 @@ export function InvestorCommunications({
                             <p className="text-sm text-red-500 mb-4">{logError}</p>
                         )}
                         {logSuccess && (
-                            <p className="text-sm text-emerald-500 mb-4">Communication logged successfully.</p>
+                            <p className="text-sm text-emerald-600 mb-4">Communication logged successfully.</p>
                         )}
                         <div className="space-y-4">
                             <div className="grid grid-cols-2 gap-4">

@@ -83,7 +83,7 @@ export function PortfolioTable({ companies }: PortfolioTableProps) {
                                 <TableCell>
                                     <Link
                                         href={`/portfolio/${company.id}`}
-                                        className="font-medium text-foreground hover:text-primary hover:underline"
+                                        className="font-medium text-foreground hover:text-foreground hover:underline"
                                     >
                                         {company.name}
                                     </Link>
@@ -103,7 +103,7 @@ export function PortfolioTable({ companies }: PortfolioTableProps) {
                                 <TableCell className="text-muted-foreground">
                                     {company.entryValuation}
                                 </TableCell>
-                                <TableCell className="text-emerald-500 font-medium">
+                                <TableCell className="text-emerald-600 font-medium">
                                     {company.currentValuation || '-'}
                                 </TableCell>
                                 <TableCell className="font-medium">

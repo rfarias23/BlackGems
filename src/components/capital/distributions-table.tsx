@@ -99,7 +99,7 @@ export function DistributionsTable({ distributions }: DistributionsTableProps) {
                                 <TableCell>
                                     <Link
                                         href={`/capital/distributions/${dist.id}`}
-                                        className="font-medium text-foreground hover:text-primary hover:underline"
+                                        className="font-medium text-foreground hover:text-foreground hover:underline"
                                     >
                                         #{dist.distributionNumber}
                                     </Link>
@@ -118,7 +118,7 @@ export function DistributionsTable({ distributions }: DistributionsTableProps) {
                                 <TableCell className="font-medium">
                                     {dist.totalAmount}
                                 </TableCell>
-                                <TableCell className="text-emerald-500">
+                                <TableCell className="text-emerald-600">
                                     {dist.paidAmount}
                                 </TableCell>
                                 <TableCell className="text-muted-foreground">

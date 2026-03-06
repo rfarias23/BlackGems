@@ -121,7 +121,7 @@ export function DealTable({ deals, sortBy = 'createdAt', sortDir = 'desc' }: Dea
                             deals.map((deal) => (
                                 <TableRow key={deal.id}>
                                     <TableCell className="font-medium text-foreground">
-                                        <Link href={`/deals/${deal.id}`} className="hover:underline hover:text-primary">
+                                        <Link href={`/deals/${deal.id}`} className="hover:underline hover:text-foreground">
                                             {deal.name}
                                         </Link>
                                     </TableCell>

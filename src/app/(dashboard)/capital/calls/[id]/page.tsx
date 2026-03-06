@@ -109,7 +109,7 @@ export default async function CapitalCallDetailPage({ params }: { params: Promis
                         </Link>
                     </Button>
                     <div className="space-y-1">
-                        <h2 className="text-3xl font-bold tracking-tight text-foreground font-serif">
+                        <h2 className="font-serif text-3xl font-bold tracking-tight text-foreground">
                             Capital Call #{call.callNumber}
                         </h2>
                         <div className="flex items-center gap-2 text-muted-foreground">
@@ -149,7 +149,7 @@ export default async function CapitalCallDetailPage({ params }: { params: Promis
                         <CheckCircle className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold font-mono tabular-nums text-emerald-500">
+                        <div className="text-2xl font-bold font-mono tabular-nums text-emerald-600">
                             {formatMoney(totalPaid, currency)}
                         </div>
                     </CardContent>
@@ -204,7 +204,7 @@ export default async function CapitalCallDetailPage({ params }: { params: Promis
                         {call.completedDate && (
                             <div className="flex items-center justify-between text-sm">
                                 <span className="text-muted-foreground">Completed</span>
-                                <span className="font-medium text-emerald-500">{formatDate(call.completedDate)}</span>
+                                <span className="font-medium text-emerald-600">{formatDate(call.completedDate)}</span>
                             </div>
                         )}
                     </CardContent>
@@ -291,13 +291,13 @@ export default async function CapitalCallDetailPage({ params }: { params: Promis
                                         <TableCell>
                                             <Link
                                                 href={`/investors/${item.investorId}`}
-                                                className="font-medium text-foreground hover:text-primary hover:underline"
+                                                className="font-medium text-foreground hover:text-foreground hover:underline"
                                             >
                                                 {item.investorName}
                                             </Link>
                                         </TableCell>
                                         <TableCell className="font-medium">{item.callAmount}</TableCell>
-                                        <TableCell className="text-emerald-500">{item.paidAmount}</TableCell>
+                                        <TableCell className="text-emerald-600">{item.paidAmount}</TableCell>
                                         <TableCell className="text-muted-foreground">
                                             {formatMoney(outstanding, currency)}
                                         </TableCell>

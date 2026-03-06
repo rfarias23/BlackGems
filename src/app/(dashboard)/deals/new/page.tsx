@@ -17,7 +17,7 @@ export default async function NewDealPage() {
                         <ChevronLeft className="h-4 w-4" />
                     </Link>
                 </Button>
-                <h2 className="text-2xl font-bold tracking-tight text-foreground font-serif">Add New Deal</h2>
+                <h2 className="font-serif text-3xl font-bold tracking-tight text-foreground">Add New Deal</h2>
             </div>
 
             <ErrorBoundary module="Deals">

@@ -275,7 +275,7 @@ export function FundConfigForm({ fund }: FundConfigFormProps) {
                         )}
 
                         {state?.success && (
-                            <div className="rounded-md bg-emerald-500/15 p-3 text-sm text-emerald-500">
+                            <div className="rounded-md bg-emerald-500/15 p-3 text-sm text-emerald-600">
                                 Fund configuration updated successfully.
                             </div>
                         )}

@@ -36,7 +36,7 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
                         </Link>
                     </Button>
                     <div className="space-y-1">
-                        <h2 className="text-3xl font-bold tracking-tight text-foreground font-serif">
+                        <h2 className="font-serif text-3xl font-bold tracking-tight text-foreground">
                             {user.name || user.email}
                         </h2>
                         <div className="flex items-center gap-2 text-muted-foreground">

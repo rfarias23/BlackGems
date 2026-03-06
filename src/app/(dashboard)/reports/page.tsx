@@ -75,7 +75,7 @@ export default async function ReportsPage() {
     return (
         <div className="space-y-6">
             <div>
-                <h2 className="text-3xl font-bold tracking-tight text-foreground font-serif">Reports</h2>
+                <h2 className="font-serif text-3xl font-bold tracking-tight text-foreground">Reports</h2>
                 <p className="text-muted-foreground">
                     Fund performance, portfolio analytics, and LP statements.
                 </p>
@@ -180,7 +180,7 @@ export default async function ReportsPage() {
                                         <CardTitle className="text-sm font-medium">TVPI</CardTitle>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="text-2xl font-bold font-mono tabular-nums text-emerald-500">{fundPerformance.performance.tvpi}</div>
+                                        <div className="text-2xl font-bold font-mono tabular-nums text-emerald-600">{fundPerformance.performance.tvpi}</div>
                                         <p className="text-xs text-muted-foreground">Total Value / Paid-In</p>
                                     </CardContent>
                                 </Card>
@@ -218,7 +218,7 @@ export default async function ReportsPage() {
                                         </div>
                                         <div className="flex items-center justify-between text-sm">
                                             <span className="text-muted-foreground">Distributions</span>
-                                            <span className="font-medium text-emerald-500">{fundPerformance.capital.totalDistributed}</span>
+                                            <span className="font-medium text-emerald-600">{fundPerformance.capital.totalDistributed}</span>
                                         </div>
                                         <div className="flex items-center justify-between text-sm">
                                             <span className="text-muted-foreground">Unfunded</span>
@@ -257,7 +257,7 @@ export default async function ReportsPage() {
                                         </div>
                                         <div className="flex items-center justify-between text-sm">
                                             <span className="text-muted-foreground">Total Value</span>
-                                            <span className="font-medium text-emerald-500">{fundPerformance.portfolio.totalValue}</span>
+                                            <span className="font-medium text-emerald-600">{fundPerformance.portfolio.totalValue}</span>
                                         </div>
                                     </CardContent>
                                 </Card>
@@ -283,7 +283,7 @@ export default async function ReportsPage() {
                                         </div>
                                         <div>
                                             <p className="text-sm text-muted-foreground">Won</p>
-                                            <p className="text-2xl font-bold font-mono tabular-nums text-emerald-500">{fundPerformance.dealPipeline.wonDeals}</p>
+                                            <p className="text-2xl font-bold font-mono tabular-nums text-emerald-600">{fundPerformance.dealPipeline.wonDeals}</p>
                                         </div>
                                         <div>
                                             <p className="text-sm text-muted-foreground">Conversion Rate</p>
@@ -335,7 +335,7 @@ export default async function ReportsPage() {
                                         <TrendingUp className="h-4 w-4 text-muted-foreground" />
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="text-2xl font-bold font-mono tabular-nums text-emerald-500">{portfolioSummary.summary.totalValue}</div>
+                                        <div className="text-2xl font-bold font-mono tabular-nums text-emerald-600">{portfolioSummary.summary.totalValue}</div>
                                     </CardContent>
                                 </Card>
                                 <Card>
@@ -409,7 +409,7 @@ export default async function ReportsPage() {
                                                     <TableCell>
                                                         <Link
                                                             href={`/portfolio/${company.id}`}
-                                                            className="font-medium hover:text-primary hover:underline"
+                                                            className="font-medium hover:text-foreground hover:underline"
                                                         >
                                                             {company.name}
                                                         </Link>
@@ -418,7 +418,7 @@ export default async function ReportsPage() {
                                                     <TableCell className="text-muted-foreground">{formatDate(company.acquisitionDate)}</TableCell>
                                                     <TableCell className="text-muted-foreground">{company.holdingPeriodMonths}</TableCell>
                                                     <TableCell>{company.invested}</TableCell>
-                                                    <TableCell className="text-emerald-500">{company.currentValue}</TableCell>
+                                                    <TableCell className="text-emerald-600">{company.currentValue}</TableCell>
                                                     <TableCell className="font-medium">{company.moic}</TableCell>
                                                     <TableCell className="text-muted-foreground">{company.irr || '-'}</TableCell>
                                                     <TableCell>
@@ -584,7 +584,7 @@ export default async function ReportsPage() {
                                                     <TableCell>
                                                         <Link
                                                             href={`/deals/${deal.id}`}
-                                                            className="font-medium hover:text-primary hover:underline"
+                                                            className="font-medium hover:text-foreground hover:underline"
                                                         >
                                                             {deal.name}
                                                         </Link>

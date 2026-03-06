@@ -107,7 +107,7 @@ export function InvestorTable({ investors }: InvestorTableProps) {
                             filteredInvestors.map((investor) => (
                                 <TableRow key={investor.id}>
                                     <TableCell className="font-medium text-foreground">
-                                        <Link href={`/investors/${investor.id}`} className="hover:underline hover:text-primary">
+                                        <Link href={`/investors/${investor.id}`} className="hover:underline hover:text-foreground">
                                             {investor.name}
                                         </Link>
                                     </TableCell>

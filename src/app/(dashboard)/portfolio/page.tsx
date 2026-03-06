@@ -24,7 +24,7 @@ export default async function PortfolioPage({ searchParams }: PortfolioPageProps
         <div className="space-y-6">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-foreground font-serif">Portfolio</h2>
+                    <h2 className="font-serif text-3xl font-bold tracking-tight text-foreground">Portfolio</h2>
                     <p className="text-muted-foreground">
                         Track and manage your portfolio companies.
                     </p>
@@ -71,7 +71,7 @@ export default async function PortfolioPage({ searchParams }: PortfolioPageProps
                             <TrendingUp className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold font-mono tabular-nums text-emerald-500">{summary.totalValue}</div>
+                            <div className="text-2xl font-bold font-mono tabular-nums text-emerald-600">{summary.totalValue}</div>
                             <p className="text-xs text-muted-foreground">
                                 {summary.realizedValue} realized, {summary.unrealizedValue} unrealized
                             </p>

@@ -84,7 +84,7 @@ export function CapitalCallsTable({ calls }: CapitalCallsTableProps) {
                                 <TableCell>
                                     <Link
                                         href={`/capital/calls/${call.id}`}
-                                        className="font-medium text-foreground hover:text-primary hover:underline"
+                                        className="font-medium text-foreground hover:text-foreground hover:underline"
                                     >
                                         #{call.callNumber}
                                     </Link>
@@ -101,7 +101,7 @@ export function CapitalCallsTable({ calls }: CapitalCallsTableProps) {
                                 <TableCell className="font-medium">
                                     {call.totalAmount}
                                 </TableCell>
-                                <TableCell className="text-emerald-500">
+                                <TableCell className="text-emerald-600">
                                     {call.paidAmount}
                                 </TableCell>
                                 <TableCell className="text-muted-foreground">

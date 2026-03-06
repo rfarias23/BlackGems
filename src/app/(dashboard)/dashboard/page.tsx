@@ -46,7 +46,7 @@ export default async function DashboardPage() {
     if (!data) {
         return (
             <div className="space-y-8">
-                <h2 className="text-3xl font-bold tracking-tight text-foreground font-serif">Dashboard</h2>
+                <h2 className="font-serif text-3xl font-bold tracking-tight text-foreground">Dashboard</h2>
                 <Card>
                     <CardContent className="p-12 text-center">
                         <p className="text-muted-foreground">No fund configured yet. Go to Settings to set up your fund.</p>
@@ -78,7 +78,7 @@ export default async function DashboardPage() {
         <div className="space-y-8">
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-foreground font-serif">Dashboard</h2>
+                    <h2 className="font-serif text-3xl font-bold tracking-tight text-foreground">Dashboard</h2>
                     <p className="text-muted-foreground">{data.fundName}</p>
                 </div>
                 <DownloadReportButton metrics={pdfMetrics} />
@@ -134,10 +134,10 @@ export default async function DashboardPage() {
                         <CardTitle className="text-sm font-medium text-muted-foreground">
                             Gross MOIC
                         </CardTitle>
-                        <TrendingUp className="h-4 w-4 text-emerald-500" />
+                        <TrendingUp className="h-4 w-4 text-emerald-600" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-emerald-500 font-mono tabular-nums">{data.grossMoic}</div>
+                        <div className="text-2xl font-bold text-emerald-600 font-mono tabular-nums">{data.grossMoic}</div>
                         <p className="text-xs text-muted-foreground">
                             TVPI: {data.tvpi}
                         </p>

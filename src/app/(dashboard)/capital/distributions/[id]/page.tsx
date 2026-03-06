@@ -119,7 +119,7 @@ export default async function DistributionDetailPage({ params }: { params: Promi
                         </Link>
                     </Button>
                     <div className="space-y-1">
-                        <h2 className="text-3xl font-bold tracking-tight text-foreground font-serif">
+                        <h2 className="font-serif text-3xl font-bold tracking-tight text-foreground">
                             Distribution #{distribution.distributionNumber}
                         </h2>
                         <div className="flex items-center gap-2 text-muted-foreground">
@@ -168,7 +168,7 @@ export default async function DistributionDetailPage({ params }: { params: Promi
                         <DollarSign className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold font-mono tabular-nums text-emerald-500">
+                        <div className="text-2xl font-bold font-mono tabular-nums text-emerald-600">
                             {formatMoney(totalPaid, currency)}
                         </div>
                     </CardContent>
@@ -219,7 +219,7 @@ export default async function DistributionDetailPage({ params }: { params: Promi
                         {distribution.paidDate && (
                             <div className="flex items-center justify-between text-sm">
                                 <span className="text-muted-foreground">Completed Date</span>
-                                <span className="font-medium text-emerald-500">{formatDate(distribution.paidDate)}</span>
+                                <span className="font-medium text-emerald-600">{formatDate(distribution.paidDate)}</span>
                             </div>
                         )}
                         {distribution.source && (
@@ -308,14 +308,14 @@ export default async function DistributionDetailPage({ params }: { params: Promi
                                     <TableCell>
                                         <Link
                                             href={`/investors/${item.investorId}`}
-                                            className="font-medium text-foreground hover:text-primary hover:underline"
+                                            className="font-medium text-foreground hover:text-foreground hover:underline"
                                         >
                                             {item.investorName}
                                         </Link>
                                     </TableCell>
                                     <TableCell className="font-medium">{item.grossAmount}</TableCell>
                                     <TableCell className="text-muted-foreground">{item.withholdingTax}</TableCell>
-                                    <TableCell className="text-emerald-500 font-medium">{item.netAmount}</TableCell>
+                                    <TableCell className="text-emerald-600 font-medium">{item.netAmount}</TableCell>
                                     <TableCell>
                                         <Badge className={getItemStatusColor(item.status)}>
                                             {item.status}

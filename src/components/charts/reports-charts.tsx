@@ -38,7 +38,7 @@ export function FundPerformanceCharts({
               <p className={`text-sm ${theme === 'dark' ? 'text-muted-foreground' : 'text-slate-500'}`}>
                 Gross IRR
               </p>
-              <p className="text-3xl font-bold text-emerald-500">
+              <p className="text-3xl font-bold text-emerald-600">
                 {grossIrr || 'N/A'}
               </p>
             </div>
@@ -46,7 +46,7 @@ export function FundPerformanceCharts({
               <p className={`text-sm ${theme === 'dark' ? 'text-muted-foreground' : 'text-slate-500'}`}>
                 Net IRR
               </p>
-              <p className="text-3xl font-bold text-emerald-500">
+              <p className="text-3xl font-bold text-emerald-600">
                 {netIrr || 'N/A'}
               </p>
             </div>

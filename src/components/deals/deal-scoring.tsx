@@ -170,7 +170,7 @@ export function DealScoring({ dealId, initialScores, canEdit }: DealScoringProps
           <div className="pt-3 flex items-center justify-between">
             <div className="text-xs">
               {error && <span className="text-red-400">{error}</span>}
-              {saved && <span className="text-emerald-500">Scores saved</span>}
+              {saved && <span className="text-emerald-600">Scores saved</span>}
             </div>
             <Button
               size="sm"
