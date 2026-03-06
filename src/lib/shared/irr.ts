@@ -214,3 +214,68 @@ export interface LPCashFlows {
 export function calculateLPIRR(params: LPCashFlows): number | null {
   return calculateFundIRR(params) // same logic, different scope
 }
+
+// ---------------------------------------------------------------------------
+// Net IRR (fee-adjusted)
+// ---------------------------------------------------------------------------
+
+export interface NetIRRParams {
+  capitalCalls: { date: Date; amount: number }[]
+  distributions: { date: Date; amount: number }[]
+  currentNAV: number
+  valuationDate: Date
+  managementFeeRate: number
+  carriedInterestRate: number
+}
+
+/**
+ * Calculates Net IRR by adjusting gross cashflows for management fees and carry.
+ *
+ * - Capital calls inflated by management fee (LP pays more in)
+ * - Distributions reduced by carried interest on profit portion
+ * - Terminal NAV reduced by accrued carry on unrealized gains
+ */
+export function calculateNetIRR(params: NetIRRParams): number | null {
+  const {
+    capitalCalls,
+    distributions,
+    currentNAV,
+    valuationDate,
+    managementFeeRate,
+    carriedInterestRate,
+  } = params
+
+  const cashFlows: CashFlow[] = []
+  const totalCalled = capitalCalls.reduce((s, c) => s + Math.abs(c.amount), 0)
+
+  // Capital calls: LP pays call + management fee
+  for (const call of capitalCalls) {
+    cashFlows.push({
+      date: call.date,
+      amount: -Math.abs(call.amount) * (1 + managementFeeRate),
+    })
+  }
+
+  // Distributions: carry only applies to profit portion
+  let capitalReturned = 0
+  for (const dist of distributions) {
+    const amount = Math.abs(dist.amount)
+    const returnOfCapital = Math.min(amount, Math.max(0, totalCalled - capitalReturned))
+    const profit = amount - returnOfCapital
+    capitalReturned += returnOfCapital
+
+    const netAmount = returnOfCapital + profit * (1 - carriedInterestRate)
+    cashFlows.push({ date: dist.date, amount: netAmount })
+  }
+
+  // Terminal NAV: reduce by accrued carry on unrealized gains
+  if (currentNAV > 0) {
+    const remainingCostBasis = Math.max(0, totalCalled - capitalReturned)
+    const unrealizedGain = Math.max(0, currentNAV - remainingCostBasis)
+    const accruedCarry = unrealizedGain * carriedInterestRate
+    const netNAV = Math.max(0, currentNAV - accruedCarry)
+    cashFlows.push({ date: valuationDate, amount: netNAV })
+  }
+
+  return calculateIRR(cashFlows)
+}
