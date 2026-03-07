@@ -47,8 +47,8 @@ export async function sendInviteEmail({
             html: `
                 <div style="font-family: 'Inter', system-ui, sans-serif; max-width: 600px; margin: 0 auto;">
                     <div style="background-color: #11141D; padding: 32px; text-align: center;">
-                        <h1 style="color: #F8FAFC; font-size: 24px; margin: 0;">
-                            <span style="font-weight: 400;">Black</span><span style="font-weight: 600;">Gem</span>
+                        <h1 style="color: #F8FAFC; font-size: 25px; margin: 0; font-family: Georgia, 'Times New Roman', serif;">
+                            <span style="font-weight: 400; letter-spacing: -0.01em;">Black</span><span style="font-weight: 600; letter-spacing: 0.03em;">Gem</span>
                         </h1>
                     </div>
                     <div style="padding: 32px; background-color: #F9FAFB;">
@@ -72,7 +72,7 @@ export async function sendInviteEmail({
                         </p>
                     </div>
                     <div style="padding: 16px 32px; background-color: #F1F5F9; text-align: center;">
-                        <p style="color: #94A3B8; font-size: 12px; margin: 0;">
+                        <p style="color: #94A3B8; font-size: 12px; margin: 0; font-family: Georgia, 'Times New Roman', serif;">
                             BlackGem — Institutional excellence from day one
                         </p>
                     </div>
@@ -120,8 +120,8 @@ export async function sendWelcomeEmail({
             html: `
                 <div style="font-family: 'Inter', system-ui, sans-serif; max-width: 600px; margin: 0 auto;">
                     <div style="background-color: #11141D; padding: 32px; text-align: center;">
-                        <h1 style="color: #F8FAFC; font-size: 24px; margin: 0;">
-                            <span style="font-weight: 400;">Black</span><span style="font-weight: 600;">Gem</span>
+                        <h1 style="color: #F8FAFC; font-size: 25px; margin: 0; font-family: Georgia, 'Times New Roman', serif;">
+                            <span style="font-weight: 400; letter-spacing: -0.01em;">Black</span><span style="font-weight: 600; letter-spacing: 0.03em;">Gem</span>
                         </h1>
                     </div>
                     <div style="padding: 32px; background-color: #F9FAFB;">
@@ -148,7 +148,7 @@ export async function sendWelcomeEmail({
                         </ul>
                     </div>
                     <div style="padding: 16px 32px; background-color: #F1F5F9; text-align: center;">
-                        <p style="color: #94A3B8; font-size: 12px; margin: 0;">
+                        <p style="color: #94A3B8; font-size: 12px; margin: 0; font-family: Georgia, 'Times New Roman', serif;">
                             BlackGem — Institutional excellence from day one
                         </p>
                     </div>
@@ -190,8 +190,8 @@ export async function sendInvestorEmail({
             html: `
                 <div style="font-family: 'Inter', system-ui, sans-serif; max-width: 600px; margin: 0 auto;">
                     <div style="background-color: #11141D; padding: 32px; text-align: center;">
-                        <h1 style="color: #F8FAFC; font-size: 24px; margin: 0;">
-                            <span style="font-weight: 400;">Black</span><span style="font-weight: 600;">Gem</span>
+                        <h1 style="color: #F8FAFC; font-size: 25px; margin: 0; font-family: Georgia, 'Times New Roman', serif;">
+                            <span style="font-weight: 400; letter-spacing: -0.01em;">Black</span><span style="font-weight: 600; letter-spacing: 0.03em;">Gem</span>
                         </h1>
                     </div>
                     <div style="padding: 32px; background-color: #F9FAFB;">
@@ -203,7 +203,7 @@ ${message}
                         </div>
                     </div>
                     <div style="padding: 16px 32px; background-color: #F1F5F9; text-align: center;">
-                        <p style="color: #94A3B8; font-size: 12px; margin: 0;">
+                        <p style="color: #94A3B8; font-size: 12px; margin: 0; font-family: Georgia, 'Times New Roman', serif;">
                             BlackGem — Institutional excellence from day one
                         </p>
                     </div>
