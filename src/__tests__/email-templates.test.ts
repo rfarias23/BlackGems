@@ -286,8 +286,8 @@ describe('renderEmailTemplate', () => {
 
       for (const type of types) {
         const result = renderEmailTemplate(type, vars)
-        expect(result.html).toContain('<span style="font-weight: 400;">Black</span>')
-        expect(result.html).toContain('<span style="font-weight: 600;">Gem</span>')
+        expect(result.html).toContain('<span style="font-weight: 400; letter-spacing: -0.01em;">Black</span>')
+        expect(result.html).toContain('<span style="font-weight: 600; letter-spacing: 0.03em;">Gem</span>')
       }
     })
 
