@@ -531,11 +531,9 @@ export async function deleteUser(id: string) {
         })
 
         revalidatePath('/admin/users')
-        redirect('/admin/users')
+        revalidatePath(`/admin/users/${id}`)
+        return { success: true }
     } catch (error) {
-        if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
-            throw error
-        }
         console.error('Error deleting user:', error)
         return { error: 'Failed to delete user' }
     }
