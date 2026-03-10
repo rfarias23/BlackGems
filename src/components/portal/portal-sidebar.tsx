@@ -23,9 +23,10 @@ const navigation = [
 interface PortalSidebarProps {
     investorName?: string | null;
     userName?: string | null;
+    orgName?: string | null;
 }
 
-export function PortalSidebar({ investorName }: PortalSidebarProps) {
+export function PortalSidebar({ investorName, orgName }: PortalSidebarProps) {
     const pathname = usePathname();
 
     return (
@@ -34,7 +35,7 @@ export function PortalSidebar({ investorName }: PortalSidebarProps) {
             <div className="flex h-16 items-center px-6 border-b border-slate-200">
                 <Link href="/portal" className="flex items-center gap-2">
                     <span className="font-serif text-2xl font-semibold tracking-tight text-slate-900">
-                        BlackGem
+                        {orgName || 'BlackGem'}
                     </span>
                     <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">
                         Portal

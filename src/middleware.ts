@@ -7,7 +7,7 @@ import { extractSubdomain } from '@/lib/shared/tenant'
  *
  * Composes with NextAuth auth() wrapper:
  * 1. NextAuth authorized() callback runs first (login redirects, LP protection)
- * 2. Our custom handler runs to inject the fund slug header
+ * 2. Our custom handler runs to inject the org slug header (subdomain → Organization.slug)
  *
  * In development (localhost), falls back to ?fund=<slug> query parameter.
  */
@@ -27,9 +27,9 @@ export default auth((request) => {
     return NextResponse.next()
   }
 
-  // 4. Clone headers and inject fund slug for downstream consumption
+  // 4. Clone headers and inject org slug for downstream consumption
   const requestHeaders = new Headers(request.headers)
-  requestHeaders.set('x-fund-slug', fundSlug)
+  requestHeaders.set('x-org-slug', fundSlug)
 
   return NextResponse.next({
     request: { headers: requestHeaders },

@@ -611,12 +611,13 @@ export async function createLPInvitation(formData: FormData) {
         return { error: 'This investor is already linked to a user account' }
     }
 
-    // Get fund name for the email
+    // Get fund name and org slug for the email
     const fundCommitment = await prisma.commitment.findFirst({
         where: { investorId, ...notDeleted },
-        include: { fund: { select: { name: true } } },
+        include: { fund: { select: { name: true, organization: { select: { slug: true } } } } },
     })
     const fundName = fundCommitment?.fund.name || 'BlackGem Fund'
+    const orgSlug = fundCommitment?.fund.organization?.slug ?? null
 
     try {
         // Generate secure token
@@ -643,6 +644,7 @@ export async function createLPInvitation(formData: FormData) {
             inviteToken: token,
             fundName,
             inviterName: session.user.name || 'A fund manager',
+            orgSlug: orgSlug ?? undefined,
         })
 
         if (!emailResult.success) {

@@ -1,8 +1,8 @@
 /**
  * Tenant resolution utilities for multi-subdomain routing.
  *
- * Subdomains map to Fund slugs: martha-fund.blackgem.ai -> Fund.slug = "martha-fund"
- * The Organization is inferred from the Fund's organizationId.
+ * Subdomains map to Organization slugs: andeancapital.blackgem.ai -> Organization.slug = "andeancapital"
+ * Each subdomain represents one firm (Organization).
  */
 
 const ROOT_DOMAIN = process.env.ROOT_DOMAIN || 'blackgem.ai'

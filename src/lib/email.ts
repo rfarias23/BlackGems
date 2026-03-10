@@ -27,17 +27,26 @@ export async function sendInviteEmail({
     inviteToken,
     fundName,
     inviterName,
+    orgSlug,
 }: {
     to: string;
     inviteToken: string;
     fundName: string;
     inviterName: string;
+    orgSlug?: string;
 }): Promise<{ success: boolean; error?: string }> {
     const keyError = getApiKeyError();
     if (keyError) return { success: false, error: keyError };
 
     const baseUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const acceptUrl = `${baseUrl}/accept-invite?token=${inviteToken}`;
+    let acceptUrl: string;
+    if (orgSlug) {
+        const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || process.env.ROOT_DOMAIN || 'blackgem.ai';
+        const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+        acceptUrl = `${protocol}://${orgSlug}.${rootDomain}/accept-invite?token=${inviteToken}`;
+    } else {
+        acceptUrl = `${baseUrl}/accept-invite?token=${inviteToken}`;
+    }
 
     try {
         const { error: sendError } = await getResend().emails.send({
