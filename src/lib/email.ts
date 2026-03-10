@@ -105,12 +105,12 @@ export async function sendWelcomeEmail({
     to,
     userName,
     fundName,
-    fundSlug,
+    orgSlug,
 }: {
     to: string;
     userName: string;
     fundName: string;
-    fundSlug: string;
+    orgSlug: string;
 }): Promise<{ success: boolean; error?: string }> {
     const keyError = getApiKeyError();
     if (keyError) return { success: false, error: keyError };
@@ -118,7 +118,7 @@ export async function sendWelcomeEmail({
     const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || process.env.ROOT_DOMAIN || 'blackgem.ai';
     const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
     const dashboardUrl = process.env.NODE_ENV === 'production'
-        ? `${protocol}://${fundSlug}.${rootDomain}/dashboard`
+        ? `${protocol}://${orgSlug}.${rootDomain}/dashboard`
         : `http://localhost:3002/dashboard`;
 
     try {
