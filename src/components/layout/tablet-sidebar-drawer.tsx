@@ -37,7 +37,7 @@ export function TabletSidebarDrawer({
     <>
       <button
         onClick={() => setOpen(true)}
-        className="fixed top-4 left-4 z-20 hidden md:flex xl:hidden items-center justify-center h-8 w-8 rounded-md hover:bg-[#1E293B] transition-colors"
+        className="fixed top-4 left-4 z-[35] hidden md:flex xl:hidden items-center justify-center h-8 w-8 rounded-md hover:bg-[#1E293B] transition-colors"
         aria-label="Open navigation"
       >
         <Menu className="h-5 w-5 text-[#94A3B8]" />
