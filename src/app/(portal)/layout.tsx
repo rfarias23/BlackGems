@@ -1,5 +1,6 @@
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { PortalSidebar } from '@/components/portal/portal-sidebar';
 import { PortalHeader } from '@/components/portal/portal-header';
@@ -14,8 +15,22 @@ export default async function PortalLayout({
 }) {
     const session = await auth();
 
-    if (!session?.user) {
+    if (!session?.user?.id) {
         redirect('/login');
+    }
+
+    // Resolve org branding from subdomain
+    const headerList = await headers();
+    const orgSlug = headerList.get('x-org-slug');
+
+    let orgName: string | null = null;
+    if (orgSlug) {
+        const org = await prisma.organization.findUnique({
+            where: { slug: orgSlug },
+            select: { name: true },
+        });
+        if (!org) redirect('https://www.blackgem.ai');
+        orgName = org.name;
     }
 
     // Resolve investor name for the sidebar
@@ -35,6 +50,7 @@ export default async function PortalLayout({
                 <PortalSidebar
                     investorName={investorName}
                     userName={session.user.name}
+                    orgName={orgName}
                 />
             </div>
 

@@ -132,7 +132,7 @@ describe('registerWithOnboarding', () => {
         to: 'martha@fund.com',
         userName: 'Martha Smith',
         fundName: 'Martha Fund',
-        fundSlug: 'martha-fund',
+        orgSlug: 'martha-fund',
       })
     })
 

@@ -31,13 +31,13 @@ async function isAdminRole(userId: string): Promise<boolean> {
 }
 
 /**
- * Reads the fund slug injected by middleware from the request headers.
+ * Reads the org slug injected by middleware from the request headers.
  * Returns null if no subdomain was detected.
  */
-async function getFundSlugFromHeaders(): Promise<string | null> {
+async function getOrgSlugFromHeaders(): Promise<string | null> {
   try {
     const headersList = await headers()
-    return headersList.get('x-fund-slug')
+    return headersList.get('x-org-slug')
   } catch {
     // headers() may throw outside of request context (e.g., in tests)
     return null
@@ -124,7 +124,7 @@ export async function requireFundAccess(userId: string, fundId: string) {
  * Returns the active fund ID for the current user.
  *
  * Resolution order:
- * 1. Subdomain-resolved fund (from x-fund-slug header → find Fund by slug → verify access)
+ * 1. Subdomain-resolved fund (from x-org-slug header → find Fund by org slug → verify access)
  * 2. Cookie value (if user still has access)
  * 3. First fund the user has membership in
  * 4. First fund in DB (for admins with no memberships)
@@ -154,13 +154,14 @@ export async function getAuthorizedFundId(userId: string): Promise<string | null
       return m?.isActive === true
     }
 
-    // 1. Try subdomain-resolved fund (from middleware header)
-    const fundSlug = await getFundSlugFromHeaders()
-    if (fundSlug) {
-      const fund = await prisma.fund.findUnique({
-        where: { slug: fundSlug },
-        select: { id: true, organizationId: true },
+    // 1. Try subdomain-resolved fund (from middleware header: org slug → org's first fund)
+    const orgSlug = await getOrgSlugFromHeaders()
+    if (orgSlug) {
+      const org = await prisma.organization.findUnique({
+        where: { slug: orgSlug },
+        select: { funds: { select: { id: true, organizationId: true }, take: 1, orderBy: { createdAt: 'asc' } } },
       })
+      const fund = org?.funds[0]
       if (fund && await canAccessFund(fund.id, fund.organizationId)) {
         await trySaveActiveFundId(fund.id)
         return fund.id

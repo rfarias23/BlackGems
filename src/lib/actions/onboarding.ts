@@ -219,7 +219,7 @@ export async function registerWithOnboarding(
       to: normalizedEmail,
       userName: data.userName,
       fundName,
-      fundSlug,
+      orgSlug,
     }).catch((err) => console.error('Welcome email failed:', err))
 
     return { success: true, fundSlug, skipPayment }
