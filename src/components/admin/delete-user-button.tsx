@@ -53,7 +53,7 @@ export function DeleteUserButton({ userId, userName }: DeleteUserButtonProps) {
             </DialogTrigger>
             <DialogContent className="bg-[#1E293B] text-[#F8FAFC] border-[#334155]">
                 <DialogHeader>
-                    <DialogTitle>Delete User</DialogTitle>
+                    <DialogTitle className="text-[#94A3B8]">Delete User</DialogTitle>
                     <DialogDescription className="text-[#94A3B8]">
                         Are you sure you want to delete &quot;{userName}&quot;? Their account will be
                         deactivated and they will no longer be able to log in.
