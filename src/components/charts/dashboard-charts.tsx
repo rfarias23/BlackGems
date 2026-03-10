@@ -21,7 +21,7 @@ export function DashboardCharts({
   return (
     <>
       {/* IRR Card + MOIC Chart + Sector Allocation */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-7">
         <Card className="col-span-4">
           <CardHeader>
             <div className="flex items-center justify-between">

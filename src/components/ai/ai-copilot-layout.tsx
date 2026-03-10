@@ -5,8 +5,8 @@ import { AICopilot } from './ai-copilot'
 
 /**
  * Renders the AI panel fixed to the right side of the viewport.
- * - Tablet (md–lg): overlays with a backdrop
- * - Desktop (lg+): side-by-side, content pushes left
+ * - Tablet (md–xl): overlays with a backdrop
+ * - Desktop (xl+): side-by-side, content pushes left
  */
 export function AICopilotPanel() {
   const { isOpen, isEnabled, setIsOpen } = useAICopilot()
@@ -17,7 +17,7 @@ export function AICopilotPanel() {
     <>
       {/* Tablet backdrop (md–lg only) — closes panel on click */}
       <div
-        className="fixed inset-0 z-30 bg-black/50 hidden md:block lg:hidden"
+        className="fixed inset-0 z-30 bg-black/50 hidden md:block xl:hidden"
         onClick={() => setIsOpen(false)}
       />
       {/* Panel */}
@@ -30,8 +30,8 @@ export function AICopilotPanel() {
 
 /**
  * Wraps main content and applies right padding when the AI panel is open.
- * Padding only applies at lg+ (desktop) where the panel is side-by-side.
- * On tablet (md–lg), the panel overlays without pushing content.
+ * Padding only applies at xl+ (desktop) where the panel is side-by-side.
+ * On tablet (md–xl), the panel overlays without pushing content.
  */
 export function AICopilotContentWrapper({
   children,
@@ -44,8 +44,8 @@ export function AICopilotContentWrapper({
 
   return (
     <div
-      className={`md:pl-64 flex flex-col min-h-screen transition-[padding] duration-200 ${
-        showPanel ? 'lg:pr-[400px]' : ''
+      className={`md:pl-14 xl:pl-64 flex flex-col h-dvh overflow-hidden transition-[padding] duration-200 ${
+        showPanel ? 'xl:pr-[400px]' : ''
       }`}
     >
       {children}

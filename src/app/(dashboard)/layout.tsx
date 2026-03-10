@@ -9,6 +9,7 @@ import { redirect } from 'next/navigation';
 import { AICopilotProvider } from '@/components/ai/ai-copilot-provider';
 import { AICopilotPanel, AICopilotContentWrapper } from '@/components/ai/ai-copilot-layout';
 import { MobileEmmaShell } from '@/components/ai/mobile-emma-shell';
+import { TabletSidebarDrawer } from '@/components/layout/tablet-sidebar-drawer';
 import { prisma } from '@/lib/prisma';
 import { checkSubscriptionAccess } from '@/lib/shared/subscription-access';
 import { BlockModal } from '@/components/billing/block-modal';
@@ -130,7 +131,7 @@ export default async function DashboardLayout({
                 {/* Desktop/Tablet: Cockpit (>= 768px) */}
                 <div className="hidden md:block">
                     {/* Sidebar fixed on the left */}
-                    <div className="fixed inset-y-0 z-50 hidden w-64 md:flex md:flex-col">
+                    <div className="fixed inset-y-0 z-50 hidden w-64 xl:flex xl:flex-col">
                         <Sidebar
                             userRole={session?.user?.role as string | undefined}
                             funds={funds}
@@ -140,10 +141,19 @@ export default async function DashboardLayout({
                         />
                     </div>
 
+                    {/* Tablet sidebar drawer (md–xl) */}
+                    <TabletSidebarDrawer
+                        userRole={session?.user?.role as string | undefined}
+                        funds={funds}
+                        activeFundId={fundId}
+                        permissions={permissions}
+                        trialDaysRemaining={subscriptionAccess.allowed ? subscriptionAccess.daysRemaining : undefined}
+                    />
+
                     {/* Main content area — padding adjusts when AI panel is open */}
                     <AICopilotContentWrapper>
                         <Header user={session?.user} unreadCount={unreadCount} />
-                        <main className="flex-1 p-8">
+                        <main className="flex-1 overflow-y-auto p-8">
                             {children}
                         </main>
                     </AICopilotContentWrapper>
