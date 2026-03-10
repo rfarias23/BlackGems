@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
-import { Menu } from 'lucide-react'
+import { Menu, ChevronLeft } from 'lucide-react'
 import {
   Sheet,
   SheetContent,
@@ -46,12 +46,12 @@ export function TabletSidebarDrawer({
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent
           side="left"
-          className="w-64 p-0 bg-[#11141D] border-[#334155]"
+          className="w-64 p-0 bg-[#11141D] border-[#334155] [&>button]:hidden"
         >
           <SheetTitle className="sr-only">Navigation</SheetTitle>
           {/* Re-declare dark CSS vars — portal renders outside the layout div */}
           <div
-            className="h-full"
+            className="relative h-full"
             style={{
               '--background': '#11141D',
               '--foreground': '#F8FAFC',
@@ -73,6 +73,13 @@ export function TabletSidebarDrawer({
               colorScheme: 'dark',
             } as React.CSSProperties}
           >
+            <button
+              onClick={() => setOpen(false)}
+              className="absolute top-4 right-3 p-2 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors"
+              aria-label="Close navigation"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
             <Sidebar
               userRole={userRole}
               funds={funds}
