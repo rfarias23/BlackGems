@@ -3,6 +3,9 @@ name: Deploy to EC2
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "**.md"
+      - ".claude/**"
 
 env:
   AWS_REGION: us-east-1
