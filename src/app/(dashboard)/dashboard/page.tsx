@@ -86,7 +86,7 @@ export default async function DashboardPage() {
 
             <ErrorBoundary module="Dashboard">
             {/* Top Metrics */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -95,7 +95,7 @@ export default async function DashboardPage() {
                         <DollarSign className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-foreground font-mono tabular-nums">{data.totalAUM}</div>
+                        <div className="text-3xl md:text-2xl xl:text-3xl font-bold text-foreground font-mono tabular-nums">{data.totalAUM}</div>
                         <p className="text-xs text-muted-foreground">
                             {data.capitalCallPct} capital called
                         </p>
@@ -109,7 +109,7 @@ export default async function DashboardPage() {
                         <Activity className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-foreground font-mono tabular-nums">{data.activeDeals}</div>
+                        <div className="text-3xl md:text-2xl xl:text-3xl font-bold text-foreground font-mono tabular-nums">{data.activeDeals}</div>
                         <p className="text-xs text-muted-foreground">
                             {data.totalDeals} total in pipeline
                         </p>
@@ -123,7 +123,7 @@ export default async function DashboardPage() {
                         <Users className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-foreground font-mono tabular-nums">{data.investorCount}</div>
+                        <div className="text-3xl md:text-2xl xl:text-3xl font-bold text-foreground font-mono tabular-nums">{data.investorCount}</div>
                         <p className="text-xs text-muted-foreground">
                             {data.activeInvestors} active
                         </p>
@@ -137,7 +137,7 @@ export default async function DashboardPage() {
                         <TrendingUp className="h-4 w-4 text-emerald-600" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-emerald-600 font-mono tabular-nums">{data.grossMoic}</div>
+                        <div className="text-3xl md:text-2xl xl:text-3xl font-bold text-emerald-600 font-mono tabular-nums">{data.grossMoic}</div>
                         <p className="text-xs text-muted-foreground">
                             TVPI: {data.tvpi}
                         </p>
@@ -146,7 +146,7 @@ export default async function DashboardPage() {
             </div>
 
             {/* Second Row: Commitments + Portfolio + Conversion */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-3">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -155,7 +155,7 @@ export default async function DashboardPage() {
                         <DollarSign className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-foreground font-mono tabular-nums">{data.totalCommitments}</div>
+                        <div className="text-3xl md:text-2xl xl:text-3xl font-bold text-foreground font-mono tabular-nums">{data.totalCommitments}</div>
                         <p className="text-xs text-muted-foreground">
                             {data.capitalCalled} called
                         </p>
@@ -169,7 +169,7 @@ export default async function DashboardPage() {
                         <Briefcase className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-foreground font-mono tabular-nums">{data.portfolioCompanies}</div>
+                        <div className="text-3xl md:text-2xl xl:text-3xl font-bold text-foreground font-mono tabular-nums">{data.portfolioCompanies}</div>
                         <p className="text-xs text-muted-foreground">
                             Net MOIC: {data.netMoic}
                         </p>
@@ -183,7 +183,7 @@ export default async function DashboardPage() {
                         <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-foreground font-mono tabular-nums">
+                        <div className="text-3xl md:text-2xl xl:text-3xl font-bold text-foreground font-mono tabular-nums">
                             {data.totalDeals > 0 ? `${Math.round((data.closedWonDeals / data.totalDeals) * 100)}%` : '—'}
                         </div>
                         <p className="text-xs text-muted-foreground">
@@ -204,8 +204,8 @@ export default async function DashboardPage() {
             )}
 
             {/* Bottom Row: Recent Activity + Deal Pipeline */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                <Card className="col-span-4">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-7">
+                <Card className="col-span-full xl:col-span-4">
                     <CardHeader>
                         <CardTitle className="text-foreground">Recent Activity</CardTitle>
                     </CardHeader>
@@ -234,7 +234,7 @@ export default async function DashboardPage() {
                         )}
                     </CardContent>
                 </Card>
-                <Card className="col-span-3">
+                <Card className="col-span-full xl:col-span-3">
                     <CardHeader className="flex flex-row items-center justify-between">
                         <CardTitle className="text-foreground">Deal Pipeline</CardTitle>
                         <Link href="/deals" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
