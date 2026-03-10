@@ -29,9 +29,10 @@ export function AICopilotPanel() {
 }
 
 /**
- * Wraps main content and applies right padding when the AI panel is open.
- * Padding only applies at xl+ (desktop) where the panel is side-by-side.
- * On tablet (md–xl), the panel overlays without pushing content.
+ * Wraps main content with viewport-height scroll containment.
+ * - Left padding: xl+ (256px for sidebar); tablet has no left offset (sidebar is a drawer).
+ * - Right padding: xl+ when AI panel is open (400px side-by-side).
+ * - Height: h-dvh + overflow-hidden; scrolling is delegated to the inner <main>.
  */
 export function AICopilotContentWrapper({
   children,

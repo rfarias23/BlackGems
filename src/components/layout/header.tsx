@@ -37,7 +37,7 @@ function getInitials(name: string | null | undefined): string {
 export function Header({ user, unreadCount = 0 }: HeaderProps) {
 
     return (
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-card px-6 text-card-foreground">
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-card pl-14 pr-6 xl:px-6 text-card-foreground">
             <div className="flex items-center gap-4">
                 {/* Placeholder for future breadcrumbs or page title */}
             </div>

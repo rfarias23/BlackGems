@@ -128,7 +128,7 @@ export default async function DashboardLayout({
                 </div>
                 )}
 
-                {/* Desktop/Tablet: Cockpit (>= 768px) */}
+                {/* Cockpit: tablet (md–xl) uses drawer sidebar, desktop (xl+) uses fixed sidebar */}
                 <div className="hidden md:block">
                     {/* Sidebar fixed on the left */}
                     <div className="fixed inset-y-0 z-50 hidden w-64 xl:flex xl:flex-col">
