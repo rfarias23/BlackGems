@@ -15,7 +15,7 @@ export function AICopilotPanel() {
 
   return (
     <>
-      {/* Tablet backdrop (md–lg only) — closes panel on click */}
+      {/* Tablet backdrop (md–xl only) — closes panel on click */}
       <div
         className="fixed inset-0 z-30 bg-black/50 hidden md:block xl:hidden"
         onClick={() => setIsOpen(false)}
@@ -44,7 +44,7 @@ export function AICopilotContentWrapper({
 
   return (
     <div
-      className={`md:pl-14 xl:pl-64 flex flex-col h-dvh overflow-hidden transition-[padding] duration-200 ${
+      className={`xl:pl-64 flex flex-col h-dvh overflow-hidden transition-[padding] duration-200 ${
         showPanel ? 'xl:pr-[400px]' : ''
       }`}
     >

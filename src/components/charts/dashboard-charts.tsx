@@ -22,7 +22,7 @@ export function DashboardCharts({
     <>
       {/* IRR Card + MOIC Chart + Sector Allocation */}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-7">
-        <Card className="col-span-4">
+        <Card className="col-span-full xl:col-span-4">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-foreground">MOIC by Company</CardTitle>
@@ -40,7 +40,7 @@ export function DashboardCharts({
             <MoicBarChart data={moicByCompany} theme="dark" height={250} />
           </CardContent>
         </Card>
-        <Card className="col-span-3">
+        <Card className="col-span-full xl:col-span-3">
           <CardHeader>
             <CardTitle className="text-foreground">Sector Allocation</CardTitle>
           </CardHeader>
