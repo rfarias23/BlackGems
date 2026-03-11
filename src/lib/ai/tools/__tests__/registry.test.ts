@@ -58,7 +58,7 @@ describe('ToolRegistry', () => {
   it('converts to AI SDK tools format', () => {
     registry.register(makeTool({ name: 'getPipeline' }))
 
-    const ctx = { fundId: 'f1', currency: 'USD' as const, userId: 'u1' }
+    const ctx = { fundId: 'f1', currency: 'USD' as const, userId: 'u1', conversationId: 'c1' }
     const sdkTools = registry.toSDKTools(ctx)
 
     expect(sdkTools).toHaveProperty('getPipeline')

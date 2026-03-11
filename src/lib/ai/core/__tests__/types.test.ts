@@ -23,6 +23,7 @@ describe('core/types', () => {
       fundId: 'fund_123',
       currency: 'USD',
       userId: 'user_456',
+      conversationId: 'conv_789',
     }
 
     expect(ctx.fundId).toBe('fund_123')

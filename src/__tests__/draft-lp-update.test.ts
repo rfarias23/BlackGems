@@ -70,7 +70,7 @@ describe('draft-lp-update tool', () => {
 
   it('returns error if fund not found', async () => {
     vi.mocked(prisma.fund.findUnique).mockResolvedValue(null as never)
-    const result = await draftLPUpdateTool.execute({ periodType: 'Q1', year: 2026 }, mockCtx)
+    const result = await draftLPUpdateTool.execute({ periodType: 'Q1', year: 2026, tone: 'formal' }, mockCtx)
     expect(result).toMatchObject({ error: expect.stringContaining('Fund') })
   })
 })

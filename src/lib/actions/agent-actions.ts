@@ -6,7 +6,7 @@ import { requireFundAccess } from '@/lib/shared/fund-access'
 import { logAudit } from '@/lib/shared/audit'
 import { revalidatePath } from 'next/cache'
 import { notDeleted } from '@/lib/shared/soft-delete'
-import { DealStage } from '@prisma/client'
+import { DealStage, type Prisma } from '@prisma/client'
 import { canTransitionDealStage } from '@/lib/shared/stage-transitions'
 
 // ============================================================================
@@ -17,7 +17,7 @@ export async function createAgentAction(input: {
   fundId: string
   conversationId: string
   tool: string
-  proposedPayload: Record<string, unknown>
+  proposedPayload: Prisma.InputJsonValue
   costUsd?: number
 }): Promise<{ success: true; actionId: string } | { error: string }> {
   const session = await auth()
@@ -50,7 +50,7 @@ export async function createAgentAction(input: {
 
 export async function approveAgentAction(
   actionId: string,
-  editedPayload?: Record<string, unknown>
+  editedPayload?: Prisma.InputJsonValue
 ): Promise<{ success: true; resultEntityId?: string } | { error: string }> {
   const session = await auth()
   if (!session?.user?.id) return { error: 'Unauthorized' }
@@ -75,7 +75,7 @@ export async function approveAgentAction(
       where: { id: actionId },
       data: {
         status,
-        finalPayload: payload,
+        finalPayload: payload as Prisma.InputJsonValue,
         resultEntityId,
         resolvedAt: new Date(),
       },
