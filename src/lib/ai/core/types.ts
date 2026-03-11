@@ -13,6 +13,7 @@ export interface ToolContext {
   fundId: string
   currency: CurrencyCode
   userId: string
+  conversationId: string
 }
 
 export interface ITool<TInput = unknown, TOutput = unknown> {
