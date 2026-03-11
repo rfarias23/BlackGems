@@ -75,13 +75,29 @@ const EXPECTED_TOOL_METADATA = [
     description: 'Get all contacts associated with a specific deal including names, roles, titles, and contact information. Use this when the user asks about who is involved in a deal or needs someone\'s contact details.',
     category: 'deals',
   },
+  // Phase 2: Write tools (approval-gated)
+  {
+    name: 'updateDealStage',
+    description: 'Move a deal to a new pipeline stage, optionally add a note and follow-up task. Requires user approval before executing.',
+    category: 'deals',
+  },
+  {
+    name: 'logMeetingNote',
+    description: 'Log a meeting or call: extracts summary, action items, optional follow-up email draft, and optional stage change suggestion. Requires user approval before executing.',
+    category: 'deals',
+  },
+  {
+    name: 'draftLPUpdate',
+    description: 'Draft a quarterly LP update letter from live fund data. First call assembles fund context. Second call (with sections populated) creates the draft for approval.',
+    category: 'operations',
+  },
 ] as const
 
 describe('tool-parity: registry contains all expected tools', () => {
   const registry = createDefaultRegistry()
 
-  it('has exactly 13 tools', () => {
-    expect(registry.getAll()).toHaveLength(13)
+  it('has exactly 16 tools', () => {
+    expect(registry.getAll()).toHaveLength(16)
   })
 
   it('all expected tool names are present', () => {
@@ -110,12 +126,16 @@ describe('tool-parity: registry contains all expected tools', () => {
     expect(registry.getByCategory('capital')).toHaveLength(6)
   })
 
-  it('deals category has 5 tools (2 existing + 3 new)', () => {
-    expect(registry.getByCategory('deals')).toHaveLength(5)
+  it('deals category has 7 tools (5 read + 2 write)', () => {
+    expect(registry.getByCategory('deals')).toHaveLength(7)
   })
 
-  it('toSDKTools produces all 13 tools with expected shape', () => {
-    const ctx = { fundId: 'test-fund', currency: 'USD' as const, userId: 'test-user' }
+  it('operations category has 1 tool', () => {
+    expect(registry.getByCategory('operations')).toHaveLength(1)
+  })
+
+  it('toSDKTools produces all 16 tools with expected shape', () => {
+    const ctx = { fundId: 'test-fund', currency: 'USD' as const, userId: 'test-user', conversationId: 'test-conv' }
     const sdkTools = registry.toSDKTools(ctx)
 
     for (const expected of EXPECTED_TOOL_METADATA) {

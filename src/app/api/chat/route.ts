@@ -121,6 +121,7 @@ export async function POST(req: Request) {
     userId: session.user.id,
     fundId: activeFund.fundId,
     currency: activeFund.currency,
+    conversationId,
     session,
   })
 

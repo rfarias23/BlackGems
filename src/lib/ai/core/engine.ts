@@ -13,6 +13,8 @@ import {
   formatGreetingBlock,
 } from '../prompt/sections/dynamic'
 import { createDefaultRegistry } from '../tools/create-default-registry'
+import { writeCapabilitiesSection } from '../prompt/sections/write-capabilities'
+import { financialGuardrailsSection } from '../prompt/sections/financial-guardrails'
 import type { ToolContext } from './types'
 import type { CurrencyCode } from '@/lib/shared/formatters'
 import { getConversations } from '@/lib/actions/ai-conversations'
@@ -27,6 +29,7 @@ export interface EngineInput {
   userId: string
   fundId: string
   currency: CurrencyCode
+  conversationId: string
   session: { user?: { id?: string; name?: string | null; role?: string } }
 }
 
@@ -40,7 +43,7 @@ export interface EngineOutput {
 }
 
 export async function assembleEngine(input: EngineInput): Promise<EngineOutput> {
-  const { userId, fundId, currency, session } = input
+  const { userId, fundId, currency, conversationId, session } = input
 
   // 1. Assemble context (parallel)
   const [fundContext, conversations] = await Promise.all([
@@ -51,7 +54,7 @@ export async function assembleEngine(input: EngineInput): Promise<EngineOutput> 
   const isFirstTime = conversations.length <= 1
 
   // 2. Resolve tools — bind per-request context to singleton registry
-  const toolContext: ToolContext = { fundId, currency, userId }
+  const toolContext: ToolContext = { fundId, currency, userId, conversationId }
   const tools = defaultRegistry.toSDKTools(toolContext)
 
   // 3. Compose prompt
@@ -66,6 +69,8 @@ export async function assembleEngine(input: EngineInput): Promise<EngineOutput> 
     .addSection(formatCurrencyBlock(currency))
     .addSection(fundIsolationSection(fundName, fundIdStr))
     .addSection(formatToolsBlock(defaultRegistry))
+    .addSection(writeCapabilitiesSection())
+    .addSection(financialGuardrailsSection())
     .addSection(formattingRulesSection())
     .addSection(formatGreetingBlock(userContext, isFirstTime))
 

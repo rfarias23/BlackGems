@@ -12,6 +12,9 @@ import { getDistributionDetails } from './capital/get-distribution-details'
 import { getDDOverview } from './deals/get-dd-overview'
 import { getDealDDItems } from './deals/get-deal-dd-items'
 import { getDealContacts } from './deals/get-deal-contacts'
+import { updateDealStageTool } from './deals/update-deal-stage'
+import { logMeetingNoteTool } from './activities/log-meeting-note'
+import { draftLPUpdateTool } from './reports/draft-lp-update'
 
 /**
  * Creates a ToolRegistry pre-loaded with all Phase 1 + Phase 1.5 read-only tools.
@@ -39,6 +42,11 @@ export function createDefaultRegistry(): ToolRegistry {
   registry.register(getDDOverview)
   registry.register(getDealDDItems)
   registry.register(getDealContacts)
+
+  // Phase 2: Write tools (approval-gated)
+  registry.register(updateDealStageTool)
+  registry.register(logMeetingNoteTool)
+  registry.register(draftLPUpdateTool)
 
   return registry
 }
