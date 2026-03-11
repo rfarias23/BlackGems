@@ -1,6 +1,7 @@
 'use client'
 
 import type { DynamicToolUIPart } from 'ai'
+import { AIApprovalCard } from './ai-approval-card'
 
 // ---------------------------------------------------------------------------
 // Typed tool result shapes (match the server-side tool return types)
@@ -323,6 +324,21 @@ interface AIToolResultProps {
 }
 
 export function AIToolResult({ part }: AIToolResultProps) {
+  // Early return for approval cards — card has its own styling, no wrapper div
+  if (part.state === 'output-available' && part.output) {
+    const output = part.output as Record<string, unknown>
+    if (output.needsApproval === true) {
+      return (
+        <AIApprovalCard
+          actionId={output.actionId as string}
+          tool={output.tool as string}
+          summary={output.summary as string}
+          details={output.details as Record<string, string>}
+        />
+      )
+    }
+  }
+
   const toolName = part.toolName
   const isLoading =
     part.state === 'input-streaming' || part.state === 'input-available'
