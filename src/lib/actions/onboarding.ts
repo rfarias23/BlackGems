@@ -15,7 +15,7 @@ import type { Currency, FundType, OrgEntityType } from '@prisma/client'
 // ============================================================================
 
 type OnboardingResult =
-  | { success: true; fundSlug: string; skipPayment: boolean }
+  | { success: true; orgSlug: string; skipPayment: boolean }
   | { error: string }
 
 // Beta codes: extend trial and skip payment step
@@ -222,7 +222,7 @@ export async function registerWithOnboarding(
       orgSlug,
     }).catch((err) => console.error('Welcome email failed:', err))
 
-    return { success: true, fundSlug, skipPayment }
+    return { success: true, orgSlug, skipPayment }
   } catch (error) {
     // Handle Prisma unique constraint violation (race condition)
     if (

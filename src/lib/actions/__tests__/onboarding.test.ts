@@ -111,12 +111,12 @@ describe('registerWithOnboarding', () => {
   describe('happy path', () => {
     it('registers Search Fund successfully', async () => {
       const result = await registerWithOnboarding(searchFundInput)
-      expect(result).toEqual({ success: true, fundSlug: 'martha-fund', skipPayment: false })
+      expect(result).toEqual({ success: true, orgSlug: 'martha-fund', skipPayment: false })
     })
 
     it('registers PE Fund successfully', async () => {
       const result = await registerWithOnboarding(peFundInput)
-      expect(result).toEqual({ success: true, fundSlug: 'andes-fund-i', skipPayment: false })
+      expect(result).toEqual({ success: true, orgSlug: 'andes-capital', skipPayment: false })
     })
 
     it('calls logAudit 3 times on success', async () => {
@@ -138,12 +138,12 @@ describe('registerWithOnboarding', () => {
 
     it('Search Fund uses orgSlug for fund slug', async () => {
       const result = await registerWithOnboarding(searchFundInput)
-      expect(result).toEqual({ success: true, fundSlug: 'martha-fund', skipPayment: false })
+      expect(result).toEqual({ success: true, orgSlug: 'martha-fund', skipPayment: false })
     })
 
     it('PE Fund uses separate fund slug', async () => {
       const result = await registerWithOnboarding(peFundInput)
-      expect(result).toEqual({ success: true, fundSlug: 'andes-fund-i', skipPayment: false })
+      expect(result).toEqual({ success: true, orgSlug: 'andes-capital', skipPayment: false })
     })
 
     it('Search Fund with EUR currency succeeds', async () => {
@@ -151,7 +151,7 @@ describe('registerWithOnboarding', () => {
         ...searchFundInput,
         currency: 'EUR',
       })
-      expect(result).toEqual({ success: true, fundSlug: 'martha-fund', skipPayment: false })
+      expect(result).toEqual({ success: true, orgSlug: 'martha-fund', skipPayment: false })
     })
 
     it('assigns FUND_ADMIN role (not SUPER_ADMIN) to registered users', async () => {
@@ -174,7 +174,7 @@ describe('registerWithOnboarding', () => {
       })
 
       const result = await registerWithOnboarding(searchFundInput)
-      expect(result).toEqual({ success: true, fundSlug: 'martha-fund', skipPayment: false })
+      expect(result).toEqual({ success: true, orgSlug: 'martha-fund', skipPayment: false })
       expect(capturedUserData).not.toBeNull()
       expect(capturedUserData!.role).toBe('FUND_ADMIN')
     })
@@ -281,13 +281,13 @@ describe('registerWithOnboarding', () => {
     it('succeeds even if welcome email fails', async () => {
       vi.mocked(sendWelcomeEmail).mockRejectedValue(new Error('Resend down'))
       const result = await registerWithOnboarding(searchFundInput)
-      expect(result).toEqual({ success: true, fundSlug: 'martha-fund', skipPayment: false })
+      expect(result).toEqual({ success: true, orgSlug: 'martha-fund', skipPayment: false })
     })
 
     it('succeeds even if audit logging fails', async () => {
       vi.mocked(logAudit).mockRejectedValue(new Error('Audit DB error'))
       const result = await registerWithOnboarding(searchFundInput)
-      expect(result).toEqual({ success: true, fundSlug: 'martha-fund', skipPayment: false })
+      expect(result).toEqual({ success: true, orgSlug: 'martha-fund', skipPayment: false })
     })
   })
 })

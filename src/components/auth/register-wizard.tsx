@@ -137,7 +137,7 @@ export function RegisterWizard() {
   const [isPending, startTransition] = useTransition()
   const [success, setSuccess] = useState(false)
   const [skipPayment, setSkipPayment] = useState(false)
-  const [fundSlug, setFundSlug] = useState<string | null>(null)
+  const [orgSlug, setOrgSlug] = useState<string | null>(null)
 
   // Pre-select vehicle type from query param (?type=search or ?type=pe)
   useEffect(() => {
@@ -279,7 +279,7 @@ export function RegisterWizard() {
     const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'blackgem.ai'
     const isLocal = typeof window !== 'undefined' && window.location.hostname === 'localhost'
     const dashboardUrl = isLocal
-      ? `/dashboard?fund=${slug}`
+      ? `/dashboard?org=${slug}`
       : `https://${slug}.${rootDomain}/dashboard`
 
     setTimeout(() => {
@@ -290,7 +290,7 @@ export function RegisterWizard() {
   function handlePaymentComplete() {
     setSuccess(true)
     setStep(totalSteps - 1)
-    if (fundSlug) redirectToDashboard(fundSlug)
+    if (orgSlug) redirectToDashboard(orgSlug)
   }
 
   function submitRegistration() {
@@ -343,14 +343,14 @@ export function RegisterWizard() {
           // signIn failed — user can still log in manually
         }
 
-        setFundSlug(result.fundSlug)
+        setOrgSlug(result.orgSlug)
         setSkipPayment(result.skipPayment)
 
         if (result.skipPayment) {
           // Beta user — skip payment, go to Done
           setSuccess(true)
           setStep(totalSteps - 1)
-          redirectToDashboard(result.fundSlug)
+          redirectToDashboard(result.orgSlug)
         } else {
           // Regular user — advance to Plan step
           setStep(s => s + 1)
