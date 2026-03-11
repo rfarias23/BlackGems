@@ -64,7 +64,26 @@ describe('canTransitionDealStage', () => {
     })
   })
 
-  describe('terminal states', () => {
+  describe('terminal stages are reachable from any active stage', () => {
+    it('allows any active stage to transition to CLOSED_LOST', () => {
+      const activeStages = [
+        DealStage.IDENTIFIED,
+        DealStage.INITIAL_REVIEW,
+        DealStage.DUE_DILIGENCE,
+        DealStage.CLOSING,
+      ]
+      for (const stage of activeStages) {
+        expect(canTransitionDealStage(stage as any, DealStage.CLOSED_LOST as any)).toBe(true)
+      }
+    })
+
+    it('allows any active stage to transition to CLOSED_WON', () => {
+      expect(canTransitionDealStage(DealStage.CLOSING as any, DealStage.CLOSED_WON as any)).toBe(true)
+      expect(canTransitionDealStage(DealStage.DUE_DILIGENCE as any, DealStage.CLOSED_WON as any)).toBe(true)
+    })
+  })
+
+  describe('terminal states cannot transition out', () => {
     it('CLOSED has no allowed transitions', () => {
       expect(canTransitionDealStage(DealStage.CLOSED as any, DealStage.INITIAL_REVIEW as any)).toBe(false)
       expect(canTransitionDealStage(DealStage.CLOSED as any, DealStage.ON_HOLD as any)).toBe(false)
@@ -72,6 +91,11 @@ describe('canTransitionDealStage', () => {
 
     it('CLOSED_WON has no allowed transitions', () => {
       expect(canTransitionDealStage(DealStage.CLOSED_WON as any, DealStage.CLOSING as any)).toBe(false)
+    })
+
+    it('CLOSED_LOST has no allowed transitions', () => {
+      expect(canTransitionDealStage(DealStage.CLOSED_LOST as any, DealStage.IDENTIFIED as any)).toBe(false)
+      expect(canTransitionDealStage(DealStage.CLOSED_LOST as any, DealStage.ON_HOLD as any)).toBe(false)
     })
   })
 
@@ -105,9 +129,9 @@ describe('canTransitionDealStage', () => {
       expect(canTransitionDealStage(DealStage.ON_HOLD as any, DealStage.DUE_DILIGENCE as any)).toBe(true)
     })
 
-    it('does not allow ON_HOLD to move to terminal stages', () => {
-      expect(canTransitionDealStage(DealStage.ON_HOLD as any, DealStage.CLOSED as any)).toBe(false)
-      expect(canTransitionDealStage(DealStage.ON_HOLD as any, DealStage.PASSED as any)).toBe(false)
+    it('allows ON_HOLD to move to terminal stages', () => {
+      expect(canTransitionDealStage(DealStage.ON_HOLD as any, DealStage.CLOSED_LOST as any)).toBe(true)
+      expect(canTransitionDealStage(DealStage.ON_HOLD as any, DealStage.PASSED as any)).toBe(true)
     })
   })
 })
@@ -118,6 +142,8 @@ describe('getAllowedTransitions', () => {
     expect(allowed).toContain(DealStage.PRELIMINARY_ANALYSIS)
     expect(allowed).toContain(DealStage.PASSED)
     expect(allowed).toContain(DealStage.ON_HOLD)
+    expect(allowed).toContain(DealStage.CLOSED_LOST)
+    expect(allowed).toContain(DealStage.CLOSED_WON)
   })
 
   it('returns empty array for terminal stages', () => {

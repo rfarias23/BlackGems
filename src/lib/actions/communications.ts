@@ -166,6 +166,7 @@ export async function sendBulkCommunication(
           content: body,
           date: new Date(),
           sentBy: userName,
+          status: 'SENT',
         },
       })
 
@@ -336,6 +337,7 @@ export async function logCommunication(
         sentBy: userName,
         followUpDate: followUpDate ? new Date(followUpDate) : null,
         notes: notes || null,
+        status: 'SENT',
       },
     })
 

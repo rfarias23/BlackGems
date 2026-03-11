@@ -155,6 +155,7 @@ model User {
   accounts        Account[]
   investor        Investor?        // LP user linked to investor record
   conversations   Conversation[]
+  agentActions    AgentAction[]
 
   @@index([organizationId])
 }
@@ -275,6 +276,7 @@ model Fund {
   portfolioCompanies PortfolioCompany[]
   reports            Report[]
   conversations      Conversation[]
+  agentActions       AgentAction[]
 
   @@index([organizationId])
 }
@@ -1385,6 +1387,7 @@ model Communication {
   followUpDone Boolean              @default(false)
 
   notes       String?               @db.Text
+  status      CommunicationStatus   @default(DRAFT)
   createdAt   DateTime              @default(now())
 
   @@index([investorId])
@@ -1405,6 +1408,12 @@ enum CommunicationDirection {
   OUTBOUND
 }
 
+enum CommunicationStatus {
+  DRAFT
+  SENT
+  FAILED
+}
+
 // ============================================================================
 // AI COPILOT
 // ============================================================================
@@ -1419,7 +1428,8 @@ model Conversation {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
   archivedAt DateTime?
-  messages   Message[]
+  messages      Message[]
+  agentActions  AgentAction[]
 
   @@index([fundId])
   @@index([userId])
@@ -1438,4 +1448,34 @@ model Message {
 
   @@index([conversationId])
   @@index([createdAt])
+}
+
+enum AgentActionStatus {
+  PROPOSED
+  APPROVED
+  REJECTED
+  EDITED
+}
+
+model AgentAction {
+  id              String            @id @default(cuid())
+  fundId          String
+  conversationId  String
+  userId          String
+  tool            String
+  status          AgentActionStatus @default(PROPOSED)
+  proposedPayload Json
+  finalPayload    Json?
+  resultEntityId  String?
+  costUsd         Float?
+  createdAt       DateTime          @default(now())
+  resolvedAt      DateTime?
+  fund            Fund              @relation(fields: [fundId], references: [id], onDelete: Cascade)
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversation    Conversation      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([fundId])
+  @@index([conversationId])
+  @@index([userId])
+  @@index([status])
 }
