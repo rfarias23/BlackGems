@@ -101,7 +101,7 @@ export function AIApprovalCard({ actionId, tool, summary, details }: AIApprovalC
           <>
             <button
               onClick={handleApprove}
-              className="px-4 py-1.5 rounded text-sm font-medium bg-[#B8960C] text-black hover:bg-[#D4AD0E] transition-colors"
+              className="px-4 py-1.5 rounded text-sm font-medium bg-[#3E5CFF] text-white hover:bg-[#5A75FF] transition-colors"
             >
               Confirm
             </button>

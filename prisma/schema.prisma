@@ -1387,7 +1387,7 @@ model Communication {
   followUpDone Boolean              @default(false)
 
   notes       String?               @db.Text
-  status      CommunicationStatus   @default(SENT)
+  status      CommunicationStatus   @default(DRAFT)
   createdAt   DateTime              @default(now())
 
   @@index([investorId])

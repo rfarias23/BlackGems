@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
+import { notDeleted } from '@/lib/shared/soft-delete'
 import type { ITool, ToolContext } from '../../core/types'
 import type { ApprovalResult } from '../shared/approval-types'
 import { resolveDealName } from '../deals/deal-name-resolver'
@@ -55,6 +56,19 @@ export const logMeetingNoteTool: ITool<Input, Output> = {
       dealName = dealResult.dealName
     }
 
+    // Resolve investor if provided
+    let investorId: string | undefined
+    let investorNameResolved: string | undefined
+    if (input.investorName) {
+      const investor = await resolveInvestorName(input.investorName, ctx.fundId)
+      if (investor) {
+        investorId = investor.id
+        investorNameResolved = investor.name
+      } else {
+        console.warn(`Investor "${input.investorName}" not found in fund ${ctx.fundId} — email draft will be saved without investor link`)
+      }
+    }
+
     // Resolve stage alias if suggested
     let resolvedStage: string | undefined
     if (input.suggestedStageChange) {
@@ -64,6 +78,7 @@ export const logMeetingNoteTool: ITool<Input, Output> = {
     // Build details
     const details: Record<string, string> = {}
     if (dealName) details['Deal'] = dealName
+    if (investorNameResolved) details['Investor'] = investorNameResolved
     details['Type'] = input.meetingType
     details['Summary'] = input.extractedSummary.slice(0, 80) + (input.extractedSummary.length > 80 ? '...' : '')
 
@@ -83,6 +98,8 @@ export const logMeetingNoteTool: ITool<Input, Output> = {
         proposedPayload: {
           dealId,
           dealName,
+          investorId,
+          investorName: investorNameResolved ?? input.investorName,
           meetingType: input.meetingType,
           meetingDate: input.meetingDate ?? new Date().toISOString(),
           extractedSummary: input.extractedSummary,
@@ -106,4 +123,29 @@ export const logMeetingNoteTool: ITool<Input, Output> = {
       details,
     }
   },
+}
+
+async function resolveInvestorName(
+  nameQuery: string,
+  fundId: string
+): Promise<{ id: string; name: string } | null> {
+  const lower = nameQuery.toLowerCase()
+
+  const investors = await prisma.investor.findMany({
+    where: {
+      commitments: { some: { fundId, ...notDeleted } },
+      ...notDeleted,
+    },
+    select: { id: true, name: true },
+  })
+
+  // Exact match
+  const exact = investors.find(i => i.name.toLowerCase() === lower)
+  if (exact) return exact
+
+  // Substring match
+  const substring = investors.filter(i => i.name.toLowerCase().includes(lower))
+  if (substring.length === 1) return substring[0]
+
+  return null
 }

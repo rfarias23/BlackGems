@@ -261,20 +261,24 @@ async function executeLogMeetingNote(
       })
     }
 
-    if (emailDraft && investorId) {
-      const user = await tx.user.findUnique({ where: { id: userId }, select: { name: true } })
-      await tx.communication.create({
-        data: {
-          investorId,
-          type: 'EMAIL',
-          direction: 'OUTBOUND',
-          subject: emailDraft.subject,
-          content: emailDraft.body,
-          date: new Date(),
-          status: 'DRAFT',
-          sentBy: user?.name ?? null,
-        },
-      })
+    if (emailDraft) {
+      if (investorId) {
+        const user = await tx.user.findUnique({ where: { id: userId }, select: { name: true } })
+        await tx.communication.create({
+          data: {
+            investorId,
+            type: 'EMAIL',
+            direction: 'OUTBOUND',
+            subject: emailDraft.subject,
+            content: emailDraft.body,
+            date: new Date(),
+            status: 'DRAFT',
+            sentBy: user?.name ?? null,
+          },
+        })
+      } else {
+        console.warn(`Email draft skipped — investor not resolved for meeting note`)
+      }
     }
 
     if (stageChange?.newStage && dealId) {

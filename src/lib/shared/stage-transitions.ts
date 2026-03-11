@@ -25,35 +25,34 @@ const DEAL_STAGE_TRANSITIONS: Record<DealStage, DealStage[]> = {
   ON_HOLD: [], // ON_HOLD can resume to any stage — handled separately
 }
 
+const TERMINAL_STAGES: DealStage[] = [
+  DealStage.CLOSED,
+  DealStage.CLOSED_WON,
+  DealStage.CLOSED_LOST,
+  DealStage.PASSED,
+]
+
 /**
  * Validates whether a deal stage transition is allowed.
- * ON_HOLD is special: any active stage can go to ON_HOLD,
- * and ON_HOLD can return to any active stage.
+ * Terminal stages (CLOSED_WON, CLOSED_LOST, PASSED) are reachable from any
+ * active (non-terminal) stage. ON_HOLD is bidirectional with all active stages.
  */
 export function canTransitionDealStage(
   current: DealStage,
   target: DealStage
 ): boolean {
+  // Cannot transition out of a terminal stage
+  if (TERMINAL_STAGES.includes(current)) return false
+
+  // Any active stage can go to a terminal stage
+  if (TERMINAL_STAGES.includes(target)) return true
+
   // Any active stage can go to ON_HOLD
-  if (target === DealStage.ON_HOLD) {
-    const terminalStages: DealStage[] = [
-      DealStage.CLOSED,
-      DealStage.CLOSED_WON,
-      DealStage.CLOSED_LOST,
-      DealStage.PASSED,
-    ]
-    return !terminalStages.includes(current)
-  }
+  if (target === DealStage.ON_HOLD) return true
 
   // ON_HOLD can return to any non-terminal stage
   if (current === DealStage.ON_HOLD) {
-    const terminalStages: DealStage[] = [
-      DealStage.CLOSED,
-      DealStage.CLOSED_WON,
-      DealStage.CLOSED_LOST,
-      DealStage.PASSED,
-    ]
-    return !terminalStages.includes(target)
+    return !TERMINAL_STAGES.includes(target)
   }
 
   return DEAL_STAGE_TRANSITIONS[current]?.includes(target) ?? false
@@ -63,23 +62,22 @@ export function canTransitionDealStage(
  * Returns the list of stages a deal can transition to from its current stage.
  */
 export function getAllowedTransitions(current: DealStage): DealStage[] {
+  if (TERMINAL_STAGES.includes(current)) return []
+
   const allowed = [...(DEAL_STAGE_TRANSITIONS[current] ?? [])]
 
-  // Any non-terminal stage can go to ON_HOLD
-  const terminalStages: DealStage[] = [
-    DealStage.CLOSED,
-    DealStage.CLOSED_WON,
-    DealStage.CLOSED_LOST,
-    DealStage.PASSED,
-  ]
-  if (!terminalStages.includes(current) && current !== DealStage.ON_HOLD) {
+  // All active stages can reach terminal stages and ON_HOLD
+  for (const t of TERMINAL_STAGES) {
+    if (!allowed.includes(t)) allowed.push(t)
+  }
+  if (current !== DealStage.ON_HOLD) {
     allowed.push(DealStage.ON_HOLD)
   }
 
   // ON_HOLD can return to any non-terminal stage
   if (current === DealStage.ON_HOLD) {
     return Object.values(DealStage).filter(
-      (s) => !terminalStages.includes(s) && s !== DealStage.ON_HOLD
+      (s) => !TERMINAL_STAGES.includes(s) && s !== DealStage.ON_HOLD
     )
   }
 
